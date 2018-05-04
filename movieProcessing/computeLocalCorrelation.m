@@ -34,7 +34,7 @@ function corrMap = tilingAndComputeCorrelation(rawMovie,tileSize,mask,tileShift)
         disp([num2str(i),' strip out of ',num2str(nTile1)]);
         for j = 1:nTile2
             tind=getTileIndices(i,j,tileSize,tileShift);
-            tileMovie = rawMovie(tind{1},tind{2});
+            tileMovie = rawMovie(tind{1},tind{2},:);
             tileCorrMat = computeCorrelationSingleTile(tileMovie,mask);
             corrMap(tind{1},tind{2}) =  tileCorrMat;
         end

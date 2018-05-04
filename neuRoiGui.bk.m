@@ -22,7 +22,7 @@ function varargout = neuRoiGui(varargin)
 
 % Edit the above text to modify the response to help neuRoiGui
 
-% Last Modified by GUIDE v2.5 04-May-2018 18:11:40
+% Last Modified by GUIDE v2.5 04-May-2018 13:01:27
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -101,26 +101,15 @@ function response_Callback(hObject, eventdata, handles)
     handles.controller.setDisplayState('response')
 
 
-% --- Executes on button press in masterResponse.
-function masterResponse_Callback(hObject, eventdata, handles)
-% hObject    handle to masterResponse (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-    handles.controller.setDisplayState('masterResponse')
-
-
-% --- Executes on button press in localCorr.
-function localCorr_Callback(hObject, eventdata, handles)
-% hObject    handle to localCorr (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-    handles.controller.setDisplayState('localCorr')
-
-
-% --- Executes on button press in addRoi.
-function addRoi_Callback(hObject, eventdata, handles)
-% hObject    handle to addRoi (see GCBO)
+% --- Executes on button press in pushbutton3.
+function pushbutton3_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton3 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of addRoi
+
+% --- Executes on button press in pushbutton4.
+function pushbutton4_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)

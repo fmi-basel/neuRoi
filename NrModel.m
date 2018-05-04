@@ -1,4 +1,4 @@
-classdef model < handle
+classdef NrModel < handle
     properties (SetObservable)
         filePath
         meta
@@ -9,10 +9,14 @@ classdef model < handle
         localCorrMap
         displayState
         stateArray
+        
+        roiArray
+        % roiMap
+        % timeTraceArray
     end
     
     methods
-        function self = model(filePath)
+        function self = NrModel(filePath)
             self.filePath = filePath;
             self.loadMovie(filePath);
             self.preprocessMovie();
@@ -59,5 +63,12 @@ classdef model < handle
             tilesize = 16;
             self.localCorrMap = computeLocalCorrelation(self.rawMovie,tilesize);
         end
+    end
+    
+    methods
+        function addRoi(self,roi)
+            self.roiArray{end+1} = roi;
+        end
+    
     end
 end
