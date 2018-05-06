@@ -33,10 +33,10 @@ classdef NrModel < handle
             
             nPlane = 1;
             meta.framerate = meta.framerate/nPlane;
-            self.meta = meta
+            self.meta = meta;
             
             startFrame = 50;
-            nFrame = 700;
+            nFrame = 200;
             planeNum = 1;
             
             self.rawMovie = readMovie(filePath,self.meta,nFrame,startFrame,nPlane,planeNum);

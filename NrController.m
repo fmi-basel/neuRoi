@@ -21,9 +21,19 @@ classdef NrController < handle
             end
         end
         
-        function addRoi(self)
+        function addRoi(self,hObject)
             roi = ExtFreehandRoi();
             self.model.addRoi(roi);
+        end
+        % Bo Hu 2018-05-05
+        function addRoiToggle(self,hObject)
+            mapAxes = self.view.guiHandles.mapAxes;
+            switch hObject.Value
+              case hObject.Max 
+                set(mapAxes,'ButtonDownFcn',@(src,evnt)self.addRoi());
+              case hObject.Min
+                set(mapAxes,'ButtonDownFcn','');
+            end
         end
         
     end

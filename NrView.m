@@ -14,9 +14,12 @@ classdef NrView < handle
             self.gui = neuRoiGui('controller',self.controller);
             self.guiHandles = guidata(self.gui);
             self.guiHandles.mapImage =  imagesc(self.model.anatomyMap,'Parent', ...
-                                        self.guiHandles.axes1);
+                                        self.guiHandles.mapAxes);
             addlistener(self.model,'displayState','PostSet',...
-                        @(src,event)NrView.changeDisplay(self,src,event));
+                        @(src,event)NrView.changeDisplay(self,src, ...
+                                                         event));
+            set(self.guiHandles.mapImage,'ButtonDownFcn',@self.addRoi_tmp);
+
             
         end
     end
@@ -36,6 +39,12 @@ classdef NrView < handle
                 set(hMapImage,'CData',eventObj.localCorrMap)
             end
         end
+        
+        function addRoi_tmp(self,src,event)
+            display('button down')
+            % roi = ExtFreehandRoi();
+        end
+
     end
 end    
     
