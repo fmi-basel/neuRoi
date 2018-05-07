@@ -21,20 +21,28 @@ classdef NrController < handle
             end
         end
         
-        function addRoi(self,hObject)
-            roi = ExtFreehandRoi();
-            self.model.addRoi(roi);
-        end
-        % Bo Hu 2018-05-05
-        function addRoiToggle(self,hObject)
-            mapAxes = self.view.guiHandles.mapAxes;
-            switch hObject.Value
-              case hObject.Max 
-                set(mapAxes,'ButtonDownFcn',@(src,evnt)self.addRoi());
-              case hObject.Min
-                set(mapAxes,'ButtonDownFcn','');
+        function addRoi(self)
+            freshRoi = ExtFreehandRoi();
+            if ~isempty(freshRoi.getPosition())
+                self.model.addRoi(freshRoi);
+            else
+                delete(freshRoi)
             end
         end
-        
     end
+    
+    methods
+        function closeGUI(self,src,event)
+            selection = questdlg('Close MyGUI?', ...
+                                 'Warning', ...
+                                 'Yes','No','Yes');
+            switch selection
+              case 'Yes'
+                delete(src)
+              case 'No'
+                return
+            end
+        end
+    end
+
 end

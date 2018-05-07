@@ -18,12 +18,52 @@ classdef NrView < handle
             addlistener(self.model,'displayState','PostSet',...
                         @(src,event)NrView.changeDisplay(self,src, ...
                                                          event));
-            set(self.guiHandles.mapImage,'ButtonDownFcn',@self.addRoi_tmp);
 
-            
+            self.assignCallback();
         end
+        
+        function assignCallback(self)
+            set(self.guiHandles.anatomyButton,'Callback',...
+               @(src,event)self.anatomy_Callback());
+            set(self.guiHandles.responseButton,'Callback',...
+               @(src,event)self.response_Callback());
+            set(self.guiHandles.addRoiButton,'Callback',...
+               @(src,event)self.addRoi_Callback(src,event));
+            % set(self.gui,'CloseRequestFcn',@(src,event)...
+            %              self.controller.closeGUI(src,event));
+            set(self.gui,'WindowKeyPressFcn',@(src,event)...
+                         self.keyPressCallback(src,event));
+
+        end
+                
     end
 
+    % Callback functions
+    methods
+        function anatomy_Callback(self)
+            self.controller.setDisplayState( 'anatomy');
+        end
+        function response_Callback(self)
+            self.controller.setDisplayState( 'response');
+        end
+        function addRoi_Callback(self,src,event)
+            self.controller.addRoi();
+        end
+        
+        function keyPressCallback(self,src,event)
+            keyword = event.Key;
+            switch keyword
+              case 'q'
+                self.anatomy_Callback()
+              case 'w'
+                self.response_Callback()
+              case 'f'
+                self.addRoi_Callback()
+            end
+
+        end
+    end
+    
     methods (Static)
         function changeDisplay(self,src,event)
             eventObj = event.AffectedObject;
@@ -39,24 +79,7 @@ classdef NrView < handle
                 set(hMapImage,'CData',eventObj.localCorrMap)
             end
         end
-        
-        function addRoi_tmp(self,src,event)
-            display('button down')
-            % roi = ExtFreehandRoi();
-        end
-
     end
 end    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+        
+
