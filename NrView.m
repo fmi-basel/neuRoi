@@ -72,6 +72,10 @@ classdef NrView < handle
             self.controller.selectRoi();
         end
         
+        function deleteRoi_Callback(self,src,event)
+            self.controller.deleteRoi();
+        end
+        
         function keyPressCallback(self,src,event)
             if strcmp(src.Tag,'traceFig')
                 figure(self.guiHandles.mainFig)
@@ -84,6 +88,8 @@ classdef NrView < handle
                 self.response_Callback()
               case 'f'
                 self.addRoi_Callback()
+              case 'd'
+                self.deleteRoi_Callback()
             end
         end
     end

@@ -73,6 +73,12 @@ classdef NrModel < handle
     
     % Methods for ROI-based processing
     methods
+        function set.currentRoi(self,roi)
+            self.currentRoi = roi;
+            self.currentTimeTrace = ...
+                roi.getTimeTrace(self.rawMovie);
+        end
+        
         function addRoi(self,roi)
             if isempty(self.roiArray)
                 roi.id = 1;
@@ -81,7 +87,6 @@ classdef NrModel < handle
             end
             self.roiArray{end+1} = roi;
             self.currentRoi = roi;
-            self.currentTimeTrace = roi.getTimeTrace(self.rawMovie);
         end
         
         function setCurrentRoiByTag(self,tag)
