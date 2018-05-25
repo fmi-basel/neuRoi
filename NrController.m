@@ -29,6 +29,21 @@ classdef NrController < handle
                 delete(freshRoi)
             end
         end
+        
+        function selectRoi(self)
+            selectedObj = get(gco,'Parent');
+            tag = get(selectedObj,'Tag');
+            display('aaa')
+            if and(~isempty(selectedObj),strfind(tag,'roi_'))
+                self.model.setCurrentRoiByTag(tag);
+                display(self.model.currentRoi)
+            end 
+
+        end
+        
+        function deleteRoi(self)
+            self.model.deleteRoi()
+        end
     end
     
     methods

@@ -1,6 +1,7 @@
 classdef NrModel < handle
     properties (SetObservable)
         filePath
+        fileBaseName
         meta
         rawMovie
         anatomyMap
@@ -11,6 +12,8 @@ classdef NrModel < handle
         stateArray
         
         roiArray
+        currentRoi
+        currentTimeTrace
         % roiMap
         % timeTraceArray
     end
@@ -18,6 +21,7 @@ classdef NrModel < handle
     methods
         function self = NrModel(filePath)
             self.filePath = filePath;
+            [~,self.fileBaseName,~] = fileparts(filePath);
             self.loadMovie(filePath);
             self.preprocessMovie();
             self.calcAnatomy();
@@ -26,6 +30,8 @@ classdef NrModel < handle
             self.stateArray = {'anatomy','response', ...
                                'masterResponse','localCorr'};
             self.displayState = self.stateArray{1};
+            
+            self.roiArray = {};
         end
         
         function loadMovie(self,filePath)
@@ -65,10 +71,39 @@ classdef NrModel < handle
         end
     end
     
+    % Methods for ROI-based processing
     methods
         function addRoi(self,roi)
+            if isempty(self.roiArray)
+                roi.id = 1;
+            else
+                roi.id = self.roiArray{end}.id + 1;
+            end
             self.roiArray{end+1} = roi;
+            self.currentRoi = roi;
+            self.currentTimeTrace = roi.getTimeTrace(self.rawMovie);
         end
-    
+        
+        function setCurrentRoiByTag(self,tag)
+            if strfind(tag,'roi_')
+                roiArray = self.roiArray;
+                currentRoiArray = roiArray(cellfun(@(x) strcmp(tag,x.getTag()), ...
+                                                   roiArray));
+                if length(currentRoiArray) == 1
+                    currentRoi = currentRoiArray{:};
+                    self.currentRoi = currentRoi;
+                else
+                    error('Tag did not match or more than one ROI matched')
+                end
+            else
+                error(sprintf('Tag %s is wrong format',tag))
+            end
+        end
+        
+        function deleteRoi(self)
+            delete(self.currentRoi)
+            roiArray = self.roiArray;
+            self.roiArray = roiArray(cellfun(@isvalid,roiArray));
+        end
     end
 end
