@@ -1,5 +1,5 @@
 function mainGui()
-mainFig = figureDM('Position',[600,300,400,100]);
+mainFig = figureDM('Position',[100,300,400,100]);
 handles = {}
 handles.copyRoiButton  = uicontrol('Style','pushbutton',...
                                    'String','copyRoi',...
@@ -9,7 +9,8 @@ handles.pasteRoiButton  = uicontrol('Style','pushbutton',...
                                    'String','pasteRoi',...
                                    'Units','normal',...
                                    'Position',[0.6,0.1,0.3,0.5]);
-
+set(handles.copyRoiButton,'Callback', @copyRoi_Callback);
+set(handles.pasteRoiButton,'Callback', @pasteRoi_Callback);
 
 baseDir = '/home/hubo/Projects/juvenile_Ca_imaging/data/2018-05-24';
 fileName1 = 'BH18_25dpf_f2_tel_zm_food_003_.tif';
@@ -29,12 +30,23 @@ function mycontroller = openFile(filePath)
 end
 
 function copyRoi_Callback(source,event)
-    mainFig = source.Parent
-    handles = getappdata(mainFig,'handles')
-    copiedRoi = handles.controller1.copyRoi()
-    setappdata(mainFig,'copiedRoi',copiedRoi)
-    display(getappdata(mainFig,'copiedRoi'))
-        
+    mainFig = source.Parent;
+    handles = getappdata(mainFig,'handles');
+    copiedRoi = handles.controller1.copyRoi();
+    setappdata(mainFig,'copiedRoi',copiedRoi);
+    display(getappdata(mainFig,'copiedRoi'));
+end
+
+function pasteRoi_Callback(source,event)
+    mainFig = source.Parent;
+    handles = getappdata(mainFig,'handles');
+    
+    copiedRoi = getappdata(mainFig,'copiedRoi');
+    mainFig2 = handles.controller2.view.guiHandles.mainFig;
+    set(0, 'currentfigure', mainFig2);
+    handles.controller2.pasteRoi(copiedRoi);
+end
+
     
     
 

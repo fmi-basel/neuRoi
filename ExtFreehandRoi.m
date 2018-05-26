@@ -20,13 +20,6 @@ classdef ExtFreehandRoi < imfreehand
         function tag = getTag(self)
             tag = get(self,'Tag')
         end
-        
-        function copiedRoi = copy(self)
-            save('tempRoi.mat', 'self');
-            foo = load('tempRoi.mat');
-            copiedRoi = foo.self;
-            delete('tempRoi.mat');
-        end
     end
     
     

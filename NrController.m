@@ -44,9 +44,19 @@ classdef NrController < handle
             self.model.deleteRoi()
         end
         
-        function copiedRoi=copyRoi(self)
+        function roiPos = copyRoiPos(self)
             currentRoi = self.model.currentRoi;
-            copiedRoi = currentRoi.copy();
+            roiPos = currentRoi.getPosition();
+        end
+        
+        function pasteRoi(self,roiPos)
+        % TODO
+            if ~isempty(roiPos)
+                freshRoi = imfreehand(roiPos);
+                self.model.addRoi(freshRoi);
+            else
+                warning('Empty ROI!')
+            end
         end
     end
     

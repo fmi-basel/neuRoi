@@ -42,7 +42,7 @@ classdef NrModel < handle
             self.meta = meta;
             
             startFrame = 50;
-            nFrame = 200;
+            nFrame = 20;
             planeNum = 1;
             
             self.rawMovie = readMovie(filePath,self.meta,nFrame,startFrame,nPlane,planeNum);
@@ -59,8 +59,10 @@ classdef NrModel < handle
         
         function calcResponse(self)
             offset = -30;
-            fZeroWindow = [100 200];
-            responseWindow = [500 min(800,size(self.rawMovie,3))];
+            % fZeroWindow = [100 200];
+            % responseWindow = [500 min(800,size(self.rawMovie,3))];
+            fZeroWindow = [1 2];
+            responseWindow = [5 10];
             [self.responseMap, self.masterResponseMap, ~] = ...
                 dFoverF(self.rawMovie,offset,fZeroWindow,responseWindow,false);
         end
