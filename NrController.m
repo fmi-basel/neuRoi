@@ -21,6 +21,7 @@ classdef NrController < handle
             end
         end
         
+        % ROI funcitons
         function addRoi(self)
             freshRoi = ExtFreehandRoi();
             if ~isempty(freshRoi.getPosition())
@@ -33,16 +34,19 @@ classdef NrController < handle
         function selectRoi(self)
             selectedObj = get(gco,'Parent');
             tag = get(selectedObj,'Tag');
-            display('aaa')
             if and(~isempty(selectedObj),strfind(tag,'roi_'))
                 self.model.setCurrentRoiByTag(tag);
-                display(self.model.currentRoi)
             end 
 
         end
         
         function deleteRoi(self)
             self.model.deleteRoi()
+        end
+        
+        function copiedRoi=copyRoi(self)
+            currentRoi = self.model.currentRoi;
+            copiedRoi = currentRoi.copy();
         end
     end
     

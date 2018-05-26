@@ -1,2 +1,0 @@
-classdef NeuRoiGui < handle
-end
