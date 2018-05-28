@@ -23,19 +23,24 @@ classdef NrController < handle
         
         % ROI funcitons
         function addRoi(self)
-            freshRoi = ExtFreehandRoi();
-            if ~isempty(freshRoi.getPosition())
+            rawRoi = imfreehand;
+            position = rawRoi.getPosition();
+            imageInfo = getImageSizeInfo(self.view.guiHandles.mapImage);
+            if ~isempty(position)
+                freshRoi = RoiFreehand(0,position,imageInfo);
                 self.model.addRoi(freshRoi);
-            else
-                delete(freshRoi)
+                self.view.addRoiPatch(freshRoi);
+                self.model.currentRoi = freshRoi;
             end
+            delete(rawRoi)
         end
         
         function selectRoi(self)
-            selectedObj = get(gco,'Parent');
+            selectedObj = gco; % get(gco,'Parent');
             tag = get(selectedObj,'Tag');
             if and(~isempty(selectedObj),strfind(tag,'roi_'))
-                self.model.setCurrentRoiByTag(tag);
+                slRoi = getappdata(selectedObj,'roiHandle');
+                self.model.currentRoi = slRoi;
             end 
 
         end

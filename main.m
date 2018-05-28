@@ -6,4 +6,3 @@ filePath = fullfile(baseDir,fileName);
 mymodel = NrModel(filePath);
 mycontroller = NrController(mymodel);
 
-1

@@ -76,41 +76,83 @@ classdef NrModel < handle
     % Methods for ROI-based processing
     methods
         function set.currentRoi(self,roi)
-            self.currentRoi = roi;
-            self.currentTimeTrace = ...
-                roi.getTimeTrace(self.rawMovie);
+            if isvalid(roi) && isa(roi,'RoiFreehand')
+                RoiInArray = NrModel.isInRoiArray(self,roi);
+                if RoiInArray
+                    if RoiInArray > 1
+                        warning('Multiple handles to same ROI!')
+                    end
+                self.currentRoi = roi;
+                self.currentTimeTrace = ...
+                    getTimeTrace(self.rawMovie,roi);
+                else
+                    error('ROI not in ROI array!')
+                end
+            else
+                error('Invalid ROI!')
+            end
         end
         
-        function addRoi(self,roi)
+        function addRoi(self,varargin)
+        % add ROI to ROI array
+        % input argument can be a ROI structure
+        % or position of a ROI
+            
+            if isnumeric(varargin{1}) && ~isempty(varargin{2})
+                % TODO imageInfo
+                position = varargin{1};
+                imageInfo = varargin{2};
+                invalidPosition = ~isempty(position) && ~ ...
+                    isequal(size(position,2),2);
+                if invalidPosition
+                    error('Invalid Position')
+                end
+                roi = RoiFreehand(0,position,imageInfo);
+            else if isvalid(varargin{1}) && isa(varargin{1}, ...
+                                                'RoiFreehand')
+                    % TODO check id conflict
+                    roi = varargin{1};
+            else
+                error('Type error! Input should be ROI position or ROI structure.')
+            end
+            end
+                    
             if isempty(self.roiArray)
                 roi.id = 1;
             else
                 roi.id = self.roiArray{end}.id + 1;
             end
             self.roiArray{end+1} = roi;
-            self.currentRoi = roi;
         end
-        
-        function setCurrentRoiByTag(self,tag)
-            if strfind(tag,'roi_')
-                roiArray = self.roiArray;
-                currentRoiArray = roiArray(cellfun(@(x) strcmp(tag,x.getTag()), ...
-                                                   roiArray));
-                if length(currentRoiArray) == 1
-                    currentRoi = currentRoiArray{:};
-                    self.currentRoi = currentRoi;
-                else
-                    error('Tag did not match or more than one ROI matched')
-                end
-            else
-                error(sprintf('Tag %s is wrong format',tag))
-            end
-        end
+
+        % function setCurrentRoiByTag(self,tag)
+        %     if strfind(tag,'roi_')
+        %         roiArray = self.roiArray;
+        %         currentRoiArray = roiArray(cellfun(@(x) strcmp(tag,x.getTag()), ...
+        %                                            roiArray));
+        %         if length(currentRoiArray) == 1
+        %             currentRoi = currentRoiArray{:};
+        %             self.currentRoi = currentRoi;
+        %         else
+        %             error('Tag did not match or more than one ROI matched')
+        %         end
+        %     else
+        %         error(sprintf('Tag %s is wrong format',tag))
+        %     end
+        % end
         
         function deleteRoi(self)
             delete(self.currentRoi)
             roiArray = self.roiArray;
             self.roiArray = roiArray(cellfun(@isvalid,roiArray));
+        end
+    end
+    
+    methods(Static)
+        function result = isInRoiArray(self,roi)
+            roiArray = self.roiArray;
+            existArray = cellfun(@(x) x == roi,roiArray);
+            result = sum(existArray);
         end
     end
 end
