@@ -109,6 +109,10 @@ classdef NrView < handle
             delete(roiPatch)
         end
         
+        function addRoiPatchArray(self,roiArray)
+            cellfun(@(x) self.addRoiPatch(x),roiArray);
+        end
+        
         function roiPatchArray = getRoiPatchArray(self)
             mapAxes = self.guiHandles.mapAxes;
             children = mapAxes.Children;

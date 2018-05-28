@@ -99,10 +99,11 @@ classdef NrModel < handle
         function addRoi(self,varargin)
         % add ROI to ROI array
         % input argument can be a ROI structure
-        % or position of a ROI
+        % or position of a ROI, imageSize information
             
-            if isnumeric(varargin{1}) && ~isempty(varargin{2})
-                % TODO imageInfo
+            if nargin == 3
+                isnumeric(varargin{1}) && ~isempty(varargin{2})
+                % Add ROI from position
                 position = varargin{1};
                 imageInfo = varargin{2};
                 invalidPosition = ~isempty(position) && ~ ...
@@ -111,13 +112,22 @@ classdef NrModel < handle
                     error('Invalid Position')
                 end
                 roi = RoiFreehand(0,position,imageInfo);
-            else if isvalid(varargin{1}) && isa(varargin{1}, ...
-                                                'RoiFreehand')
+            elseif nargin == 2
+                if isa(varargin{1},'RoiFreehand')
+                % Add RoiFreehand object
+                    
                     % TODO check id conflict
                     roi = varargin{1};
+                elseif isstruct(varargin{1})
+                    roiStruct = varargin{1}
+                    roi = RoiFreehand(roiStruct)
+                else
+                    error(['Input should be a RoiFreehand or a ' ...
+                           'stucture!'])
+                end
             else
-                error('Type error! Input should be ROI position or ROI structure.')
-            end
+                % TODO add ROI from mask
+                error('Wrong usage!')
             end
                     
             if isempty(self.roiArray)
@@ -126,6 +136,10 @@ classdef NrModel < handle
                 roi.id = self.roiArray{end}.id + 1;
             end
             self.roiArray{end+1} = roi;
+        end
+        
+        function addRoiArray(self,roiArray)
+            cellfun(@(x) self.addRoi(x),roiArray);
         end
 
         % function setCurrentRoiByTag(self,tag)
@@ -151,7 +165,7 @@ classdef NrModel < handle
             delete(roi);
             roiArray = self.roiArray;
             self.roiArray = roiArray(cellfun(@isvalid,roiArray));
-        end
+        end            
     end
     
     methods(Static)
@@ -159,6 +173,21 @@ classdef NrModel < handle
             roiArray = self.roiArray;
             existArray = cellfun(@(x) x == roi,roiArray);
             result = sum(existArray);
+        end
+        
+        function saveRoiArray(self,filePath)
+            [fileDir,fileName,ext] = fileparts(filePath);
+            roiArray = self.roiArray;
+            if strcmp(ext,'.mat')
+                filePath = fullfile(fileDir,fileName);
+                save(filePath,'roiArray');
+            end
+        end
+        
+        function loadRoiArray(self,filePath)
+            foo = load(filePath);
+            roiArray = foo.roiArray;
+            self.addRoiArray(roiArray);
         end
     end
 end

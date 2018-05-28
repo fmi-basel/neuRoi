@@ -34,7 +34,7 @@ classdef NrController < handle
                 self.model.currentRoi = freshRoi;
             end
         end
-        
+                
         function selectRoi(self)
             selectedObj = gco; % get(gco,'Parent');
             tag = get(selectedObj,'Tag');
@@ -70,6 +70,23 @@ classdef NrController < handle
                 warning('Invalid ROI!')
             end
         end
+        
+        function addRoiArray(self,roiArray)
+            self.model.addRoiArray(roiArray);
+            self.view.addRoiPatchArray(roiArray);
+        end
+
+        function saveRoiArray(self,filePath)
+            NrModel.saveRoiArray(self.model,filePath)
+        end
+        
+        function loadRoiArray(self,filePath)
+            foo = load(filePath);
+            roiArray = foo.roiArray;
+            self.addRoiArray(roiArray);
+        end
+        
+        
     end
     
     methods

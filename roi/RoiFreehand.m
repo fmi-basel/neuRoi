@@ -6,10 +6,19 @@ classdef RoiFreehand < matlab.mixin.Copyable
     end
     
     methods
-        function self = RoiFreehand(id,position,imageInfo)
-            self.id = id;
-            self.position = position;
-            self.imageInfo = imageInfo;
+        function self = RoiFreehand(varargin)
+            if nargin == 1
+                roiStruct = varargin{1};
+                self.id = roiStruct.id;
+                self.position = roiStruct.position;
+                self.imageInfo = roiStruct.imageInfo;
+            elseif nargin == 3
+                self.id = varargin{1};
+                self.position = varargin{2};
+                self.imageInfo = varargin{3};
+            else
+                error('Wrong number of input arguments!')
+            end
         end
         
         function mask = createMask(self)
