@@ -4,7 +4,7 @@ function handles = neuRoiGui(varargin)
 
     handles = {};
 
-    handles.mainFig = figureDM('Position',[600,300,400,300]); % figureDM is a
+    handles.mainFig = figureDM('Position',[600,300,700,600]); % figureDM is a
                                                 % function to
                                                 % create figure on dual monitor by Jan
     handles.mapAxes = axes('Position',[0.2,0.1,0.7,0.7]);

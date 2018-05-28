@@ -4,6 +4,7 @@ classdef NrView < handle
         controller
         
         guiHandles
+        currentRoiPatch
     end
     
     methods
@@ -13,7 +14,7 @@ classdef NrView < handle
             self.guiHandles = neuRoiGui();
             self.guiHandles.mainFig.Name = self.model.fileBaseName;
             self.guiHandles.traceFig.Name = [self.model.fileBaseName, ...
-                   '_time_trace']
+                   '_time_trace'];
            
             self.guiHandles.mapImage =  imagesc(self.model.anatomyMap,'Parent', ...
                                         self.guiHandles.mapAxes);
@@ -94,6 +95,28 @@ classdef NrView < handle
             end
         end
     end
+
+    % Methods for viewing ROIs
+    methods
+        function addRoiPatch(self,roi)
+            createRoiPatch(roi,self.guiHandles.mapAxes);
+        end
+        
+        function deleteRoiPatch(self,roiPatch)
+            if roiPatch == self.currentRoiPatch
+                self.currentRoiPatch = [];
+            end
+            delete(roiPatch)
+        end
+        
+        function roiPatchArray = getRoiPatchArray(self)
+            mapAxes = self.guiHandles.mapAxes;
+            children = mapAxes.Children;
+            patchInd = arrayfun(@isaRoiPatch,children);
+            roiPatchArray = children(patchInd);
+        end
+    end
+    
     
     methods (Static)
         function changeDisplay(self,src,event)
@@ -112,30 +135,44 @@ classdef NrView < handle
         end
         
         function plotTimeTrace(self,src,event)
+            eventObj = event.AffectedObject;
+            currentTimeTrace = eventObj.currentTimeTrace;
+
             traceFig = self.guiHandles.traceFig;
             traceFig.Visible = 'on';
             figure(traceFig)
-            plot(self.model.currentTimeTrace);
+            if ~isempty(currentTimeTrace)
+                plot(currentTimeTrace)
+            else
+                cla(traceFig.CurrentAxes)
+            end
             figure(self.guiHandles.mainFig)
         end
-
+        
         function changeCurrentRoiDisplay(self,src,event)
+        % TODO current roi display after adding new     
+       
             display('currentRoi changed')
             eventObj = event.AffectedObject;
             currentRoi = eventObj.currentRoi;
-            roiArray = eventObj.roiArray;
-            if isvalid(currentRoi) && strcmp(class(currentRoi),'ExtFreehandRoi')
-                for i=1:length(roiArray)
-                    roi = roiArray{i};
-                    if roi.id==currentRoi.id
-                        setColor(roi,'red')
+            
+            if ~isempty(currentRoi)
+                roiPatchArray = self.getRoiPatchArray();
+                for i=1:length(roiPatchArray)
+                    roiPatch = roiPatchArray(i);
+                    roiHandle = getappdata(roiPatch,'roiHandle');
+                    if roiHandle == currentRoi
+                        self.currentRoiPatch = roiPatch;
+                        set(roiPatch,'Facecolor','red')
                     else
-                        setColor(roi,'blue')
+                        set(roiPatch,'Facecolor','yellow')
                     end
+                end
+            else
+                if ~isempty(self.currentRoiPatch)
+                    set(self.currentRoiPatch,'Facecolor','yellow')
                 end
             end
         end
     end
 end    
-        
-

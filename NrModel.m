@@ -76,18 +76,21 @@ classdef NrModel < handle
     % Methods for ROI-based processing
     methods
         function set.currentRoi(self,roi)
-            if isvalid(roi) && isa(roi,'RoiFreehand')
-                RoiInArray = NrModel.isInRoiArray(self,roi);
-                if RoiInArray
-                    if RoiInArray > 1
-                        warning('Multiple handles to same ROI!')
+            if isempty(roi)
+                self.currentRoi = [];
+                self.currentTimeTrace = [];
+            elseif isvalid(roi) && isa(roi,'RoiFreehand')
+                    RoiInArray = NrModel.isInRoiArray(self,roi);
+                    if RoiInArray
+                        if RoiInArray > 1
+                            warning('Multiple handles to same ROI!')
+                        end
+                        self.currentRoi = roi;
+                        self.currentTimeTrace = ...
+                            getTimeTrace(self.rawMovie,roi);
+                    else
+                        error('ROI not in ROI array!')
                     end
-                self.currentRoi = roi;
-                self.currentTimeTrace = ...
-                    getTimeTrace(self.rawMovie,roi);
-                else
-                    error('ROI not in ROI array!')
-                end
             else
                 error('Invalid ROI!')
             end
@@ -141,8 +144,11 @@ classdef NrModel < handle
         %     end
         % end
         
-        function deleteRoi(self)
-            delete(self.currentRoi)
+        function deleteRoi(self,roi)
+            if self.currentRoi == roi
+                self.currentRoi = [];
+            end
+            delete(roi);
             roiArray = self.roiArray;
             self.roiArray = roiArray(cellfun(@isvalid,roiArray));
         end

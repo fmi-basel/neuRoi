@@ -25,6 +25,7 @@ classdef NrController < handle
         function addRoi(self)
             rawRoi = imfreehand;
             position = rawRoi.getPosition();
+            delete(rawRoi)
             imageInfo = getImageSizeInfo(self.view.guiHandles.mapImage);
             if ~isempty(position)
                 freshRoi = RoiFreehand(0,position,imageInfo);
@@ -32,7 +33,6 @@ classdef NrController < handle
                 self.view.addRoiPatch(freshRoi);
                 self.model.currentRoi = freshRoi;
             end
-            delete(rawRoi)
         end
         
         function selectRoi(self)
@@ -42,25 +42,32 @@ classdef NrController < handle
                 slRoi = getappdata(selectedObj,'roiHandle');
                 self.model.currentRoi = slRoi;
             end 
-
         end
         
         function deleteRoi(self)
-            self.model.deleteRoi()
+            display('Control:delete')
+            selectedObj = gco;
+            tag = get(selectedObj,'Tag');
+            if and(~isempty(selectedObj),strfind(tag,'roi_'))
+                slRoi = getappdata(selectedObj,'roiHandle');
+                self.model.deleteRoi(slRoi);
+                self.view.deleteRoiPatch(selectedObj);
+            end 
         end
         
-        function roiPos = copyRoiPos(self)
+        function roi = copyRoi(self)
             currentRoi = self.model.currentRoi;
-            roiPos = currentRoi.getPosition();
+            roi = copy(currentRoi)
         end
         
-        function pasteRoi(self,roiPos)
-        % TODO
-            if ~isempty(roiPos)
-                freshRoi = imfreehand(roiPos);
-                self.model.addRoi(freshRoi);
+        function pasteRoi(self,roi)
+            if isvalid(roi) && isa(roi,'RoiFreehand')
+                % TODO check if image info matches
+                self.model.addRoi(roi);
+                self.view.addRoiPatch(roi);
+                self.model.currentRoi = roi;
             else
-                warning('Empty ROI!')
+                warning('Invalid ROI!')
             end
         end
     end
