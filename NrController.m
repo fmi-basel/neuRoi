@@ -22,19 +22,29 @@ classdef NrController < handle
         end
         
         % ROI funcitons
-        function addRoi(self)
+        function addRoiInteract(self)
             rawRoi = imfreehand;
+            %TODO important, deal with roi cancelled by Esc!!
             position = rawRoi.getPosition();
             delete(rawRoi)
             imageInfo = getImageSizeInfo(self.view.guiHandles.mapImage);
             if ~isempty(position)
                 freshRoi = RoiFreehand(0,position,imageInfo);
-                self.model.addRoi(freshRoi);
-                self.view.addRoiPatch(freshRoi);
+                self.addRoi(freshRoi);
                 self.model.currentRoi = freshRoi;
             end
         end
-                
+
+        function addRoi(self,roi)
+            if isvalid(roi) && isa(roi,'RoiFreehand')
+                % TODO check if image info matches
+                self.model.addRoi(roi);
+                self.view.addRoiPatch(roi);
+            else
+                warning('Invalid ROI!')
+            end
+        end
+
         function selectRoi(self)
             selectedObj = gco; % get(gco,'Parent');
             tag = get(selectedObj,'Tag');
@@ -59,23 +69,18 @@ classdef NrController < handle
             currentRoi = self.model.currentRoi;
             roi = copy(currentRoi)
         end
-        
-        function pasteRoi(self,roi)
-            if isvalid(roi) && isa(roi,'RoiFreehand')
-                % TODO check if image info matches
-                self.model.addRoi(roi);
-                self.view.addRoiPatch(roi);
-                self.model.currentRoi = roi;
-            else
-                warning('Invalid ROI!')
-            end
-        end
-        
+                
         function addRoiArray(self,roiArray)
-            self.model.addRoiArray(roiArray);
-            self.view.addRoiPatchArray(roiArray);
+            cellfun(@(x) self.addRoi(x), roiArray);
         end
 
+        function freshRoiArray = copyRoiArray(self)
+            roiArray = self.model.getRoiArray();
+            freshRoiArray = cellfun(@copy,roiArray, ...
+                                    'UniformOutput',false);
+            
+        end
+        
         function saveRoiArray(self,filePath)
             NrModel.saveRoiArray(self.model,filePath)
         end

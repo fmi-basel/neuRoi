@@ -138,9 +138,6 @@ classdef NrModel < handle
             self.roiArray{end+1} = roi;
         end
         
-        function addRoiArray(self,roiArray)
-            cellfun(@(x) self.addRoi(x),roiArray);
-        end
 
         % function setCurrentRoiByTag(self,tag)
         %     if strfind(tag,'roi_')
@@ -165,7 +162,16 @@ classdef NrModel < handle
             delete(roi);
             roiArray = self.roiArray;
             self.roiArray = roiArray(cellfun(@isvalid,roiArray));
-        end            
+        end
+        
+        function roiArray = getRoiArray(self)
+            roiArray = self.roiArray;
+        end
+        
+        function addRoiArray(self,roiArray)
+            cellfun(@(x) self.addRoi(x),roiArray);
+        end
+
     end
     
     methods(Static)

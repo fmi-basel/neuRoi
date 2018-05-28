@@ -1,4 +1,4 @@
-function mainGui()
+function mainFig = mainGui()
 mainFig = figureDM('Position',[100,300,400,100]);
 handles = {};
 handles.copyRoiButton  = uicontrol('Style','pushbutton',...
@@ -8,9 +8,17 @@ handles.copyRoiButton  = uicontrol('Style','pushbutton',...
 handles.pasteRoiButton  = uicontrol('Style','pushbutton',...
                                    'String','pasteRoi',...
                                    'Units','normal',...
-                                   'Position',[0.6,0.1,0.3,0.5]);
+                                   'Position',[0.8,0.1,0.3,0.5]);
+
+handles.copyAllRoiButton  = uicontrol('Style','pushbutton',...
+                                   'String','copyAllRoi',...
+                                   'Units','normal',...
+                                   'Position',[0.5,0.1,0.3,0.5]);
+
 set(handles.copyRoiButton,'Callback', @copyRoi_Callback);
 set(handles.pasteRoiButton,'Callback', @pasteRoi_Callback);
+
+set(handles.copyAllRoiButton,'Callback', @copyAllRoi_Callback);
 
 baseDir = '/home/hubo/Projects/juvenile_Ca_imaging/data/2018-05-24';
 fileName1 = 'BH18_25dpf_f2_tel_zm_food_003_.tif';
@@ -33,19 +41,28 @@ function copyRoi_Callback(source,event)
     mainFig = source.Parent;
     handles = getappdata(mainFig,'handles');
     copiedRoi = handles.controller1.copyRoi();
-    setappdata(mainFig,'copiedRoi',copiedRoi);
-    display(getappdata(mainFig,'copiedRoi'));
+    setappdata(mainFig,'roiClipboard',{copiedRoi});
+    display(getappdata(mainFig,'roiClipboard'));
 end
 
 function pasteRoi_Callback(source,event)
     mainFig = source.Parent;
     handles = getappdata(mainFig,'handles');
     
-    copiedRoi = getappdata(mainFig,'copiedRoi');
+    roiClipboard = getappdata(mainFig,'roiClipboard');
     mainFig2 = handles.controller2.view.guiHandles.mainFig;
     set(0, 'currentfigure', mainFig2);
-    handles.controller2.pasteRoi(copiedRoi);
+    handles.controller2.addRoiArray(roiClipboard);
 end
+
+function copyAllRoi_Callback(source,event)
+    mainFig = source.Parent;
+    handles = getappdata(mainFig,'handles');
+    roiClipboard = handles.controller1.copyRoiArray();
+    setappdata(mainFig,'roiClipboard',roiClipboard);
+    display(getappdata(mainFig,'roiClipboard'));
+end
+
 
     
     

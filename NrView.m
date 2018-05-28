@@ -67,7 +67,7 @@ classdef NrView < handle
         end
         
         function addRoi_Callback(self,src,event)
-            self.controller.addRoi();
+            self.controller.addRoiInteract();
         end
         
         function selectRoi_Callback(self,src,event)
@@ -108,11 +108,7 @@ classdef NrView < handle
             end
             delete(roiPatch)
         end
-        
-        function addRoiPatchArray(self,roiArray)
-            cellfun(@(x) self.addRoiPatch(x),roiArray);
-        end
-        
+                
         function roiPatchArray = getRoiPatchArray(self)
             mapAxes = self.guiHandles.mapAxes;
             children = mapAxes.Children;
