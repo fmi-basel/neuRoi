@@ -12,8 +12,6 @@ classdef NrModel < handle
         responseMap
         masterResponseMap
         localCorrMap
-        displayState
-        stateArray
         
         roiArray
         currentRoi
@@ -52,9 +50,6 @@ classdef NrModel < handle
             self.responseMap = zeros(size(self.rawMovie(:,:,1)));
             self.masterResponseMap = zeros(size(self.rawMovie(:,:,1)));
             self.localCorrMap = zeros(size(self.rawMovie(:,:,1)));
-            self.stateArray = {'anatomy','response', ...
-                               'masterResponse','localCorr'};
-            self.displayState = self.stateArray{1};
             
             self.roiArray = {};
         end

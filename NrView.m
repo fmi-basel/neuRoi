@@ -15,20 +15,17 @@ classdef NrView < handle
             self.guiHandles.mainFig.Name = self.model.fileBaseName;
             self.guiHandles.traceFig.Name = [self.model.fileBaseName, ...
                    '_time_trace'];
-           
-            self.guiHandles.mapImage =  imagesc(self.model.anatomyMap,'Parent', ...
-                                        self.guiHandles.mapAxes);
+            self.guiHandles.mapImage  = imagesc(self.model.anatomyMap,'Parent', ...
+                                                self.guiHandles.mapAxes);
+            self.plotMap('anatomy');
             
             self.assignCallbacks();
             self.addListners();
         end
         
         function addListners(self)
-            addlistener(self.model,'displayState','PostSet', ...
-                        @(src,event)NrView.changeDisplay(self,src,event));
-
             addlistener(self.model,'responseMap','PostSet', ...
-                        @(src,event)NrView.changeDisplay(self,src,event));
+                        @(src,event)NrView.changeMapDisplay(self,src,event));
 
             addlistener(self.model,'currentRoi','PostSet', ...
                         @(src,event)NrView.changeCurrentRoiDisplay(self,src,event));
@@ -65,11 +62,11 @@ classdef NrView < handle
     % Callback functions
     methods
         function anatomy_Callback(self)
-            self.controller.setDisplayState( 'anatomy');
+            self.plotMap('anatomy');
         end
         
         function response_Callback(self)
-            self.controller.setDisplayState( 'response');
+            self.plotMap('response');
         end
         
         function addRoi_Callback(self,src,event)
@@ -114,8 +111,30 @@ classdef NrView < handle
         end
     end
 
-    % Methods for viewing ROIs
     methods
+        function plotMap(self,mapName)
+            hMapImage = self.guiHandles.mapImage;
+            if ~isvalid(hMapImage)
+                hMapImage = imagesc(self.model.anatomyMap,'Parent', ...
+                                    self.guiHandles.mapAxes);
+                self.guiHandles.mapImage = hMapImage;
+            end
+
+            switch mapName
+              case 'anatomy'
+                set(hMapImage,'CData',self.model.anatomyMap);
+                colormap gray;
+              case 'response'
+                set(hMapImage,'CData',self.model.responseMap)
+              case 'masterResponse'
+                set(hMapImage,'CData',self.model.masterResponseMap)
+              case 'localCorr'
+                set(hMapImage,'CData',self.model.localCorrMap)
+            end
+        end
+
+        
+        % Methods for viewing ROIs
         function addRoiPatch(self,roi)
             createRoiPatch(roi,self.guiHandles.mapAxes);
         end
@@ -137,19 +156,10 @@ classdef NrView < handle
     
     
     methods (Static)
-        function changeDisplay(self,src,event)
-            eventObj = event.AffectedObject;
-            hMapImage = self.guiHandles.mapImage;
-            switch eventObj.displayState
-              case 'anatomy'
-                set(hMapImage,'CData',eventObj.anatomyMap);
-                colormap gray;
-              case 'response'
-                set(hMapImage,'CData',eventObj.responseMap)
-              case 'masterResponse'
-                set(hMapImage,'CData',eventObj.masterResponseMap)
-              case 'localCorr'
-                set(hMapImage,'CData',eventObj.localCorrMap)
+        function changeMapDisplay(self,src,event)
+            switch src.Name
+              case 'responseMap'
+                self.plotMap('response');
             end
         end
         

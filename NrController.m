@@ -12,17 +12,6 @@ classdef NrController < handle
             self.view = NrView(self);
         end
         
-        function setDisplayState(self,displayState)
-            if ismember(displayState, self.model.stateArray)
-                if strcmp(displayState,'localCorr') & ~self.model.localCorrMap
-                        self.model.calcLocalCorrelation();
-                end
-                self.model.displayState = displayState;
-            else
-                error('The state should be in array of states')
-            end
-        end
-        
         % ROI funcitons
         function addRoiInteract(self)
             rawRoi = imfreehand;
