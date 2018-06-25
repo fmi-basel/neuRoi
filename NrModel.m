@@ -7,6 +7,8 @@ classdef NrModel < handle
         
         rawMovie
         anatomyMap
+        
+        responseOption
         responseMap
         masterResponseMap
         localCorrMap
@@ -39,8 +41,16 @@ classdef NrModel < handle
             self.loadMovie(filePath);
             self.preprocessMovie();
             
-            self.calcAnatomy();
-            self.calcResponse();
+            % self.calcAnatomy();
+            % self.calcResponse();
+            % TODO calcDefaultResponseOption
+            self.responseOption = struct('offset',-10,...
+                                         'fZeroWindow',[100,200],...
+                                         'responseWindow',[400,600]);
+            
+            self.anatomyMap = zeros(size(self.rawMovie(:,:,1)));
+            self.responseMap = zeros(size(self.rawMovie(:,:,1)));
+            self.masterResponseMap = zeros(size(self.rawMovie(:,:,1)));
             self.localCorrMap = zeros(size(self.rawMovie(:,:,1)));
             self.stateArray = {'anatomy','response', ...
                                'masterResponse','localCorr'};
@@ -62,17 +72,38 @@ classdef NrModel < handle
         end
         
         function calcAnatomy(self)
-            self.anatomyMap = mean(self.rawMovie,3);
+            anatomyMap = mean(self.rawMovie,3);
+            minAm = min(anatomyMap(:));
+            maxAm = max(anatomyMap(:));
+            anatomyMap = (anatomyMap - minAm)/(maxAm - minAm);
+            anatomyMapAdj = adapthisteq(anatomyMap,'NumTiles',[16 16]);
+            self.anatomyMap = anatomyMapAdj;
         end
         
-        function calcResponse(self)
-            offset = -30;
-            % fZeroWindow = [100 200];
-            % responseWindow = [500 min(800,size(self.rawMovie,3))];
-            fZeroWindow = [1 2];
-            responseWindow = [5 10];
-            [self.responseMap, self.masterResponseMap, ~] = ...
-                dFoverF(self.rawMovie,offset,fZeroWindow,responseWindow,false);
+        function responseMap = calcResponse(self,varargin)
+        % calculate response map (dF/F)
+        % based on parameters defined in self.responseOption
+        % or parameters defined in the input argument(s)
+            if nargin == 1
+                responseOption = self.responseOption;
+            elseif nargin == 2
+                responseOption = varargin{1};
+                self.responseOption = responseOption;
+            elseif nargin == 4
+                reponseOption = struct('offset',varargin{1}, ...
+                                       'fZeroWindow',varargin{2}, ...
+                                       'responseWindow', ...
+                                       varargin{3});
+                self.responseOption = responseOption;
+            end
+            
+            offset = responseOption.offset;
+            fZeroWindow = responseOption.fZeroWindow;
+            responseWindow = responseOption.responseWindow;
+                
+            responseMap = dFoverF(self.rawMovie,offset,fZeroWindow, ...
+                                  responseWindow);
+            self.responseMap = responseMap;
         end
         
         function calcLocalCorrelation(self)
@@ -94,8 +125,11 @@ classdef NrModel < handle
                             warning('Multiple handles to same ROI!')
                         end
                         self.currentRoi = roi;
-                        self.currentTimeTrace = ...
+                        currentTimeTrace = ...
                             getTimeTrace(self.rawMovie,roi);
+                        currentTimeTraceSm = ...
+                            smooth(currentTimeTrace,10);
+                        self.currentTimeTrace = currentTimeTraceSm;
                     else
                         error('ROI not in ROI array!')
                     end

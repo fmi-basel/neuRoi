@@ -26,7 +26,10 @@ classdef NrView < handle
         function addListners(self)
             addlistener(self.model,'displayState','PostSet', ...
                         @(src,event)NrView.changeDisplay(self,src,event));
-            
+
+            addlistener(self.model,'responseMap','PostSet', ...
+                        @(src,event)NrView.changeDisplay(self,src,event));
+
             addlistener(self.model,'currentRoi','PostSet', ...
                         @(src,event)NrView.changeCurrentRoiDisplay(self,src,event));
             
@@ -52,6 +55,9 @@ classdef NrView < handle
                          self.keyPressCallback(src,event));
             set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
                 @(src,event)self.selectRoi_Callback(src,event));
+            set(self.guiHandles.traceFig,'CloseRequestFcn', ...
+                              @(src,event)self.closeTraceFig(src,event));
+            
         end
                 
     end
@@ -94,6 +100,18 @@ classdef NrView < handle
                 self.deleteRoi_Callback()
             end
         end
+        
+        function closeMainFig(self,src,event)
+        % TODO
+        end
+        
+        function closeTraceFig(self,src,event)
+            if isvalid(self.guiHandles.mainFig)
+                src.Visible = 'off';
+            else
+                delete(src)
+            end
+        end
     end
 
     % Methods for viewing ROIs
@@ -124,7 +142,8 @@ classdef NrView < handle
             hMapImage = self.guiHandles.mapImage;
             switch eventObj.displayState
               case 'anatomy'
-                set(hMapImage,'CData',eventObj.anatomyMap)
+                set(hMapImage,'CData',eventObj.anatomyMap);
+                colormap gray;
               case 'response'
                 set(hMapImage,'CData',eventObj.responseMap)
               case 'masterResponse'
@@ -138,7 +157,7 @@ classdef NrView < handle
             eventObj = event.AffectedObject;
             currentTimeTrace = eventObj.currentTimeTrace;
 
-            traceFig = self.guiHandles.traceFig;
+            traceFig = self.guiHandles.traceFig;                
             traceFig.Visible = 'on';
             figure(traceFig)
             if ~isempty(currentTimeTrace)

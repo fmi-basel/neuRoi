@@ -7,6 +7,8 @@ classdef NrController < handle
     methods
         function self = NrController(mymodel)
             self.model = mymodel;
+            self.model.calcResponse();
+            self.model.calcAnatomy()
             self.view = NrView(self);
         end
         

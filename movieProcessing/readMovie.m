@@ -21,7 +21,7 @@ function rawMovie = readMovie(filePath,meta,varargin)
                'frames (%d)!'],startFrame,nFrame,meta.numberframes));
     end
     
-    % warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning')
+    warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning')
     TifLink = Tiff(filePath, 'r');
     rawMovie = zeros(meta.height,meta.width,nFrame,'uint16');
     for i = 1:nFrame
