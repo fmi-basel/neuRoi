@@ -3,7 +3,7 @@ classdef NrModel < handle
         filePath
         fileBaseName
         meta
-        loadOption
+        loadMovieOption
         
         rawMovie
         anatomyMap
@@ -21,20 +21,24 @@ classdef NrModel < handle
     end
     
     methods
-        function self = NrModel(filePath)
+        function self = NrModel(filePath,varargin)
+            if nargin == 1
+                loadMovieOption = struct('startFrame', 50, ...
+                                         'nFrame', 900);
+            elseif nargin == 2
+                loadMovieOption = varargin{1};
+            else
+                error(['Usage: NrModel(filePath,' ...
+                       '[loadMovieOption])']);
+            end
             self.filePath = filePath;
             [~,self.fileBaseName,~] = fileparts(filePath);
             self.meta = readMeta(filePath);
             
-            self.loadOptions = struct('stratFrame', 50, ...
-                                      'nFrame', 1000,...
-                                      'nPlane', 1, ...
-                                      'planeNum', 1, ...
-                                      'binning', 1);
+            self.loadMovieOption = loadMovieOption;
             self.loadMovie(filePath);
-            
-            
             self.preprocessMovie();
+            
             self.calcAnatomy();
             self.calcResponse();
             self.localCorrMap = zeros(size(self.rawMovie(:,:,1)));
@@ -47,13 +51,9 @@ classdef NrModel < handle
         
         
         function loadMovie(self,filePath)
-            stratFrame = self.loadOption.stratFrame;
-            nFrame = self.loadOption.nFrame;
-            nPlane = self.loadOption.nPlane;
-            planeNum = self.loadOption.planeNum;
-            binning = self.loadOption.binning;
-
-            self.rawMovie = readMovie(filePath,self.meta,nFrame,startFrame,nPlane,planeNum);
+            startFrame = self.loadMovieOption.startFrame;
+            nFrame = self.loadMovieOption.nFrame;
+            self.rawMovie = readMovie(filePath,self.meta,nFrame,startFrame);
         end
         
         function preprocessMovie(self)
