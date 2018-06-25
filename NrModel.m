@@ -68,11 +68,7 @@ classdef NrModel < handle
         
         function calcAnatomy(self)
             anatomyMap = mean(self.rawMovie,3);
-            minAm = min(anatomyMap(:));
-            maxAm = max(anatomyMap(:));
-            anatomyMap = (anatomyMap - minAm)/(maxAm - minAm);
-            anatomyMapAdj = adapthisteq(anatomyMap,'NumTiles',[16 16]);
-            self.anatomyMap = anatomyMapAdj;
+            self.anatomyMap = anatomyMap;
         end
         
         function responseMap = calcResponse(self,varargin)

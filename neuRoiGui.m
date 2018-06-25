@@ -24,6 +24,10 @@ function handles = neuRoiGui(varargin)
                               'Units','normal',...
                               'Position',[0.05,0.7,0.1,0.08]);
     
+    % Sliders for contrast adjustment
+    handles.contrastMinSlider = uicontrol('style','slider','Units','normal','position',[0.5 0.9 0.25 0.04]);
+    handles.contrastMaxSlider = uicontrol('style','slider','Units','normal','position',[0.5 0.8 0.25 0.04]);
+    
     handles.traceFig = figureDM('Name','Time Trace','Tag','traceFig',...
                                 'Position',[50,500,500,400],'Visible','off');
     handles.traceAxes = axes();

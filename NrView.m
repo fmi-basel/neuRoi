@@ -4,6 +4,7 @@ classdef NrView < handle
         controller
         
         guiHandles
+        displayState
         currentRoiPatch
     end
     
@@ -31,9 +32,19 @@ classdef NrView < handle
                         @(src,event)NrView.changeCurrentRoiDisplay(self,src,event));
             
             addlistener(self.model,'currentTimeTrace','PostSet', ...
-                        @(src,event)NrView.plotTimeTrace(self,src,event));
+                        @(src,event)NrView.plotTimeTrace(self,src, ...
+                                                         event));
             
-
+            % Listen to mapImage CData and update contrast slider limits
+            addlistener(self.guiHandles.mapImage,'CData','PostSet', ...
+                        @(src,event)NrView.updateContrastSliders(self,src,event));
+            
+            % Listen to contrast slider value and update mapImage
+            % color map (caxis)
+            addlistener(self.guiHandles.contrastMinSlider,'Value','PostSet',...
+                        @(src,event)NrView.adjustContrast(self,src,event));
+            addlistener(self.guiHandles.contrastMaxSlider,'Value','PostSet',...
+                        @(src,event)NrView.adjustContrast(self,src,event));
         end
         
         function assignCallbacks(self)
@@ -53,7 +64,8 @@ classdef NrView < handle
             set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
                 @(src,event)self.selectRoi_Callback(src,event));
             set(self.guiHandles.traceFig,'CloseRequestFcn', ...
-                              @(src,event)self.closeTraceFig(src,event));
+                              @(src,event)self.closeTraceFig(src, ...
+                                                             event));
             
         end
                 
@@ -62,11 +74,15 @@ classdef NrView < handle
     % Callback functions
     methods
         function anatomy_Callback(self)
+            self.displayState = 'anatomy';
             self.plotMap('anatomy');
+            % Update contrast slider
         end
         
         function response_Callback(self)
+            self.displayState = 'response';
             self.plotMap('response');
+            % Update contrast slider
         end
         
         function addRoi_Callback(self,src,event)
@@ -158,8 +174,14 @@ classdef NrView < handle
     methods (Static)
         function changeMapDisplay(self,src,event)
             switch src.Name
+              case 'anatomyMap'
+                if strcmp(self.displayState,'response')
+                    self.plotMap('response');
+                end
               case 'responseMap'
-                self.plotMap('response');
+                if strcmp(self.displayState,'response')
+                    self.plotMap('response');
+                end
             end
         end
         
@@ -203,5 +225,24 @@ classdef NrView < handle
                 end
             end
         end
+        
+        function updateContrastSliders(self,src,event)
+            himage = event.AffectedObject;
+            cdata = get(himage,'CData');
+            minCData = min(cdata(:));
+            maxCData = max(cdata(:));
+            set(self.guiHandles.contrastMinSlider,'Min',minCData, ...
+                              'Max',maxCData,'Value',minCData);
+            set(self.guiHandles.contrastMaxSlider,'Min',minCData,'Max',maxCData,'Value',maxCData);
+        end
+        
+        function adjustContrast(self,src,event)
+            minSliderVal = get(self.guiHandles.contrastMinSlider, ...
+                               'Value');
+            maxSliderVal = get(self.guiHandles.contrastMaxSlider, ...
+                               'Value');
+            caxis(self.guiHandles.mapAxes,[minSliderVal,maxSliderVal]);
+        end
+        
     end
 end    
