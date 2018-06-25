@@ -20,7 +20,7 @@ set(handles.pasteRoiButton,'Callback', @pasteRoi_Callback);
 
 set(handles.copyAllRoiButton,'Callback', @copyAllRoi_Callback);
 
-baseDir = '/home/hubo/Projects/juvenile_Ca_imaging/data/2018-05-24';
+baseDir = '/home/hubo/Projects/Ca_imaging/data/2018-05-24';
 fileName1 = 'BH18_25dpf_f2_tel_zm_food_003_.tif';
 filePath1 = fullfile(baseDir,fileName1);
 handles.controller1 = openFile(filePath1);

@@ -3,6 +3,8 @@ classdef NrModel < handle
         filePath
         fileBaseName
         meta
+        loadOption
+        
         rawMovie
         anatomyMap
         responseMap
@@ -22,10 +24,19 @@ classdef NrModel < handle
         function self = NrModel(filePath)
             self.filePath = filePath;
             [~,self.fileBaseName,~] = fileparts(filePath);
+            self.meta = readMeta(filePath);
+            
+            self.loadOptions = struct('stratFrame', 50, ...
+                                      'nFrame', 1000,...
+                                      'nPlane', 1, ...
+                                      'planeNum', 1, ...
+                                      'binning', 1);
             self.loadMovie(filePath);
+            
+            
             self.preprocessMovie();
             self.calcAnatomy();
-            self.calcResponse;
+            self.calcResponse();
             self.localCorrMap = zeros(size(self.rawMovie(:,:,1)));
             self.stateArray = {'anatomy','response', ...
                                'masterResponse','localCorr'};
@@ -34,17 +45,14 @@ classdef NrModel < handle
             self.roiArray = {};
         end
         
+        
         function loadMovie(self,filePath)
-            meta = readMeta(filePath);
-            
-            nPlane = 1;
-            meta.framerate = meta.framerate/nPlane;
-            self.meta = meta;
-            
-            startFrame = 50;
-            nFrame = 20;
-            planeNum = 1;
-            
+            stratFrame = self.loadOption.stratFrame;
+            nFrame = self.loadOption.nFrame;
+            nPlane = self.loadOption.nPlane;
+            planeNum = self.loadOption.planeNum;
+            binning = self.loadOption.binning;
+
             self.rawMovie = readMovie(filePath,self.meta,nFrame,startFrame,nPlane,planeNum);
         end
         
