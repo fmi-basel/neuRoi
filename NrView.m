@@ -94,11 +94,6 @@ classdef NrView < handle
             end
         end
         
-        function response_Callback(self)
-            self.currentMapName = 'response';
-            self.plotMap('response');
-        end
-        
         function addRoi_Callback(self,src,event)
             self.controller.addRoiInteract();
         end
@@ -118,9 +113,9 @@ classdef NrView < handle
             keyword = event.Key;
             switch keyword
               case 'q'
-                self.anatomy_Callback()
+                self.switchMap_Callback('anatomy')
               case 'w'
-                self.response_Callback()
+                self.switchMap_Callback('anatomy')
               case 'f'
                 self.addRoi_Callback()
               case 'd'
@@ -227,10 +222,8 @@ classdef NrView < handle
             figure(self.guiHandles.mainFig)
         end
         
-        function changeCurrentRoiDisplay(self,src,event)
-        % TODO current roi display after adding new     
-       
-            display('currentRoi changed')
+        function updateCurrentRoiDisplay(self,src,event)
+        % TODO current roi display after adding new            
             eventObj = event.AffectedObject;
             currentRoi = eventObj.currentRoi;
             

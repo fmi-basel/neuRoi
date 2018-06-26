@@ -116,11 +116,9 @@ classdef NrModel < handle
                             warning('Multiple handles to same ROI!')
                         end
                         self.currentRoi = roi;
-                        currentTimeTrace = ...
-                            getTimeTrace(self.rawMovie,roi);
-                        currentTimeTraceSm = ...
-                            smooth(currentTimeTrace,10);
-                        self.currentTimeTrace = currentTimeTraceSm;
+                        currentTimeTrace = getTimeTrace(...
+                            self.rawMovie,roi,self.responseOption.offset);
+                        self.currentTimeTrace = currentTimeTrace;
                     else
                         error('ROI not in ROI array!')
                     end
