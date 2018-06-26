@@ -4,8 +4,9 @@ classdef NrView < handle
         controller
         
         guiHandles
-        displayState
+        currentMapName
         currentRoiPatch
+        contrastLimStc
     end
     
     methods
@@ -18,18 +19,26 @@ classdef NrView < handle
                    '_time_trace'];
             self.guiHandles.mapImage  = imagesc(self.model.anatomyMap,'Parent', ...
                                                 self.guiHandles.mapAxes);
-            self.plotMap('anatomy');
-            
             self.assignCallbacks();
             self.addListners();
+            
+            self.plotMap('anatomy');
+            self.currentMapName = 'anatomy';
+            self.contrastLimStc = self.initContrastLimStc();
         end
         
+        function contrastLimStc = initContrastLimStc(self)
+            contrastLimStc.anatomy = minMax(self.model.anatomyMap);
+            contrastLimStc.response = ...
+                minMax(self.model.responseMap);
+        end
+                
         function addListners(self)
             addlistener(self.model,'responseMap','PostSet', ...
-                        @(src,event)NrView.changeMapDisplay(self,src,event));
+                        @(src,event)NrView.updateMapDisplay(self,src,event));
 
             addlistener(self.model,'currentRoi','PostSet', ...
-                        @(src,event)NrView.changeCurrentRoiDisplay(self,src,event));
+                        @(src,event)NrView.updateCurrentRoiDisplay(self,src,event));
             
             addlistener(self.model,'currentTimeTrace','PostSet', ...
                         @(src,event)NrView.plotTimeTrace(self,src, ...
@@ -49,9 +58,9 @@ classdef NrView < handle
         
         function assignCallbacks(self)
             set(self.guiHandles.anatomyButton,'Callback',...
-                @(src,event)self.anatomy_Callback());
+                @(src,event)self.switchMap_Callback('anatomy'));
             set(self.guiHandles.responseButton,'Callback',...
-                @(src,event)self.response_Callback());
+                @(src,event)self.switchMap_Callback('response'));
             set(self.guiHandles.addRoiButton,'Callback',...
                 @(src,event)self.addRoi_Callback(src,event));
             % set(self.gui,'CloseRequestFcn',@(src,event)...
@@ -73,16 +82,21 @@ classdef NrView < handle
 
     % Callback functions
     methods
-        function anatomy_Callback(self)
-            self.displayState = 'anatomy';
-            self.plotMap('anatomy');
-            % Update contrast slider
+        function switchMap_Callback(self,newMapName)
+            if ~strcmp(self.currentMapName,newMapName)
+                currentContrastLim = self.getCurrentContrastLim();
+                self.contrastLimStc = setfield(self.contrastLimStc, ...
+                                               self.currentMapName,currentContrastLim);
+                self.currentMapName = newMapName;
+                self.plotMap(newMapName);
+                contrastLim = getfield(self.contrastLimStc,self.currentMapName);
+                self.setCurrentContrastLim(contrastLim);
+            end
         end
         
         function response_Callback(self)
-            self.displayState = 'response';
+            self.currentMapName = 'response';
             self.plotMap('response');
-            % Update contrast slider
         end
         
         function addRoi_Callback(self,src,event)
@@ -142,6 +156,7 @@ classdef NrView < handle
                 colormap gray;
               case 'response'
                 set(hMapImage,'CData',self.model.responseMap)
+                colormap default
               case 'masterResponse'
                 set(hMapImage,'CData',self.model.masterResponseMap)
               case 'localCorr'
@@ -149,6 +164,18 @@ classdef NrView < handle
             end
         end
 
+        function contrastLim = getCurrentContrastLim(self)
+            minSliderVal = get(self.guiHandles.contrastMinSlider, ...
+                               'Value');
+            maxSliderVal = get(self.guiHandles.contrastMaxSlider, ...
+                               'Value');
+            contrastLim = [minSliderVal,maxSliderVal];
+        end
+        
+        function setCurrentContrastLim(self,contrastLim)
+            set(self.guiHandles.contrastMinSlider,'Value',contrastLim(1));
+            set(self.guiHandles.contrastMaxSlider,'Value',contrastLim(2));
+        end
         
         % Methods for viewing ROIs
         function addRoiPatch(self,roi)
@@ -172,14 +199,14 @@ classdef NrView < handle
     
     
     methods (Static)
-        function changeMapDisplay(self,src,event)
+        function updateMapDisplay(self,src,event)
             switch src.Name
               case 'anatomyMap'
-                if strcmp(self.displayState,'response')
+                if strcmp(self.currentMapName,'anatomy')
                     self.plotMap('response');
                 end
               case 'responseMap'
-                if strcmp(self.displayState,'response')
+                if strcmp(self.currentMapName,'response')
                     self.plotMap('response');
                 end
             end
@@ -229,19 +256,18 @@ classdef NrView < handle
         function updateContrastSliders(self,src,event)
             himage = event.AffectedObject;
             cdata = get(himage,'CData');
-            minCData = min(cdata(:));
-            maxCData = max(cdata(:));
-            set(self.guiHandles.contrastMinSlider,'Min',minCData, ...
-                              'Max',maxCData,'Value',minCData);
-            set(self.guiHandles.contrastMaxSlider,'Min',minCData,'Max',maxCData,'Value',maxCData);
+            cdlim = minMax(cdata);
+            set(self.guiHandles.contrastMinSlider,'Min',cdlim(1), ...
+                              'Max',cdlim(2),'Value',cdlim(1));
+            set(self.guiHandles.contrastMaxSlider,'Min',cdlim(1), ...
+                              'Max',cdlim(2),'Value',cdlim(2));
         end
         
         function adjustContrast(self,src,event)
-            minSliderVal = get(self.guiHandles.contrastMinSlider, ...
-                               'Value');
-            maxSliderVal = get(self.guiHandles.contrastMaxSlider, ...
-                               'Value');
-            caxis(self.guiHandles.mapAxes,[minSliderVal,maxSliderVal]);
+            contrastLim = self.getCurrentContrastLim();
+            if contrastLim(1) < contrastLim(2)
+                caxis(self.guiHandles.mapAxes,contrastLim);
+            end
         end
         
     end
