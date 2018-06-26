@@ -195,6 +195,7 @@ classdef NrView < handle
     
     methods (Static)
         function updateMapDisplay(self,src,event)
+            preContrastLim = self.getCurrentContrastLim();
             switch src.Name
               case 'anatomyMap'
                 if strcmp(self.currentMapName,'anatomy')
@@ -205,6 +206,11 @@ classdef NrView < handle
                     self.plotMap('response');
                 end
             end
+            minCData = self.guiHandles.contrastMinSlider.Min;
+            maxCData = self.guiHandles.contrastMinSlider.Max;
+            postContrastLim = [max(preContrastLim(1),minCData), ...
+                               min(preContrastLim(2),maxCData)];
+            self.setCurrentContrastLim(postContrastLim);
         end
         
         function plotTimeTrace(self,src,event)
