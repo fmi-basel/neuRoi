@@ -16,7 +16,7 @@ function rawMovie = readMovie(filePath,meta,varargin)
                        'frames %d!'],startFrame,meta.numberframes));
     end
     
-    if startFrame+nFrame > meta.numberframes
+    if startFrame+nFrame-1 > meta.numberframes
         error(sprintf(['Frame number (%d + %d) exceeded total number of ' ...
                'frames (%d)!'],startFrame,nFrame,meta.numberframes));
     end

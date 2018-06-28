@@ -1,6 +1,10 @@
-function subMovie = subtractPreampRing(rawMovie,nTemplateFrame)    
-template_window = [1:nTemplateFrame]';
-template = mean(rawMovie(:,:,template_window),3);
+function [subMovie,template] = subtractPreampRing(rawMovie,noSignalWindow)
+% SUBTRACTPREAMPRING subtracts from a calcium imaging movie the
+% striped pattern (bright dots in alternative lines) at the edge.
+% Usage: subMovie = subtractPreampRing(rawMovie,noSignalWindow)
+% noSignalWindow contains first and last number of frames that no
+% signal from PMT is recorded.
+template = mean(rawMovie(:,:,noSignalWindow),3);
 template_odd = mean(template(1:2:end,:),1);
 template_even = mean(template(2:2:end,:),1);
 for k = 1:size(template,1)/2

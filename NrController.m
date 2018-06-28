@@ -3,26 +3,44 @@ classdef NrController < handle
         model
         view
     end
+       
+    properties (SetObservable)
+        timeTraceState
+        roiDisplayState
+    end
     
     methods
         function self = NrController(mymodel)
+            self.timeTraceState = 'dfOverF';
+            self.roiDisplayState = true;
+
             self.model = mymodel;
             self.model.calcResponse();
             self.model.calcAnatomy()
             self.view = NrView(self);
         end
         
+        % Change display states
+        function toggleRoiDisplayState(self)
+            self.roiDisplayState = ~self.roiDisplayState;
+        end
+        
         % ROI funcitons
         function addRoiInteract(self)
+            if ~self.roiDisplayState
+                self.roiDisplayState = true;
+            end
             rawRoi = imfreehand;
             %TODO important, deal with roi cancelled by Esc!!
-            position = rawRoi.getPosition();
-            delete(rawRoi)
-            imageInfo = getImageSizeInfo(self.view.guiHandles.mapImage);
-            if ~isempty(position)
-                freshRoi = RoiFreehand(0,position,imageInfo);
-                self.addRoi(freshRoi);
-                self.model.currentRoi = freshRoi;
+            if ~isempty(rawRoi)
+                position = rawRoi.getPosition();
+                delete(rawRoi)
+                imageInfo = getImageSizeInfo(self.view.guiHandles.mapImage);
+                if ~isempty(position)
+                    freshRoi = RoiFreehand(0,position,imageInfo);
+                    self.addRoi(freshRoi);
+                    self.model.currentRoi = freshRoi;
+                end
             end
         end
 

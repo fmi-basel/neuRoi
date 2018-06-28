@@ -3,6 +3,7 @@ classdef NrModel < handle
         filePath
         fileBaseName
         meta
+        noSignalWindow
         loadMovieOption
         
         rawMovie
@@ -37,6 +38,8 @@ classdef NrModel < handle
             
             self.loadMovieOption = loadMovieOption;
             self.loadMovie(filePath);
+            
+            self.noSignalWindow = [1, 12];
             self.preprocessMovie();
             
             % self.calcAnatomy();
@@ -56,14 +59,17 @@ classdef NrModel < handle
         
         
         function loadMovie(self,filePath)
+            if isempty(self.loadMovieOption)
+                self.loadMovieOption.startFrame = 1;
+                self.loadMovieOption.nFrame = self.meta.numberframes;
+            end
             startFrame = self.loadMovieOption.startFrame;
             nFrame = self.loadMovieOption.nFrame;
             self.rawMovie = readMovie(filePath,self.meta,nFrame,startFrame);
         end
         
         function preprocessMovie(self)
-            nTemplateFrame = 12;
-            self.rawMovie = subtractPreampRing(self.rawMovie, nTemplateFrame);
+            self.rawMovie = subtractPreampRing(self.rawMovie,self.noSignalWindow);
         end
         
         function calcAnatomy(self)
@@ -116,9 +122,10 @@ classdef NrModel < handle
                             warning('Multiple handles to same ROI!')
                         end
                         self.currentRoi = roi;
-                        currentTimeTrace = getTimeTrace(...
+                        ctt = {};
+                        [ctt{1},ctt{2}] = getTimeTrace(...
                             self.rawMovie,roi,self.responseOption.offset);
-                        self.currentTimeTrace = currentTimeTrace;
+                        self.currentTimeTrace = ctt;
                     else
                         error('ROI not in ROI array!')
                     end

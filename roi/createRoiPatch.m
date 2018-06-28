@@ -11,7 +11,7 @@ end
 
 position = roi.position;
 roiPatch = patch(position(:,1),position(:,2),'y','Parent',parent);
-set(roiPatch,'FaceAlpha',0.4)
+set(roiPatch,'FaceAlpha',0.5)
 set(roiPatch,'LineStyle','none');
 set(roiPatch,'Tag',sprintf('roi_%04d',roi.id))
 setappdata(roiPatch,'roiHandle',roi);

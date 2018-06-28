@@ -1,5 +1,4 @@
-function [timeTrace,timeTraceRaw] = getTimeTrace(rawMovie,roi, ...
-                                                          varargin)
+function [timeTraceRaw,timeTraceDf] = getTimeTrace(rawMovie,roi,varargin)
     % GETTIMETRACE function to get time trace of dF/F within a ROI
     % from the input raw movie
     % Usage: getTimeTrace(rawMovie,roi,[offset])
@@ -23,5 +22,5 @@ function [timeTrace,timeTraceRaw] = getTimeTrace(rawMovie,roi, ...
     fZero = min(timeTraceSm(10:end-10));
     
     % Time trace of dF/F, unit in percent
-    timeTrace = (timeTraceSm - fZero) / fZero * 100;
+    timeTraceDf = (timeTraceSm - fZero) / fZero * 100;
     

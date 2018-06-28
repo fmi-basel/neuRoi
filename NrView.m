@@ -43,7 +43,15 @@ classdef NrView < handle
             addlistener(self.model,'currentTimeTrace','PostSet', ...
                         @(src,event)NrView.plotTimeTrace(self,src, ...
                                                          event));
-            
+
+            addlistener(self.controller,'timeTraceState','PostSet', ...
+                        @(src,event)NrView.plotTimeTrace(self,src, ...
+                                                         event));
+
+            addlistener(self.controller,'roiDisplayState','PostSet', ...
+                        @(src,event)NrView.toggleRoiDisplay(self,src, ...
+                                                         event));
+
             % Listen to mapImage CData and update contrast slider limits
             addlistener(self.guiHandles.mapImage,'CData','PostSet', ...
                         @(src,event)NrView.updateContrastSliders(self,src,event));
@@ -214,14 +222,20 @@ classdef NrView < handle
         end
         
         function plotTimeTrace(self,src,event)
-            eventObj = event.AffectedObject;
-            currentTimeTrace = eventObj.currentTimeTrace;
+        % eventObj = event.AffectedObject;
+            currentTimeTrace = self.model.currentTimeTrace;
 
             traceFig = self.guiHandles.traceFig;                
             traceFig.Visible = 'on';
             figure(traceFig)
             if ~isempty(currentTimeTrace)
-                plot(currentTimeTrace)
+                if strcmp(self.controller.timeTraceState,'raw')
+                    plot(currentTimeTrace{1})
+                elseif strcmp(self.controller.timeTraceState,'dfOverF')
+                    plot(currentTimeTrace{2})
+                else
+                    error('Wrong timeTraceState in Controller!')
+                end
             else
                 cla(traceFig.CurrentAxes)
             end
@@ -233,6 +247,7 @@ classdef NrView < handle
             eventObj = event.AffectedObject;
             currentRoi = eventObj.currentRoi;
             
+            unselectedColor = 'magenta';
             if ~isempty(currentRoi)
                 roiPatchArray = self.getRoiPatchArray();
                 for i=1:length(roiPatchArray)
@@ -242,13 +257,29 @@ classdef NrView < handle
                         self.currentRoiPatch = roiPatch;
                         set(roiPatch,'Facecolor','red')
                     else
-                        set(roiPatch,'Facecolor','yellow')
+                        set(roiPatch,'Facecolor',unselectedColor)
                     end
                 end
             else
                 if ~isempty(self.currentRoiPatch)
-                    set(self.currentRoiPatch,'Facecolor','yellow')
+                    set(self.currentRoiPatch,'Facecolor',unselectedColor)
                 end
+            end
+        end
+
+        function toggleRoiDisplay(self,src,event)
+            affectedObj = event.AffectedObject;
+            roiDisplayState = affectedObj.roiDisplayState;
+            if roiDisplayState
+                visibility = 'on';
+            else
+                visibility = 'off';
+            end
+            
+            roiPatchArray = self.getRoiPatchArray();
+            for i=1:length(roiPatchArray)
+                roiPatch = roiPatchArray(i);
+                set(roiPatch,'Visible',visibility);
             end
         end
         
