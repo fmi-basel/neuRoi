@@ -67,6 +67,35 @@ classdef NrController < handle
             end 
         end
         
+        function selectSingleRoi(self)
+            selectedObj = gco; % get(gco,'Parent');
+            tag = get(selectedObj,'Tag');
+            if and(~isempty(selectedObj),strfind(tag,'roi_'))
+                self.view.selectSingleRoiPatch(selectedObj);
+                slRoi = getappdata(selectedObj,'roiHandle');
+                self.model.selectSingleRoi(slRoi);
+            else
+                self.view.unselectAllRoiPatch();
+                self.model.unselectAllRoi();
+            end
+        end
+        
+        function selectMultRoi(self)
+            selectedObj = gco; % get(gco,'Parent');
+            tag = get(selectedObj,'Tag');
+            if and(~isempty(selectedObj),strfind(tag,'roi_'))
+                if strcmp(selectedObj.Selected,'on')
+                    self.view.selectRoiPatch(selectedObj);
+                    slRoi = getappdata(selectedObj,'roiHandle');
+                    self.model.selectRoi(slRoi);
+                else
+                    self.view.unselectRoiPatch(selectedObj);
+                    slRoi = getappdata(selectedObj,'roiHandle');
+                    self.model.unselectRoi(slRoi);
+                end
+            end
+        end
+        
         function deleteRoi(self)
             selectedObj = gco;
             tag = get(selectedObj,'Tag');

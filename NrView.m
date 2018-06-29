@@ -41,8 +41,8 @@ classdef NrView < handle
             addlistener(self.model,'responseMap','PostSet', ...
                         @(src,event)NrView.updateMapDisplay(self,src,event));
 
-            addlistener(self.model,'currentRoi','PostSet', ...
-                        @(src,event)NrView.updateCurrentRoiDisplay(self,src,event));
+            % addlistener(self.model,'currentRoi','PostSet', ...
+            %             @(src,event)NrView.updateCurrentRoiDisplay(self,src,event));
             
             addlistener(self.model,'currentTimeTrace','PostSet', ...
                         @(src,event)NrView.plotTimeTrace(self,src, ...
@@ -111,7 +111,12 @@ classdef NrView < handle
         end
         
         function selectRoi_Callback(self,src,event)
-            self.controller.selectRoi();
+            selectionType = get(gcf,'SelectionType')
+            if strcmp(selectionType,'normal')
+                self.controller.selectSingleRoi();
+            elseif strcmp(selectionType,'alt') % Ctrl pressed
+                self.controller.selectMultRoi();
+            end
         end
         
         function deleteRoi_Callback(self,src,event)
@@ -192,6 +197,38 @@ classdef NrView < handle
                            self.unselectedRoiColor);
         end
         
+        function selectRoiPatch(self,roiPatch)
+            roiPatch.Selected = 'on';
+        end
+        
+        function unselectRoiPatch(self,roiPatch)
+            roiPatch.Selected = 'off';
+        end
+        
+        function selectSingleRoiPatch(self,slRoiPatch)
+            slTag = get(slRoiPatch,'Tag');
+            roiPatchArray = self.getRoiPatchArray();
+            for i=1:length(roiPatchArray)
+                roiPatch = roiPatchArray(i);
+                tag = get(roiPatch,'Tag');
+                if strcmp(tag,slTag)
+                    roiPatch.Selected = 'on';
+                else
+                    roiPatch.Selected = 'off';
+                end
+            end
+        end
+        
+        function unselectAllRoiPatch(self)
+            roiPatchArray = self.getRoiPatchArray();
+            for i=1:length(roiPatchArray)
+                roiPatch = roiPatchArray(i);
+                roiPatch.Selected = 'off';
+            end
+        end
+        
+        
+        
         function deleteRoiPatch(self,roiPatch)
             if roiPatch == self.currentRoiPatch
                 self.currentRoiPatch = [];
@@ -249,29 +286,29 @@ classdef NrView < handle
             figure(self.guiHandles.mainFig)
         end
         
-        function updateCurrentRoiDisplay(self,src,event)
-        % TODO current roi display after adding new            
-            eventObj = event.AffectedObject;
-            currentRoi = eventObj.currentRoi;
+        % function updateCurrentRoiDisplay(self,src,event)
+        % % TODO current roi display after adding new            
+        %     eventObj = event.AffectedObject;
+        %     currentRoi = eventObj.currentRoi;
             
-            if ~isempty(currentRoi)
-                roiPatchArray = self.getRoiPatchArray();
-                for i=1:length(roiPatchArray)
-                    roiPatch = roiPatchArray(i);
-                    roiHandle = getappdata(roiPatch,'roiHandle');
-                    if roiHandle == currentRoi
-                        self.currentRoiPatch = roiPatch;
-                        set(roiPatch,'Facecolor','red')
-                    else
-                        set(roiPatch,'Facecolor',self.unselectedRoiColor)
-                    end
-                end
-            else
-                if ~isempty(self.currentRoiPatch)
-                    set(self.currentRoiPatch,'Facecolor',self.unselectedRoiColor)
-                end
-            end
-        end
+        %     if ~isempty(currentRoi)
+        %         roiPatchArray = self.getRoiPatchArray();
+        %         for i=1:length(roiPatchArray)
+        %             roiPatch = roiPatchArray(i);
+        %             roiHandle = getappdata(roiPatch,'roiHandle');
+        %             if roiHandle == currentRoi
+        %                 self.currentRoiPatch = roiPatch;
+        %                 set(roiPatch,'Facecolor','red')
+        %             else
+        %                 set(roiPatch,'Facecolor',self.unselectedRoiColor)
+        %             end
+        %         end
+        %     else
+        %         if ~isempty(self.currentRoiPatch)
+        %             set(self.currentRoiPatch,'Facecolor',self.unselectedRoiColor)
+        %         end
+        %     end
+        % end
 
         function toggleRoiDisplay(self,src,event)
             affectedObj = event.AffectedObject;
