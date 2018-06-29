@@ -7,6 +7,7 @@ classdef NrView < handle
         currentMapName
         currentRoiPatch
         contrastLimStc
+        unselectedRoiColor
     end
     
     methods
@@ -19,6 +20,9 @@ classdef NrView < handle
                    '_time_trace'];
             self.guiHandles.mapImage  = imagesc(self.model.anatomyMap,'Parent', ...
                                                 self.guiHandles.mapAxes);
+
+            self.unselectedRoiColor = 'magenta';
+
             self.assignCallbacks();
             self.addListners();
             
@@ -123,7 +127,9 @@ classdef NrView < handle
               case 'q'
                 self.switchMap_Callback('anatomy')
               case 'w'
-                self.switchMap_Callback('anatomy')
+                self.switchMap_Callback('response')
+              case 'r'
+                self.controller.toggleRoiDisplayState()
               case 'f'
                 self.addRoi_Callback()
               case 'd'
@@ -181,8 +187,9 @@ classdef NrView < handle
         end
         
         % Methods for viewing ROIs
-        function addRoiPatch(self,roi)
-            createRoiPatch(roi,self.guiHandles.mapAxes);
+        function roiPatch = addRoiPatch(self,roi)
+            roiPatch = createRoiPatch(roi,self.guiHandles.mapAxes, ...
+                           self.unselectedRoiColor);
         end
         
         function deleteRoiPatch(self,roiPatch)
@@ -247,7 +254,6 @@ classdef NrView < handle
             eventObj = event.AffectedObject;
             currentRoi = eventObj.currentRoi;
             
-            unselectedColor = 'magenta';
             if ~isempty(currentRoi)
                 roiPatchArray = self.getRoiPatchArray();
                 for i=1:length(roiPatchArray)
@@ -257,12 +263,12 @@ classdef NrView < handle
                         self.currentRoiPatch = roiPatch;
                         set(roiPatch,'Facecolor','red')
                     else
-                        set(roiPatch,'Facecolor',unselectedColor)
+                        set(roiPatch,'Facecolor',self.unselectedRoiColor)
                     end
                 end
             else
                 if ~isempty(self.currentRoiPatch)
-                    set(self.currentRoiPatch,'Facecolor',unselectedColor)
+                    set(self.currentRoiPatch,'Facecolor',self.unselectedRoiColor)
                 end
             end
         end

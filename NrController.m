@@ -48,7 +48,9 @@ classdef NrController < handle
             if isvalid(roi) && isa(roi,'RoiFreehand')
                 % TODO check if image info matches
                 self.model.addRoi(roi);
-                self.view.addRoiPatch(roi);
+                roiPatch = self.view.addRoiPatch(roi);
+                % TODO Set the new ROI as the selected ROI
+                % roiPatch.Selected = 'on';
             else
                 warning('Invalid ROI!')
             end
@@ -60,11 +62,12 @@ classdef NrController < handle
             if and(~isempty(selectedObj),strfind(tag,'roi_'))
                 slRoi = getappdata(selectedObj,'roiHandle');
                 self.model.currentRoi = slRoi;
+            else
+                self.model.currentRoi = [];
             end 
         end
         
         function deleteRoi(self)
-            display('Control:delete')
             selectedObj = gco;
             tag = get(selectedObj,'Tag');
             if and(~isempty(selectedObj),strfind(tag,'roi_'))

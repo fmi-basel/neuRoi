@@ -1,4 +1,4 @@
-function createRoiPatch(roi,parent)
+function roiPatch = createRoiPatch(roi,parent,ptcolor)
 % CREATEROIPATCH create a patch handle according to ROI position
 % for visualization
 % Usage: createRoiPatch(roi,parent)
@@ -9,8 +9,12 @@ if ~exist('parent', 'var')
     parent = gca;
 end
 
+if ~exist('ptcolor', 'var')
+    ptcolor = 'red';
+end
+
 position = roi.position;
-roiPatch = patch(position(:,1),position(:,2),'y','Parent',parent);
+roiPatch = patch(position(:,1),position(:,2),ptcolor,'Parent',parent);
 set(roiPatch,'FaceAlpha',0.5)
 set(roiPatch,'LineStyle','none');
 set(roiPatch,'Tag',sprintf('roi_%04d',roi.id))
