@@ -21,7 +21,7 @@ classdef NrView < handle
             self.guiHandles.mapImage  = imagesc(self.model.anatomyMap,'Parent', ...
                                                 self.guiHandles.mapAxes);
 
-            self.unselectedRoiColor = 'magenta';
+            self.unselectedRoiColor = 'red';
 
             self.assignCallbacks();
             self.addListners();
@@ -44,13 +44,14 @@ classdef NrView < handle
             % addlistener(self.model,'currentRoi','PostSet', ...
             %             @(src,event)NrView.updateCurrentRoiDisplay(self,src,event));
             
-            addlistener(self.model,'currentTimeTrace','PostSet', ...
-                        @(src,event)NrView.plotTimeTrace(self,src, ...
-                                                         event));
+            % addlistener(self.model,'currentTimeTrace','PostSet', ...
+            %             @(src,event)NrView.plotTimeTrace(self,src, ...
+            %                                              event));
 
-            addlistener(self.controller,'timeTraceState','PostSet', ...
-                        @(src,event)NrView.plotTimeTrace(self,src, ...
-                                                         event));
+            % TODO
+            % addlistener(self.controller,'timeTraceState','PostSet', ...
+            %             @(src,event)NrView.plotTimeTrace(self,src, ...
+            %                                              event));
 
             addlistener(self.controller,'roiDisplayState','PostSet', ...
                         @(src,event)NrView.toggleRoiDisplay(self,src, ...
@@ -227,8 +228,6 @@ classdef NrView < handle
             end
         end
         
-        
-        
         function deleteRoiPatch(self,roiPatch)
             if roiPatch == self.currentRoiPatch
                 self.currentRoiPatch = [];
@@ -242,6 +241,40 @@ classdef NrView < handle
             patchInd = arrayfun(@isaRoiPatch,children);
             roiPatchArray = children(patchInd);
         end
+        
+        
+        function holdTraceAxes(self,holdState)
+            hold(self.guiHandles.traceAxes,holdState)
+        end
+        
+        function plotTimeTrace(self,trace,roiId)
+            traceFig = self.guiHandles.traceFig;                
+            traceFig.Visible = 'on';
+            figure(traceFig)
+            if ~isempty(trace)
+                if strcmp(self.controller.timeTraceState,'raw')
+                    plot(trace{1},'Tag',sprintf('trace_%04d',roiId));
+                elseif strcmp(self.controller.timeTraceState,'dfOverF')
+                    plot(trace{2},'Tag',sprintf('trace_%04d',roiId));
+                else
+                    error('Wrong timeTraceState in Controller!')
+                end
+            else
+                cla(traceFig.CurrentAaxes)
+            end
+            figure(self.guiHandles.mainFig)
+        end
+        
+        function deleteTraceLine(self,roiId)
+            traceAxes = self.guiHandles.traceAxes;
+            tag = sprintf('trace_%04d',roiId);
+            lineInd = find(arrayfun(@(x) strcmp(x.Tag,tag), ...
+                                    traceAxes.Children));
+            if lineInd
+                delete(traceAxes.Children(lineInd));
+            end
+        end
+
     end
     
     
@@ -265,26 +298,7 @@ classdef NrView < handle
             self.setCurrentContrastLim(postContrastLim);
         end
         
-        function plotTimeTrace(self,src,event)
-        % eventObj = event.AffectedObject;
-            currentTimeTrace = self.model.currentTimeTrace;
-
-            traceFig = self.guiHandles.traceFig;                
-            traceFig.Visible = 'on';
-            figure(traceFig)
-            if ~isempty(currentTimeTrace)
-                if strcmp(self.controller.timeTraceState,'raw')
-                    plot(currentTimeTrace{1})
-                elseif strcmp(self.controller.timeTraceState,'dfOverF')
-                    plot(currentTimeTrace{2})
-                else
-                    error('Wrong timeTraceState in Controller!')
-                end
-            else
-                cla(traceFig.CurrentAxes)
-            end
-            figure(self.guiHandles.mainFig)
-        end
+        
         
         % function updateCurrentRoiDisplay(self,src,event)
         % % TODO current roi display after adding new            

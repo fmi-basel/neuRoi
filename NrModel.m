@@ -15,8 +15,8 @@ classdef NrModel < handle
         localCorrMap
         
         roiArray
-        currentRoi
-        currentTimeTrace
+        selectedRoiArray
+        selectedTraceArray
         % roiMap
         % timeTraceArray
     end
@@ -111,28 +111,28 @@ classdef NrModel < handle
     
     % Methods for ROI-based processing
     methods
-        function set.currentRoi(self,roi)
-            if isempty(roi)
-                self.currentRoi = [];
-                self.currentTimeTrace = [];
-            elseif isvalid(roi) && isa(roi,'RoiFreehand')
-                    RoiInArray = NrModel.isInRoiArray(self,roi);
-                    if RoiInArray
-                        if RoiInArray > 1
-                            warning('Multiple handles to same ROI!')
-                        end
-                        self.currentRoi = roi;
-                        ctt = {};
-                        [ctt{1},ctt{2}] = getTimeTrace(...
-                            self.rawMovie,roi,self.responseOption.offset);
-                        self.currentTimeTrace = ctt;
-                    else
-                        error('ROI not in ROI array!')
-                    end
-            else
-                error('Invalid ROI!')
-            end
-        end
+        % function set.currentRoi(self,roi)
+        %     if isempty(roi)
+        %         self.currentRoi = [];
+        %         self.currentTimeTrace = [];
+        %     elseif isvalid(roi) && isa(roi,'RoiFreehand')
+        %             RoiInArray = NrModel.isInRoiArray(self,roi);
+        %             if RoiInArray
+        %                 if RoiInArray > 1
+        %                     warning('Multiple handles to same ROI!')
+        %                 end
+        %                 self.currentRoi = roi;
+        %                 ctt = {};
+        %                 [ctt{1},ctt{2}] = getTimeTrace(...
+        %                     self.rawMovie,roi,self.responseOption.offset);
+        %                 self.currentTimeTrace = ctt;
+        %             else
+        %                 error('ROI not in ROI array!')
+        %             end
+        %     else
+        %         error('Invalid ROI!')
+        %     end
+        % end
         
         function addRoi(self,varargin)
         % add ROI to ROI array
@@ -175,6 +175,7 @@ classdef NrModel < handle
             end
             self.roiArray{end+1} = roi;
         end
+       
         
 
         % function setCurrentRoiByTag(self,tag)
@@ -192,6 +193,43 @@ classdef NrModel < handle
         %         error(sprintf('Tag %s is wrong format',tag))
         %     end
         % end
+        function selectRoi(self,roi)
+            roiInd = find(cellfun(@(x) x==roi,self.selectedRoiArray));
+
+            % Roi not in self.selectedRoiArray
+            if isempty(roiInd)
+                self.selectedRoiArray{end+1} = roi;
+                ctt = {};
+                [ctt{1},ctt{2}] = getTimeTrace(...
+                    self.rawMovie,roi,self.responseOption.offset);
+                self.selectedTraceArray{end+1} = ctt;
+            else
+                disp('ROI already selected!')
+            end
+        end
+        
+        function unselectRoi(self,roi)
+            roiInd = find(cellfun(@(x) x==roi,self.selectedRoiArray));
+            if roiInd
+                self.selectedRoiArray(roiInd) = [];
+                self.selectedTraceArray(roiInd) = [];
+            else
+                disp('ROI not selected, cannot unselect!')
+            end
+        end
+        
+        function selectSingleRoi(self,roi)
+            self.selectedRoiArray = {roi};
+            ctt = {};
+            [ctt{1},ctt{2}] = getTimeTrace(...
+                self.rawMovie,roi,self.responseOption.offset);
+            self.selectedTraceArray = {ctt};
+        end
+        
+        function unselectAllRoi(self)
+            self.selectedRoiArray = [];
+            self.selectedTraceArray = [];
+        end
         
         function deleteRoi(self,roi)
             if self.currentRoi == roi
@@ -213,12 +251,6 @@ classdef NrModel < handle
     end
     
     methods(Static)
-        function result = isInRoiArray(self,roi)
-            roiArray = self.roiArray;
-            existArray = cellfun(@(x) x == roi,roiArray);
-            result = sum(existArray);
-        end
-        
         function saveRoiArray(self,filePath)
             [fileDir,fileName,ext] = fileparts(filePath);
             roiArray = self.roiArray;

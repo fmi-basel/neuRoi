@@ -38,43 +38,55 @@ classdef NrController < handle
                 imageInfo = getImageSizeInfo(self.view.guiHandles.mapImage);
                 if ~isempty(position)
                     freshRoi = RoiFreehand(0,position,imageInfo);
-                    self.addRoi(freshRoi);
-                    self.model.currentRoi = freshRoi;
+                    roiPatch = self.addRoi(freshRoi);
+                    % Set the new ROI as the selected ROI
+                    self.selectSingleRoi(roiPatch);
                 end
             end
         end
 
-        function addRoi(self,roi)
+        function roiPatch = addRoi(self,roi)
             if isvalid(roi) && isa(roi,'RoiFreehand')
                 % TODO check if image info matches
                 self.model.addRoi(roi);
                 roiPatch = self.view.addRoiPatch(roi);
-                % TODO Set the new ROI as the selected ROI
-                % roiPatch.Selected = 'on';
             else
                 warning('Invalid ROI!')
             end
         end
 
-        function selectRoi(self)
-            selectedObj = gco; % get(gco,'Parent');
-            tag = get(selectedObj,'Tag');
-            if and(~isempty(selectedObj),strfind(tag,'roi_'))
-                slRoi = getappdata(selectedObj,'roiHandle');
-                self.model.currentRoi = slRoi;
-            else
-                self.model.currentRoi = [];
-            end 
-        end
+        % function selectRoi(self)
+        %     selectedObj = gco; % get(gco,'Parent');
+        %     tag = get(selectedObj,'Tag');
+        %     if and(~isempty(selectedObj),strfind(tag,'roi_'))
+        %         slRoi = getappdata(selectedObj,'roiHandle');
+        %         self.model.currentRoi = slRoi;
+        %     else
+        %         self.model.currentRoi = [];
+        %     end 
+        % end
         
-        function selectSingleRoi(self)
-            selectedObj = gco; % get(gco,'Parent');
+        function selectSingleRoi(self,varargin)
+            if nargin == 1
+                selectedObj = gco; % get(gco,'Parent');
+            elseif nargin == 2
+                selectedObj = varargin{1};
+            else
+                error('Wrong usage!')
+            end
+            
             tag = get(selectedObj,'Tag');
             if and(~isempty(selectedObj),strfind(tag,'roi_'))
                 self.view.selectSingleRoiPatch(selectedObj);
                 slRoi = getappdata(selectedObj,'roiHandle');
                 self.model.selectSingleRoi(slRoi);
+                
+                trace = self.model.selectedTraceArray{end};
+                self.view.holdTraceAxes('off');
+                self.view.plotTimeTrace(trace,slRoi.id);
             else
+                cla(self.view.guiHandles.traceAxes);
+                self.view.holdTraceAxes('off');
                 self.view.unselectAllRoiPatch();
                 self.model.unselectAllRoi();
             end
@@ -84,11 +96,19 @@ classdef NrController < handle
             selectedObj = gco; % get(gco,'Parent');
             tag = get(selectedObj,'Tag');
             if and(~isempty(selectedObj),strfind(tag,'roi_'))
-                if strcmp(selectedObj.Selected,'on')
+                if strcmp(selectedObj.Selected,'off')
                     self.view.selectRoiPatch(selectedObj);
                     slRoi = getappdata(selectedObj,'roiHandle');
                     self.model.selectRoi(slRoi);
+                    
+                    self.view.holdTraceAxes('on');
+                    trace = self.model.selectedTraceArray{end};
+                    self.view.plotTimeTrace(trace,slRoi.id);
                 else
+                    roiId = regexp(tag,'\d{4}','match');
+                    roiId = str2num(roiId{:})
+                    self.view.deleteTraceLine(roiId);
+
                     self.view.unselectRoiPatch(selectedObj);
                     slRoi = getappdata(selectedObj,'roiHandle');
                     self.model.unselectRoi(slRoi);
