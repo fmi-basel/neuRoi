@@ -117,12 +117,12 @@ classdef NrController < handle
         end
         
         function deleteRoi(self)
-            selectedObj = gco;
-            tag = get(selectedObj,'Tag');
-            if and(~isempty(selectedObj),strfind(tag,'roi_'))
-                slRoi = getappdata(selectedObj,'roiHandle');
+            slRoiPatchArray = self.view.getSelectedRoiPatchArray;
+            for i=1:length(slRoiPatchArray)
+                slRoiPatch = slRoiPatchArray(i);
+                slRoi = getappdata(slRoiPatch,'roiHandle');
                 self.model.deleteRoi(slRoi);
-                self.view.deleteRoiPatch(selectedObj);
+                self.view.deleteRoiPatch(slRoiPatch);
             end 
         end
         

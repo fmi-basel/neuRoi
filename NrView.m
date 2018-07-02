@@ -5,7 +5,6 @@ classdef NrView < handle
         
         guiHandles
         currentMapName
-        currentRoiPatch
         contrastLimStc
         unselectedRoiColor
     end
@@ -229,9 +228,6 @@ classdef NrView < handle
         end
         
         function deleteRoiPatch(self,roiPatch)
-            if roiPatch == self.currentRoiPatch
-                self.currentRoiPatch = [];
-            end
             delete(roiPatch)
         end
                 
@@ -240,6 +236,15 @@ classdef NrView < handle
             children = mapAxes.Children;
             patchInd = arrayfun(@isaRoiPatch,children);
             roiPatchArray = children(patchInd);
+        end
+        
+        function slRoiPatchArray = getSelectedRoiPatchArray(self)
+            mapAxes = self.guiHandles.mapAxes;
+            children = mapAxes.Children;
+            patchInd = arrayfun(@(x) isaRoiPatch(x) && ...
+                                strcmp(x.Selected,'on'),children);
+            
+            slRoiPatchArray = children(patchInd);
         end
         
         

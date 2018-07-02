@@ -232,12 +232,12 @@ classdef NrModel < handle
         end
         
         function deleteRoi(self,roi)
-            if self.currentRoi == roi
-                self.currentRoi = [];
-            end
             delete(roi);
-            roiArray = self.roiArray;
-            self.roiArray = roiArray(cellfun(@isvalid,roiArray));
+            self.roiArray = self.roiArray(cellfun(@isvalid, ...
+                                                  self.roiArray));
+            
+            self.selectedRoiArray = self.selectedRoiArray( ...
+                cellfun(@isvalid,self.selectedRoiArray));
         end
         
         function roiArray = getRoiArray(self)
