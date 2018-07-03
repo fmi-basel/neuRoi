@@ -19,7 +19,7 @@ function [timeTraceRaw,timeTraceDf] = getTimeTrace(rawMovie,roi,varargin)
 
     timeTraceFg = timeTraceRaw - offset;
     timeTraceSm = smooth(timeTraceFg,10);
-    fZero = min(timeTraceSm(10:end-10));
+    fZero = quantile(timeTraceSm(10:end-10),0.1);
     
     % Time trace of dF/F, unit in percent
     timeTraceDf = (timeTraceSm - fZero) / fZero * 100;

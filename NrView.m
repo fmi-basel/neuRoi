@@ -111,7 +111,7 @@ classdef NrView < handle
         end
         
         function selectRoi_Callback(self,src,event)
-            selectionType = get(gcf,'SelectionType')
+            selectionType = get(gcf,'SelectionType');
             if strcmp(selectionType,'normal')
                 self.controller.selectSingleRoi();
             elseif strcmp(selectionType,'alt') % Ctrl pressed

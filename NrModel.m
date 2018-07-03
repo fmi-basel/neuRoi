@@ -227,8 +227,8 @@ classdef NrModel < handle
         end
         
         function unselectAllRoi(self)
-            self.selectedRoiArray = [];
-            self.selectedTraceArray = [];
+            self.selectedRoiArray = {};
+            self.selectedTraceArray = {};
         end
         
         function deleteRoi(self,roi)

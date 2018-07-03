@@ -92,6 +92,18 @@ classdef NrController < handle
             end
         end
         
+        % function selectMultRoi_Callback(self)
+        %     selectedObj = gco; % get(gco,'Parent');
+        %     if and(~isempty(selectedObj),strfind(tag,'roi_'))
+        %         if strcmp(selectedObj.Selected,'off')
+        %             self.selectRoi(selectedObj)
+        %         end 
+        %     end
+        % end
+                    
+
+
+        
         function selectMultRoi(self)
             selectedObj = gco; % get(gco,'Parent');
             tag = get(selectedObj,'Tag');
@@ -143,7 +155,21 @@ classdef NrController < handle
         end
         
         function saveRoiArray(self,filePath)
+            if exist(filePath, 'file') == 2
+                promptStr = sprintf(['The file %s already exists.\nDo you want ' ...
+                             'to replace it? Y/n [n]'],filePath);
+                replaceStr = input(promptStr,'s');
+                while ~strcmp(replaceStr,'Y') && ~ ...
+                        strcmp(replaceStr,'n')
+                    replaceStr = input('Please enter Y or n: ','s');
+                end
+                if ~strcmp(replaceStr,'Y')
+                    disp('Not saving the ROI array.')
+                    return
+                end
+            end
             NrModel.saveRoiArray(self.model,filePath)
+            disp(sprintf('ROI array saved as %s',filePath));
         end
         
         function loadRoiArray(self,filePath)
