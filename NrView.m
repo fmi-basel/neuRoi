@@ -115,7 +115,7 @@ classdef NrView < handle
             if strcmp(selectionType,'normal')
                 self.controller.selectSingleRoi();
             elseif strcmp(selectionType,'alt') % Ctrl pressed
-                self.controller.selectMultRoi();
+                self.controller.selectMultRoi_Callback();
             end
         end
         
@@ -127,18 +127,24 @@ classdef NrView < handle
             if strcmp(src.Tag,'traceFig')
                 figure(self.guiHandles.mainFig)
             end
-            keyword = event.Key;
-            switch keyword
-              case 'q'
-                self.switchMap_Callback('anatomy')
-              case 'w'
-                self.switchMap_Callback('response')
-              case 'r'
-                self.controller.toggleRoiDisplayState()
-              case 'f'
-                self.addRoi_Callback()
-              case 'd'
-                self.deleteRoi_Callback()
+            if isempty(event.Modifier)
+                switch event.Key
+                  case 'q'
+                    self.switchMap_Callback('anatomy')
+                  case 'w'
+                    self.switchMap_Callback('response')
+                  case 'r'
+                    self.controller.toggleRoiDisplayState()
+                  case 'f'
+                    self.addRoi_Callback()
+                  case 'd'
+                    self.deleteRoi_Callback()
+                end
+            elseif strcmp(event.Modifier,'control')
+                switch event.Key
+                  case 'a'
+                    self.controller.selectAllRoi();
+                end
             end
         end
         
@@ -298,8 +304,8 @@ classdef NrView < handle
             end
             minCData = self.guiHandles.contrastMinSlider.Min;
             maxCData = self.guiHandles.contrastMinSlider.Max;
-            postContrastLim = [max(preContrastLim(1),minCData), ...
-                               min(preContrastLim(2),maxCData)];
+            postContrastLim = [min(max(preContrastLim(1),minCData),maxCData), ...
+                               max(min(preContrastLim(2),maxCData),minCData)];
             self.setCurrentContrastLim(postContrastLim);
         end
         

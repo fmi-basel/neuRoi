@@ -16,7 +16,7 @@ classdef NrController < handle
 
             self.model = mymodel;
             self.model.calcResponse();
-            self.model.calcAnatomy()
+            self.model.calcAnatomy();
             self.view = NrView(self);
         end
         
@@ -92,41 +92,71 @@ classdef NrController < handle
             end
         end
         
-        % function selectMultRoi_Callback(self)
-        %     selectedObj = gco; % get(gco,'Parent');
-        %     if and(~isempty(selectedObj),strfind(tag,'roi_'))
-        %         if strcmp(selectedObj.Selected,'off')
-        %             self.selectRoi(selectedObj)
-        %         end 
-        %     end
-        % end
-                    
-
-
-        
-        function selectMultRoi(self)
+        function selectMultRoi_Callback(self)
             selectedObj = gco; % get(gco,'Parent');
             tag = get(selectedObj,'Tag');
+
             if and(~isempty(selectedObj),strfind(tag,'roi_'))
                 if strcmp(selectedObj.Selected,'off')
-                    self.view.selectRoiPatch(selectedObj);
-                    slRoi = getappdata(selectedObj,'roiHandle');
-                    self.model.selectRoi(slRoi);
-                    
-                    self.view.holdTraceAxes('on');
-                    trace = self.model.selectedTraceArray{end};
-                    self.view.plotTimeTrace(trace,slRoi.id);
+                    self.selectRoi(selectedObj)
                 else
-                    roiId = regexp(tag,'\d{4}','match');
-                    roiId = str2num(roiId{:})
-                    self.view.deleteTraceLine(roiId);
-
-                    self.view.unselectRoiPatch(selectedObj);
-                    slRoi = getappdata(selectedObj,'roiHandle');
-                    self.model.unselectRoi(slRoi);
+                    self.unselectRoi(selectedObj)
                 end
             end
         end
+                    
+        function selectRoi(self,roiPatch)
+            self.view.selectRoiPatch(roiPatch);
+            slRoi = getappdata(roiPatch,'roiHandle');
+            self.model.selectRoi(slRoi);
+            
+            self.view.holdTraceAxes('on');
+            trace = self.model.selectedTraceArray{end};
+            self.view.plotTimeTrace(trace,slRoi.id);
+        end
+        
+        function unselectRoi(self,roiPatch)
+            tag = get(roiPatch,'Tag');
+            roiId = regexp(tag,'\d{4}','match');
+            roiId = str2num(roiId{:})
+            self.view.deleteTraceLine(roiId);
+
+            self.view.unselectRoiPatch(roiPatch);
+            slRoi = getappdata(roiPatch,'roiHandle');
+            self.model.unselectRoi(slRoi);
+        end
+
+        function selectAllRoi(self)
+            roiPatchArray = getRoiPatchArray(self.view);
+            for i=1:length(roiPatchArray)
+                roiPatch = roiPatchArray(i);
+                self.selectRoi(roiPatch);
+            end
+        end
+        
+        % function selectMultRoi(self)
+        %     selectedObj = gco; % get(gco,'Parent');
+        %     tag = get(selectedObj,'Tag');
+        %     if and(~isempty(selectedObj),strfind(tag,'roi_'))
+        %         if strcmp(selectedObj.Selected,'off')
+        %             self.view.selectRoiPatch(selectedObj);
+        %             slRoi = getappdata(selectedObj,'roiHandle');
+        %             self.model.selectRoi(slRoi);
+                    
+        %             self.view.holdTraceAxes('on');
+        %             trace = self.model.selectedTraceArray{end};
+        %             self.view.plotTimeTrace(trace,slRoi.id);
+        %         else
+        %             roiId = regexp(tag,'\d{4}','match');
+        %             roiId = str2num(roiId{:})
+        %             self.view.deleteTraceLine(roiId);
+
+        %             self.view.unselectRoiPatch(selectedObj);
+        %             slRoi = getappdata(selectedObj,'roiHandle');
+        %             self.model.unselectRoi(slRoi);
+        %         end
+        %     end
+        % end
         
         function deleteRoi(self)
             slRoiPatchArray = self.view.getSelectedRoiPatchArray;

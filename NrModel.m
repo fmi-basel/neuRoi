@@ -8,6 +8,8 @@ classdef NrModel < handle
         
         rawMovie
         anatomyMap
+
+        yxShift
         
         responseOption
         responseMap
@@ -38,6 +40,8 @@ classdef NrModel < handle
             
             self.loadMovieOption = loadMovieOption;
             self.loadMovie(filePath);
+            
+            self.yxShift = [0 0];
             
             self.noSignalWindow = [1, 12];
             self.preprocessMovie();
@@ -72,7 +76,17 @@ classdef NrModel < handle
             self.rawMovie = subtractPreampRing(self.rawMovie,self.noSignalWindow);
         end
         
-        function calcAnatomy(self)
+        function shiftMovieYx(self,yxShift)
+            self.yxShift = self.yxShift+yxShift;
+            self.rawMovie = circshift(self.rawMovie,[yxShift 0]);
+            self.anatomyMap = circshift(self.anatomyMap,yxShift);
+            self.responseMap = circshift(self.responseMap,yxShift);
+        end
+        
+        function unshiftMovieYx(self)
+            self.shiftMovieYx(-self.yxShift);
+        end
+        function anatomyMap = calcAnatomy(self)
             anatomyMap = mean(self.rawMovie,3);
             self.anatomyMap = anatomyMap;
         end
@@ -194,7 +208,12 @@ classdef NrModel < handle
         %     end
         % end
         function selectRoi(self,roi)
-            roiInd = find(cellfun(@(x) x==roi,self.selectedRoiArray));
+            if isempty(self.selectedRoiArray)
+                roiInd = [];
+            else
+                roiInd = find(cellfun(@(x) x==roi, ...
+                                      self.selectedRoiArray));
+            end
 
             % Roi not in self.selectedRoiArray
             if isempty(roiInd)
