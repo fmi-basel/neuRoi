@@ -15,13 +15,14 @@ loadMovieOption = struct('startFrame', 50, ...
 mymodel = NrModel(filePath,loadMovieOption);
 
 %% Add map
-mymodel.calculateAndAddNewMap('anatomy')
-data1 = mymodel.mapArray{1}.data;
-% responseOption = struct('offset',-10,'fZeroWindow',[10 20],'responseWindow',[50 100]);
-% mymodel.calculateNewMap('response',responseOption)
+mymodel.calculateAndAddNewMap('anatomy');
+responseOption = struct('offset',-10,'fZeroWindow',[10 20],'responseWindow',[50 100]);
+mymodel.calculateAndAddNewMap('response',responseOption);
 
 %% Update map
 mapOption.nFrameLimit = [1 2];
 mymodel.updateMap(1,mapOption);
-data2 = mymodel.mapArray{1}.data;
+
+responseOption = struct('offset',-10,'fZeroWindow',[10 20],'responseWindow',[60 70]);
+mymodel.updateMap(2,responseOption);
 

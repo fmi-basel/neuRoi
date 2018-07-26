@@ -15,8 +15,8 @@ classdef NrController < handle
             self.roiDisplayState = true;
 
             self.model = mymodel;
-            self.model.calcResponse();
-            self.model.calcAnatomy();
+            self.model.calculateAndAddNewMap('anatomy');
+            self.model.calculateAndAddNewMap('response');
             self.view = NrView(self);
         end
         

@@ -2,7 +2,7 @@ classdef NrModel < handle
 % NRMODEL the class in neuRoi that stores data and does computation
 % Properties:
 % mapArray: the array that contains the 2-D maps that the user
-% refer to for ROI drawing. The user can define at most 6 maps.
+% refer to for ROI drawing.
     
     properties (SetObservable)
         filePath
@@ -15,9 +15,8 @@ classdef NrModel < handle
 
         yxShift
         
-        responseOption
+        defaultResponseOption
 
-        maxNMap
         mapArray
         
         roiArray
@@ -50,16 +49,11 @@ classdef NrModel < handle
             self.noSignalWindow = [1, 12];
             self.preprocessMovie();
             
-            % self.calcAnatomy();
-            % self.calcResponse();
             % TODO calcDefaultResponseOption
-            self.responseOption = struct('offset',-10,...
-                                         'fZeroWindow',[100,200],...
-                                         'responseWindow',[400,600]);
+            self.defaultResponseOption = self.calcDefaultResponseOption();
             
             
             % Initialize map array
-            maxNMap = 6;
             self.mapArray = {};
             
             % Initialize ROI array
@@ -92,24 +86,23 @@ classdef NrModel < handle
             self.shiftMovieYx(-self.yxShift);
         end
         
+        function defaultResponseOption = ...
+                calcDefaultResponseOption(self)
+            nFrame = size(self.rawMovie,3);
+            offset = -20;
+            fZeroWindow = [ceil(nFrame*0.1),ceil(nFrame*0.2)];
+            responseWindow = [ceil(nFrame*0.3),ceil(nFrame*0.4)];
+            defaultResponseOption = struct('offset',offset, ...
+                                           'fZeroWindow',fZeroWindow, ...
+                                           'responseWindow',responseWindow);
+        end
+        
         function calculateAndAddNewMap(self,mapType,varargin)
-            newMap = self.calculateNewMap(mapType,varargin{:});
-            self.addMap(newMap);
+            map.type = mapType;
+            [map.data,map.option] = self.calculateMap(map.type,varargin{:});
+            self.addMap(map);
         end
                 
-        function map = calculateNewMap(self,mapType,varargin)
-            map.type = mapType;
-            switch map.type
-              case 'anatomy'
-                [map.data,map.option] = self.calcAnatomy(varargin{:});
-              % case 'response'
-              %   newMap = self.calcResponse(varargin{:});
-              % case 'responseMax'
-              %   newMap = self.calcResponseMax(varargin{:});
-              % case 'localCorrelation'
-              %   newMap = self.calcLocalCorrelation(varargin{:});
-            end
-        end
         
         function addMap(self,newMap)
             self.mapArray{end+1} = newMap;
@@ -121,14 +114,23 @@ classdef NrModel < handle
         
         function updateMap(self,mapInd,mapOption)
             map = self.mapArray{mapInd};
-            switch map.type
-              case 'anatomy'
-                [map.data,map.option] = self.calcAnatomy(mapOption);
-            end
+            [map.data,map.option] = self.calculateMap(map.type,mapOption);
             self.mapArray{mapInd} = map;
         end
         
-        
+        function [mapData,mapOption] = calculateMap(self,mapType,varargin)
+            switch mapType
+              case 'anatomy'
+                [mapData,mapOption] = self.calcAnatomy(varargin{:});
+              case 'response'
+                [mapData,mapOption] = self.calcResponse(varargin{:});
+              % case 'responseMax'
+              %   newMap = self.calcResponseMax(varargin{:});
+              % case 'localCorrelation'
+              %   newMap = self.calcLocalCorrelation(varargin{:});
+            end
+        end
+
         function [mapData,mapOption] = calcAnatomy(self,varargin)
         % Method to calculate anatomy map
         % Usage: anatomyMap = nrmodel.calcAnatomy([nFrameLimit])
@@ -165,14 +167,16 @@ classdef NrModel < handle
             mapOption.nFrameLimit = nFrameLimit;
         end
         
-        function responseMap = calcResponse(self,varargin)
+        function [mapData,mapOption] = calcResponse(self,varargin)
         % Method to calculate response map (dF/F)
-        % based on parameters defined in self.responseOption
+        % based on parameters defined in self.mapOption
         % or parameters defined in the input argument(s)
-            if nargin == 2
-                responseOption = varargin{1};
+            if nargin == 1
+                mapOption = self.defaultResponseOption;
+            elseif nargin == 2
+                mapOption = varargin{1};
             elseif nargin == 4
-                responseOption = struct('offset',varargin{1}, ...
+                mapOption = struct('offset',varargin{1}, ...
                                        'fZeroWindow',varargin{2}, ...
                                        'responseWindow', ...
                                        varargin{3});
@@ -181,10 +185,9 @@ classdef NrModel < handle
                        'or nrmodel.calcResponse(offset,fZeroWindow,responseWindow)'])
             end
             
-            data = dFoverF(self.rawMovie,responseOption.offset, ...
-                                  responseOption.fZeroWindow, ...
-                                  responseOption.responseWindow);
-            responseMap = NrModel.createMapStruct('response',responseOption,data);
+            mapData = dFoverF(self.rawMovie,mapOption.offset, ...
+                              mapOption.fZeroWindow, ...
+                              mapOption.responseWindow);
         end
         
         function responseMaxMap = calcResponseMax(self)
@@ -253,7 +256,7 @@ classdef NrModel < handle
                 self.selectedRoiArray{end+1} = roi;
                 ctt = {};
                 [ctt{1},ctt{2}] = getTimeTrace(...
-                    self.rawMovie,roi,self.responseOption.offset);
+                    self.rawMovie,roi,self.defaultResponseOption.offset);
                 self.selectedTraceArray{end+1} = ctt;
             else
                 disp('ROI already selected!')

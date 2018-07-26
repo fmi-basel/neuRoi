@@ -8,7 +8,7 @@ function [timeTraceRaw,timeTraceDf] = getTimeTrace(rawMovie,roi,varargin)
     elseif nargin == 3
         offset = varargin{1};
     else
-        error('Wrong usage!')
+        error('Usage: getTimeTrace(rawMovie,roi,[offset])')
     end
     
     mask = roi.createMask;
