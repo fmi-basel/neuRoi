@@ -1,4 +1,9 @@
 classdef NrModel < handle
+% NRMODEL the class in neuRoi that stores data and does computation
+% Properties:
+% mapArray: the array that contains the 2-D maps that the user
+% refer to for ROI drawing. The user can define at most 6 maps.
+    
     properties (SetObservable)
         filePath
         fileBaseName
@@ -7,14 +12,13 @@ classdef NrModel < handle
         loadMovieOption
         
         rawMovie
-        anatomyMap
 
         yxShift
         
         responseOption
-        responseMap
-        masterResponseMap
-        localCorrMap
+
+        maxNMap
+        mapArray
         
         roiArray
         selectedRoiArray
@@ -53,11 +57,12 @@ classdef NrModel < handle
                                          'fZeroWindow',[100,200],...
                                          'responseWindow',[400,600]);
             
-            self.anatomyMap = zeros(size(self.rawMovie(:,:,1)));
-            self.responseMap = zeros(size(self.rawMovie(:,:,1)));
-            self.masterResponseMap = zeros(size(self.rawMovie(:,:,1)));
-            self.localCorrMap = zeros(size(self.rawMovie(:,:,1)));
             
+            % Initialize map array
+            maxNMap = 6;
+            self.mapArray = {};
+            
+            % Initialize ROI array
             self.roiArray = {};
         end
         
@@ -86,35 +91,103 @@ classdef NrModel < handle
         function unshiftMovieYx(self)
             self.shiftMovieYx(-self.yxShift);
         end
-        function anatomyMap = calcAnatomy(self)
-            anatomyMap = mean(self.rawMovie,3);
-            self.anatomyMap = anatomyMap;
+        
+        function calculateAndAddNewMap(self,mapType,varargin)
+            newMap = self.calculateNewMap(mapType,varargin{:});
+            self.addMap(newMap);
+        end
+                
+        function map = calculateNewMap(self,mapType,varargin)
+            map.type = mapType;
+            switch map.type
+              case 'anatomy'
+                [map.data,map.option] = self.calcAnatomy(varargin{:});
+              % case 'response'
+              %   newMap = self.calcResponse(varargin{:});
+              % case 'responseMax'
+              %   newMap = self.calcResponseMax(varargin{:});
+              % case 'localCorrelation'
+              %   newMap = self.calcLocalCorrelation(varargin{:});
+            end
+        end
+        
+        function addMap(self,newMap)
+            self.mapArray{end+1} = newMap;
+        end
+        
+        function deleteMap(self,mapInd)
+            self.mapArray(mapInd) = [];
+        end
+        
+        function updateMap(self,mapInd,mapOption)
+            map = self.mapArray{mapInd};
+            switch map.type
+              case 'anatomy'
+                [map.data,map.option] = self.calcAnatomy(mapOption);
+            end
+            self.mapArray{mapInd} = map;
+        end
+        
+        
+        function [mapData,mapOption] = calcAnatomy(self,varargin)
+        % Method to calculate anatomy map
+        % Usage: anatomyMap = nrmodel.calcAnatomy([nFrameLimit])
+        % nFrameLimit: 1x2 array of two integers that specify the
+        % beginning and end number of frames used to calculate the anatomy.
+            if nargin == 1
+                nFrameLimit = [1 size(self.rawMovie,3)];
+            elseif nargin == 2
+                if isfield(varargin{1},'nFrameLimit')
+                    nFrameLimit = varargin{1}.nFrameLimit;
+                else
+                    nFrameLimit = varargin{1};
+                end
+            else
+                error('Usage: nrmodel.calcAnatomy(''nFrameLimit'',nFrameLimit)')
+            end
+            
+            if isempty(nFrameLimit)
+                nFrameLimit = [1 size(self.rawMovie,3)];
+            end
+
+            if ~(length(nFrameLimit) && nFrameLimit(2)>= ...
+                 nFrameLimit(1))
+                error(['nFrameLimit should be an 1x2 integer array with ' ...
+                       '2nd element bigger that the 1st one.']);
+            end
+            if nFrameLimit(1)<1 || nFrameLimit(2)>size(self.rawMovie,3)
+                error(sprintf(['nFrameLimit [%d, %d] exceeded ' ...
+                               'the frame number of the movie %d'],[nFrameLimit, size(self.rawMovie,3)]));
+            end
+            
+            mapData = mean(self.rawMovie(:,:,nFrameLimit(1): ...
+                                            nFrameLimit(2)),3);
+            mapOption.nFrameLimit = nFrameLimit;
         end
         
         function responseMap = calcResponse(self,varargin)
-        % calculate response map (dF/F)
+        % Method to calculate response map (dF/F)
         % based on parameters defined in self.responseOption
         % or parameters defined in the input argument(s)
-            if nargin == 1
-                responseOption = self.responseOption;
-            elseif nargin == 2
+            if nargin == 2
                 responseOption = varargin{1};
-                self.responseOption = responseOption;
             elseif nargin == 4
                 responseOption = struct('offset',varargin{1}, ...
                                        'fZeroWindow',varargin{2}, ...
                                        'responseWindow', ...
                                        varargin{3});
-                self.responseOption = responseOption;
+            else
+                error(['Usage: nrmodel.calcResponse(responseOpiton) ' ...
+                       'or nrmodel.calcResponse(offset,fZeroWindow,responseWindow)'])
             end
             
-            offset = responseOption.offset;
-            fZeroWindow = responseOption.fZeroWindow;
-            responseWindow = responseOption.responseWindow;
-                
-            responseMap = dFoverF(self.rawMovie,offset,fZeroWindow, ...
-                                  responseWindow);
-            self.responseMap = responseMap;
+            data = dFoverF(self.rawMovie,responseOption.offset, ...
+                                  responseOption.fZeroWindow, ...
+                                  responseOption.responseWindow);
+            responseMap = NrModel.createMapStruct('response',responseOption,data);
+        end
+        
+        function responseMaxMap = calcResponseMax(self)
         end
         
         function calcLocalCorrelation(self)
@@ -125,29 +198,6 @@ classdef NrModel < handle
     
     % Methods for ROI-based processing
     methods
-        % function set.currentRoi(self,roi)
-        %     if isempty(roi)
-        %         self.currentRoi = [];
-        %         self.currentTimeTrace = [];
-        %     elseif isvalid(roi) && isa(roi,'RoiFreehand')
-        %             RoiInArray = NrModel.isInRoiArray(self,roi);
-        %             if RoiInArray
-        %                 if RoiInArray > 1
-        %                     warning('Multiple handles to same ROI!')
-        %                 end
-        %                 self.currentRoi = roi;
-        %                 ctt = {};
-        %                 [ctt{1},ctt{2}] = getTimeTrace(...
-        %                     self.rawMovie,roi,self.responseOption.offset);
-        %                 self.currentTimeTrace = ctt;
-        %             else
-        %                 error('ROI not in ROI array!')
-        %             end
-        %     else
-        %         error('Invalid ROI!')
-        %     end
-        % end
-        
         function addRoi(self,varargin)
         % add ROI to ROI array
         % input argument can be a ROI structure
@@ -189,24 +239,7 @@ classdef NrModel < handle
             end
             self.roiArray{end+1} = roi;
         end
-       
         
-
-        % function setCurrentRoiByTag(self,tag)
-        %     if strfind(tag,'roi_')
-        %         roiArray = self.roiArray;
-        %         currentRoiArray = roiArray(cellfun(@(x) strcmp(tag,x.getTag()), ...
-        %                                            roiArray));
-        %         if length(currentRoiArray) == 1
-        %             currentRoi = currentRoiArray{:};
-        %             self.currentRoi = currentRoi;
-        %         else
-        %             error('Tag did not match or more than one ROI matched')
-        %         end
-        %     else
-        %         error(sprintf('Tag %s is wrong format',tag))
-        %     end
-        % end
         function selectRoi(self,roi)
             if isempty(self.selectedRoiArray)
                 roiInd = [];
