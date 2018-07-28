@@ -5,6 +5,7 @@ classdef NrController < handle
     end
        
     properties (SetObservable)
+        currentMapInd
         timeTraceState
         roiDisplayState
     end
@@ -18,6 +19,16 @@ classdef NrController < handle
             self.model.calculateAndAddNewMap('anatomy');
             self.model.calculateAndAddNewMap('response');
             self.view = NrView(self);
+            self.currentMapInd = 1;
+            self.model.calculateAndAddNewMap('anatomy');
+        end
+        
+        function changeCurrentMapInd(self,src,event)
+            tag = event.NewValue.Tag;
+            indStr = regexp(tag,'mapButton_(\d+)','tokens');
+            ind = str2num(indStr{1}{1});
+            self.currentMapInd = ind;
+            disp(self.currentMapInd)
         end
         
         % Change display states

@@ -26,6 +26,10 @@ classdef NrModel < handle
         % timeTraceArray
     end
     
+    events
+        mapArrayLengthChanged
+    end
+    
     methods
         function self = NrModel(filePath,varargin)
             if nargin == 1
@@ -103,13 +107,15 @@ classdef NrModel < handle
             self.addMap(map);
         end
                 
-        
+       
         function addMap(self,newMap)
             self.mapArray{end+1} = newMap;
+            notify(self,'mapArrayLengthChanged');
         end
         
         function deleteMap(self,mapInd)
             self.mapArray(mapInd) = [];
+            notify(self,'mapArrayLengthChanged');
         end
         
         function updateMap(self,mapInd,mapOption)

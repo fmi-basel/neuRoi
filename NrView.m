@@ -17,8 +17,9 @@ classdef NrView < handle
             self.guiHandles.mainFig.Name = self.model.fileBaseName;
             self.guiHandles.traceFig.Name = [self.model.fileBaseName, ...
                    '_time_trace'];
-            self.guiHandles.mapImage  = imagesc(self.model.anatomyMap,'Parent', ...
-                                                self.guiHandles.mapAxes);
+            self.guiHandles.mapImage  = ...
+                imagesc(self.model.mapArray{1}.data,'Parent',self.guiHandles.mapAxes);
+            
 
             self.unselectedRoiColor = 'red';
 
@@ -31,62 +32,64 @@ classdef NrView < handle
         end
         
         function contrastLimStc = initContrastLimStc(self)
-            contrastLimStc.anatomy = minMax(self.model.anatomyMap);
+            contrastLimStc.anatomy = minMax(self.model.mapArray{1}.data);
             contrastLimStc.response = ...
-                minMax(self.model.responseMap);
+                minMax(self.model.mapArray{2}.data);
         end
                 
         function addListners(self)
-            addlistener(self.model,'responseMap','PostSet', ...
-                        @(src,event)NrView.updateMapDisplay(self,src,event));
-
+            % Listeners for maps
+            addlistener(self.controller,'currentMapInd','PostSet', ...
+                        @(src,evnt)self.switchMap(src,evnt));
+            addlistener(self.model,'mapArrayLengthChanged', ...
+                        @(src,evnt)self.toggleMapButton(src,evnt));
+            
             % addlistener(self.model,'currentRoi','PostSet', ...
-            %             @(src,event)NrView.updateCurrentRoiDisplay(self,src,event));
+            %             @(src,evnt)NrView.updateCurrentRoiDisplay(self,src,evnt));
             
             % addlistener(self.model,'currentTimeTrace','PostSet', ...
-            %             @(src,event)NrView.plotTimeTrace(self,src, ...
-            %                                              event));
+            %             @(src,evnt)NrView.plotTimeTrace(self,src, ...
+            %                                              evnt));
 
             % TODO
             % addlistener(self.controller,'timeTraceState','PostSet', ...
-            %             @(src,event)NrView.plotTimeTrace(self,src, ...
-            %                                              event));
+            %             @(src,evnt)NrView.plotTimeTrace(self,src, ...
+            %                                              evnt));
 
             addlistener(self.controller,'roiDisplayState','PostSet', ...
-                        @(src,event)NrView.toggleRoiDisplay(self,src, ...
-                                                         event));
+                        @(src,evnt)NrView.toggleRoiDisplay(self,src, ...
+                                                         evnt));
 
             % Listen to mapImage CData and update contrast slider limits
             addlistener(self.guiHandles.mapImage,'CData','PostSet', ...
-                        @(src,event)NrView.updateContrastSliders(self,src,event));
+                        @(src,evnt)NrView.updateContrastSliders(self,src,evnt));
             
             % Listen to contrast slider value and update mapImage
             % color map (caxis)
             addlistener(self.guiHandles.contrastMinSlider,'Value','PostSet',...
-                        @(src,event)NrView.adjustContrast(self,src,event));
+                        @(src,evnt)NrView.adjustContrast(self,src,evnt));
             addlistener(self.guiHandles.contrastMaxSlider,'Value','PostSet',...
-                        @(src,event)NrView.adjustContrast(self,src,event));
+                        @(src,evnt)NrView.adjustContrast(self,src,evnt));
         end
         
         function assignCallbacks(self)
-            set(self.guiHandles.anatomyButton,'Callback',...
-                @(src,event)self.switchMap_Callback('anatomy'));
-            set(self.guiHandles.responseButton,'Callback',...
-                @(src,event)self.switchMap_Callback('response'));
-            set(self.guiHandles.addRoiButton,'Callback',...
-                @(src,event)self.addRoi_Callback(src,event));
-            % set(self.gui,'CloseRequestFcn',@(src,event)...
-            %              self.controller.closeGUI(src,event));
-            set(self.guiHandles.mainFig,'WindowKeyPressFcn', ...
-                              @(src,event)self.keyPressCallback(src,event));
+            set(self.guiHandles.mapButtonGroup,'SelectionChangedFcn',...
+                @(src,evnt)self.controller.changeCurrentMapInd(src,evnt))
             
-            set(self.guiHandles.traceFig,'WindowKeyPressFcn',@(src,event)...
-                         self.keyPressCallback(src,event));
+            set(self.guiHandles.addRoiButton,'Callback',...
+                @(src,evnt)self.addRoi_Callback(src,evnt));
+            % set(self.gui,'CloseRequestFcn',@(src,evnt)...
+            %              self.controller.closeGUI(src,evnt));
+            set(self.guiHandles.mainFig,'WindowKeyPressFcn', ...
+                              @(src,evnt)self.keyPressCallback(src,evnt));
+            
+            set(self.guiHandles.traceFig,'WindowKeyPressFcn',@(src,evnt)...
+                         self.keyPressCallback(src,evnt));
             set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
-                @(src,event)self.selectRoi_Callback(src,event));
+                @(src,evnt)self.selectRoi_Callback(src,evnt));
             set(self.guiHandles.traceFig,'CloseRequestFcn', ...
-                              @(src,event)self.closeTraceFig(src, ...
-                                                             event));
+                              @(src,evnt)self.closeTraceFig(src, ...
+                                                             evnt));
             
         end
                 
@@ -94,6 +97,36 @@ classdef NrView < handle
 
     % Callback functions
     methods
+        function switchMap(self,src,evnt)
+            obj = evnt.AffectedObject;
+            propName = evnt.Source.Name;
+            currentMapInd = obj.(propName);
+            currentMap = self.model.mapArray{currentMapInd};
+            optionStr = ...
+                NrView.convertOptionToString(currentMap.option);
+            self.guiHandles.mapOptionText.String = optionStr;
+        end
+        
+        function toggleMapButton(self,src,evnt)
+            mapArray = src.mapArray;
+            mapButtonGroup = self.guiHandles.mapButtonGroup;
+            mapButtons = mapButtonGroup.Children;
+            for i=1:length(mapButtons)
+                mb = mapButtons(end+1-i);
+                if i <= length(mapArray)
+                    mb.Enable = 'on';
+                else
+                    if mb.Value
+                        mapButtonGroup.SelectedObject = ...
+                            mapButtons(end-length(mapArray));
+                    end
+                    mb.Enable = 'off';
+                end
+            end
+        end
+
+        
+        
         function switchMap_Callback(self,newMapName)
             if ~strcmp(self.currentMapName,newMapName)
                 currentContrastLim = self.getCurrentContrastLim();
@@ -106,11 +139,11 @@ classdef NrView < handle
             end
         end
         
-        function addRoi_Callback(self,src,event)
+        function addRoi_Callback(self,src,evnt)
             self.controller.addRoiInteract();
         end
         
-        function selectRoi_Callback(self,src,event)
+        function selectRoi_Callback(self,src,evnt)
             selectionType = get(gcf,'SelectionType');
             if strcmp(selectionType,'normal')
                 self.controller.selectSingleRoi();
@@ -119,16 +152,16 @@ classdef NrView < handle
             end
         end
         
-        function deleteRoi_Callback(self,src,event)
+        function deleteRoi_Callback(self,src,evnt)
             self.controller.deleteRoi();
         end
         
-        function keyPressCallback(self,src,event)
+        function keyPressCallback(self,src,evnt)
             if strcmp(src.Tag,'traceFig')
                 figure(self.guiHandles.mainFig)
             end
-            if isempty(event.Modifier)
-                switch event.Key
+            if isempty(evnt.Modifier)
+                switch evnt.Key
                   case 'q'
                     self.switchMap_Callback('anatomy')
                   case 'w'
@@ -140,19 +173,19 @@ classdef NrView < handle
                   case 'd'
                     self.deleteRoi_Callback()
                 end
-            elseif strcmp(event.Modifier,'control')
-                switch event.Key
+            elseif strcmp(evnt.Modifier,'control')
+                switch evnt.Key
                   case 'a'
                     self.controller.selectAllRoi();
                 end
             end
         end
         
-        function closeMainFig(self,src,event)
+        function closeMainFig(self,src,evnt)
         % TODO
         end
         
-        function closeTraceFig(self,src,event)
+        function closeTraceFig(self,src,evnt)
             if isvalid(self.guiHandles.mainFig)
                 src.Visible = 'off';
             else
@@ -172,7 +205,7 @@ classdef NrView < handle
 
             switch mapName
               case 'anatomy'
-                set(hMapImage,'CData',self.model.anatomyMap);
+                set(hMapImage,'CData',self.model.mapArray{1}.data);
                 colormap gray;
               case 'response'
                 set(hMapImage,'CData',self.model.responseMap)
@@ -290,7 +323,20 @@ classdef NrView < handle
     
     
     methods (Static)
-        function updateMapDisplay(self,src,event)
+        function optionStr = convertOptionToString(option)
+            nameArray = fieldnames(option);
+            stringArray = {};
+            for i = 1:length(nameArray)
+                name = nameArray{i};
+                value = option.(name);
+                stringArray{i} = sprintf('%s: %s',name,mat2str(value));
+            end
+            optionStr = [sprintf(['%s; '],stringArray{1:end-1}), ...
+                         stringArray{end}];
+                
+        end
+            
+        function updateMapDisplay(self,src,evnt)
             preContrastLim = self.getCurrentContrastLim();
             switch src.Name
               case 'anatomyMap'
@@ -311,10 +357,10 @@ classdef NrView < handle
         
         
         
-        % function updateCurrentRoiDisplay(self,src,event)
+        % function updateCurrentRoiDisplay(self,src,evnt)
         % % TODO current roi display after adding new            
-        %     eventObj = event.AffectedObject;
-        %     currentRoi = eventObj.currentRoi;
+        %     evntObj = evnt.AffectedObject;
+        %     currentRoi = evntObj.currentRoi;
             
         %     if ~isempty(currentRoi)
         %         roiPatchArray = self.getRoiPatchArray();
@@ -335,8 +381,8 @@ classdef NrView < handle
         %     end
         % end
 
-        function toggleRoiDisplay(self,src,event)
-            affectedObj = event.AffectedObject;
+        function toggleRoiDisplay(self,src,evnt)
+            affectedObj = evnt.AffectedObject;
             roiDisplayState = affectedObj.roiDisplayState;
             if roiDisplayState
                 visibility = 'on';
@@ -351,8 +397,8 @@ classdef NrView < handle
             end
         end
         
-        function updateContrastSliders(self,src,event)
-            himage = event.AffectedObject;
+        function updateContrastSliders(self,src,evnt)
+            himage = evnt.AffectedObject;
             cdata = get(himage,'CData');
             cdlim = minMax(cdata);
             set(self.guiHandles.contrastMinSlider,'Min',cdlim(1), ...
@@ -361,7 +407,7 @@ classdef NrView < handle
                               'Max',cdlim(2),'Value',cdlim(2));
         end
         
-        function adjustContrast(self,src,event)
+        function adjustContrast(self,src,evnt)
             contrastLim = self.getCurrentContrastLim();
             if contrastLim(1) < contrastLim(2)
                 caxis(self.guiHandles.mapAxes,contrastLim);
