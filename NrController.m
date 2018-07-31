@@ -16,22 +16,57 @@ classdef NrController < handle
             self.roiDisplayState = true;
 
             self.model = mymodel;
-            self.model.calculateAndAddNewMap('anatomy');
-            self.model.calculateAndAddNewMap('response');
-            self.view = NrView(self);
-            self.currentMapInd = 1;
-            self.model.calculateAndAddNewMap('anatomy');
+            self.view = NrView(self,self.model.fileBaseName,self.model.getMapSize());
+            
+            mapArrayLen = self.model.getMapArrayLength();
+            self.view.toggleMapButtonValidity(mapArrayLen);
+            if mapArrayLen
+                self.selectMap(1);
+            end
         end
         
-        function changeCurrentMapInd(self,src,event)
-            tag = event.NewValue.Tag;
-            indStr = regexp(tag,'mapButton_(\d+)','tokens');
-            ind = str2num(indStr{1}{1});
-            self.currentMapInd = ind;
-            disp(self.currentMapInd)
+        function addMap(self,type,varargin)
+            nMapButton = self.view.getNMapButton();
+            mapArrayLen = self.model.getMapArrayLength();
+            if mapArrayLen >= nMapButton
+                error('Cannot add more than %d maps',nMapButton);
+            end
+            self.model.calculateAndAddNewMap(type,varargin{:});
+            self.view.toggleMapButtonValidity(mapArrayLen+1);
+            self.view.selectMapButton(mapArrayLen+1);
+            self.selectMap(mapArrayLen+1);
         end
         
-        % Change display states
+        function selectMap(self,ind)
+            disp(sprintf('selectMap: map #%d selected',ind));
+            map = self.model.getMapByInd(ind);
+            self.view.displayMap(map);
+            self.view.enableMapOptionPanel(map);
+        end
+        
+        function deleteCurrentMap(self,ind)
+            mapArrayLen = self.model.getMapArrayLength();
+            if ind > mapArrayLen
+                error('Index exceeded total number of maps!');
+            end
+            self.model.delete(ind);
+            if ind == mapArrayLen
+                newInd = mapArrayLen-1;
+            else
+                newInd = ind;
+            end
+            self.view.selectMapButton(newInd);
+            self.selectMap(newInd);
+            self.view.toggleMapButtonValidity(mapArrayLen-1);
+        end
+        
+        function updateMap(self,ind,option)
+            self.model.updateMap(ind,option);
+            self.view.selectMapButton(ind);
+            self.selectMap(ind);
+        end
+        
+        % Change ROI display state
         function toggleRoiDisplayState(self)
             self.roiDisplayState = ~self.roiDisplayState;
         end

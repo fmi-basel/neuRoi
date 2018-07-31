@@ -1,4 +1,11 @@
 classdef NrView < handle
+% NRVIEW view class for neuRoi
+% Usage: myview = NrView(controller,fileBaseName,mapSize)
+% controller: an NrController object
+% fileBaseName: the base name of data file to be displayed in the
+% title line
+% mapSize: 1 x2 array that specifies the number of pixels in x and
+% y direction (equal to size(rawMovie(:,:,1)))
     properties
         model
         controller
@@ -10,25 +17,20 @@ classdef NrView < handle
     end
     
     methods
-        function self = NrView(controller)
+        function self = NrView(controller,fileBaseName,mapSize)
             self.controller = controller;
-            self.model = controller.model;
-            self.guiHandles = neuRoiGui();
-            self.guiHandles.mainFig.Name = self.model.fileBaseName;
-            self.guiHandles.traceFig.Name = [self.model.fileBaseName, ...
-                   '_time_trace'];
-            self.guiHandles.mapImage  = ...
-                imagesc(self.model.mapArray{1}.data,'Parent',self.guiHandles.mapAxes);
-            
+            self.guiHandles = neuRoiGui(mapSize);
+            self.guiHandles.mainFig.Name = fileBaseName;
+            self.guiHandles.traceFig.Name = [fileBaseName,'_time_trace'];
 
             self.unselectedRoiColor = 'red';
 
             self.assignCallbacks();
             self.addListners();
             
-            self.plotMap('anatomy');
-            self.currentMapName = 'anatomy';
-            self.contrastLimStc = self.initContrastLimStc();
+            % self.plotMap('anatomy');
+            % self.currentMapName = 'anatomy';
+            % self.contrastLimStc = self.initContrastLimStc();
         end
         
         function contrastLimStc = initContrastLimStc(self)
@@ -38,11 +40,6 @@ classdef NrView < handle
         end
                 
         function addListners(self)
-            % Listeners for maps
-            addlistener(self.controller,'currentMapInd','PostSet', ...
-                        @(src,evnt)self.switchMap(src,evnt));
-            addlistener(self.model,'mapArrayLengthChanged', ...
-                        @(src,evnt)self.toggleMapButton(src,evnt));
             
             % addlistener(self.model,'currentRoi','PostSet', ...
             %             @(src,evnt)NrView.updateCurrentRoiDisplay(self,src,evnt));
@@ -61,20 +58,20 @@ classdef NrView < handle
                                                          evnt));
 
             % Listen to mapImage CData and update contrast slider limits
-            addlistener(self.guiHandles.mapImage,'CData','PostSet', ...
-                        @(src,evnt)NrView.updateContrastSliders(self,src,evnt));
+            % addlistener(self.guiHandles.mapImage,'CData','PostSet', ...
+            %             @(src,evnt)NrView.updateContrastSliders(self,src,evnt));
             
             % Listen to contrast slider value and update mapImage
             % color map (caxis)
-            addlistener(self.guiHandles.contrastMinSlider,'Value','PostSet',...
-                        @(src,evnt)NrView.adjustContrast(self,src,evnt));
-            addlistener(self.guiHandles.contrastMaxSlider,'Value','PostSet',...
-                        @(src,evnt)NrView.adjustContrast(self,src,evnt));
+            % addlistener(self.guiHandles.contrastMinSlider,'Value','PostSet',...
+            %             @(src,evnt)NrView.adjustContrast(self,src,evnt));
+            % addlistener(self.guiHandles.contrastMaxSlider,'Value','PostSet',...
+            %             @(src,evnt)NrView.adjustContrast(self,src,evnt));
         end
         
         function assignCallbacks(self)
             set(self.guiHandles.mapButtonGroup,'SelectionChangedFcn',...
-                @(src,evnt)self.controller.changeCurrentMapInd(src,evnt))
+                @(src,evnt)self.mapButtonSelected_Callback(src,evnt))
             
             set(self.guiHandles.addRoiButton,'Callback',...
                 @(src,evnt)self.addRoi_Callback(src,evnt));
@@ -95,38 +92,93 @@ classdef NrView < handle
                 
     end
 
-    % Callback functions
+    % Methods for displaying maps
     methods
-        function switchMap(self,src,evnt)
-            obj = evnt.AffectedObject;
-            propName = evnt.Source.Name;
-            currentMapInd = obj.(propName);
-            currentMap = self.model.mapArray{currentMapInd};
-            optionStr = ...
-                NrView.convertOptionToString(currentMap.option);
-            self.guiHandles.mapOptionText.String = optionStr;
-        end
-        
-        function toggleMapButton(self,src,evnt)
-            mapArray = src.mapArray;
+        function selectMapButton(self,ind)
             mapButtonGroup = self.guiHandles.mapButtonGroup;
-            mapButtons = mapButtonGroup.Children;
-            for i=1:length(mapButtons)
-                mb = mapButtons(end+1-i);
-                if i <= length(mapArray)
+            mapButtonArray = mapButtonGroup.Children;
+            mapButtonGroup.SelectedObject = mapButtonArray(end+1-ind);
+        end
+
+        function toggleMapButtonValidity(self,nActiveButton)
+            mapButtonGroup = self.guiHandles.mapButtonGroup;
+            mapButtonArray = mapButtonGroup.Children;
+            for k=1:length(mapButtonArray)
+                mb = mapButtonArray(end+1-k);
+                if k <= nActiveButton
                     mb.Enable = 'on';
                 else
-                    if mb.Value
-                        mapButtonGroup.SelectedObject = ...
-                            mapButtons(end-length(mapArray));
-                    end
                     mb.Enable = 'off';
                 end
             end
         end
 
+        function displayMap(self,map)
+            self.showMapOption(map);
+            self.plotMap(map);
+        end
         
+        function showMapOption(self,map)
+            optionStr = NrView.convertOptionToString(map.option);
+            self.guiHandles.mapOptionText.String = optionStr;
+        end
         
+        function plotMap(self,map)
+            mapAxes = self.guiHandles.mapAxes;
+            mapImage = self.guiHandles.mapImage;
+            switch map.type
+              case 'anatomy'
+                set(mapImage,'CData',map.data);
+                colormap(mapAxes,gray);
+              case 'response'
+                set(mapImage,'CData',map.data);
+                colormap(mapAxes,'default');
+              case 'responseMax'
+                set(mapImage,'CData',map.data);
+                colormap(mapAxes,'default');
+            end
+        end
+            
+        function enableMapOptionPanel(self,map)
+            disp(sprintf('showMapOptionPanel: %s',map.type));
+        end
+        
+        function ind = getCurrentMapInd(self)
+            tag = self.mapButtonGroup.SelectedObject.Tag;
+            ind = convertTagToInd(tag,'mapButton');
+        end
+        
+        function nMapButton = getNMapButton(self)
+            mapButtonGroup = self.guiHandles.mapButtonGroup;
+            mapButtonArray = mapButtonGroup.Children;
+            nMapButton = length(mapButtonArray);
+        end
+    end
+    
+    % Callbacks for maps
+    methods
+        function addMapButton_Callback()
+            self.controller.addMap(type,option);
+        end
+        
+        function mapButtonSelected_Callback(self,src,event)
+            tag = event.NewValue.Tag;
+            ind = NrView.convertTagToInd(tag,'mapButton');
+            self.controller.selectMap(ind);
+        end
+        
+        function deleteCurrentMapButton_Callback()
+            ind = getCurrentMapInd(self);
+            self.controller.deleteCurrentMap(ind);
+        end
+        
+        function updateCurrentMap_Callback()
+            ind = getCurrentMapInd(self);
+            self.controller.updateCurrentMap(ind,option);
+        end
+    end
+    
+    methods
         function switchMap_Callback(self,newMapName)
             if ~strcmp(self.currentMapName,newMapName)
                 currentContrastLim = self.getCurrentContrastLim();
@@ -195,28 +247,6 @@ classdef NrView < handle
     end
 
     methods
-        function plotMap(self,mapName)
-            hMapImage = self.guiHandles.mapImage;
-            if ~isvalid(hMapImage)
-                hMapImage = imagesc(self.model.anatomyMap,'Parent', ...
-                                    self.guiHandles.mapAxes);
-                self.guiHandles.mapImage = hMapImage;
-            end
-
-            switch mapName
-              case 'anatomy'
-                set(hMapImage,'CData',self.model.mapArray{1}.data);
-                colormap gray;
-              case 'response'
-                set(hMapImage,'CData',self.model.responseMap)
-                colormap default
-              case 'masterResponse'
-                set(hMapImage,'CData',self.model.masterResponseMap)
-              case 'localCorr'
-                set(hMapImage,'CData',self.model.localCorrMap)
-            end
-        end
-
         function contrastLim = getCurrentContrastLim(self)
             minSliderVal = get(self.guiHandles.contrastMinSlider, ...
                                'Value');
@@ -336,6 +366,11 @@ classdef NrView < handle
                 
         end
             
+        function ind = convertTagToInd(tag,prefix)
+            indStr = regexp(tag,[prefix '_(\d+)'],'tokens');
+            ind = str2num(indStr{1}{1});
+        end
+        
         function updateMapDisplay(self,src,evnt)
             preContrastLim = self.getCurrentContrastLim();
             switch src.Name

@@ -1,6 +1,13 @@
 function handles = neuRoiGui(varargin)
 % NEUROIGUI creates a gui for drawing ROI on two-phonton imaging
 % movies.
+    if nargin > 1
+        error('Usage: neuRoiGui([mapSize]');
+    elseif nargin == 1
+        mapSize = varargin{1};
+    else
+        mapSize = [10,10];
+    end
 
     handles = {};
 
@@ -8,6 +15,8 @@ function handles = neuRoiGui(varargin)
                                                 % function to
                                                 % create figure on dual monitor by Jan
     handles.mapAxes = axes('Position',[0.15 0.1 0.8 0.72]);
+    handles.mapImage  = imagesc(zeros(mapSize),'Parent',handles.mapAxes);
+    
     handles.mapOptionText = uicontrol('Style','text',...
                                       'String','xxxxx',...
                                       'Units','normal',...

@@ -16,7 +16,7 @@ classdef NrModel < handle
         yxShift
         
         defaultResponseOption
-
+        
         mapArray
         
         roiArray
@@ -25,10 +25,10 @@ classdef NrModel < handle
         % roiMap
         % timeTraceArray
     end
-    
-    events
-        mapArrayLengthChanged
-    end
+
+    % properties (Access = private)
+    %     mapArray
+    % end
     
     methods
         function self = NrModel(filePath,varargin)
@@ -101,21 +101,22 @@ classdef NrModel < handle
                                            'responseWindow',responseWindow);
         end
         
+        function mapsize = getMapSize(self)
+            mapsize = size(self.rawMovie(:,:,1));
+        end
+        
         function calculateAndAddNewMap(self,mapType,varargin)
             map.type = mapType;
             [map.data,map.option] = self.calculateMap(map.type,varargin{:});
             self.addMap(map);
         end
-                
        
         function addMap(self,newMap)
             self.mapArray{end+1} = newMap;
-            notify(self,'mapArrayLengthChanged');
         end
         
         function deleteMap(self,mapInd)
             self.mapArray(mapInd) = [];
-            notify(self,'mapArrayLengthChanged');
         end
         
         function updateMap(self,mapInd,mapOption)
@@ -124,14 +125,22 @@ classdef NrModel < handle
             self.mapArray{mapInd} = map;
         end
         
+        function map = getMapByInd(self,ind)
+            map = self.mapArray{ind};
+        end
+        
+        function mapArrayLen = getMapArrayLength(self)
+            mapArrayLen = length(self.mapArray);
+        end
+        
         function [mapData,mapOption] = calculateMap(self,mapType,varargin)
             switch mapType
               case 'anatomy'
                 [mapData,mapOption] = self.calcAnatomy(varargin{:});
               case 'response'
                 [mapData,mapOption] = self.calcResponse(varargin{:});
-              % case 'responseMax'
-              %   newMap = self.calcResponseMax(varargin{:});
+              case 'responseMax'
+                [mapData,mapOption] = self.calcResponseMax(varargin{:});
               % case 'localCorrelation'
               %   newMap = self.calcLocalCorrelation(varargin{:});
             end
@@ -175,8 +184,13 @@ classdef NrModel < handle
         
         function [mapData,mapOption] = calcResponse(self,varargin)
         % Method to calculate response map (dF/F)
-        % based on parameters defined in self.mapOption
-        % or parameters defined in the input argument(s)
+        % Usage: 
+        % mymodel.calcResponse() calculate dF/F with default
+        % parameters
+        % mymodel.calcResponse(offset,fZeroWindow,responseWindow) 
+        % mymodel.calcResponse(mapOption)
+        % mapOption is a structure that contains
+        % offset,fZeroWindow,responseWindow in its field
             if nargin == 1
                 mapOption = self.defaultResponseOption;
             elseif nargin == 2
@@ -196,7 +210,16 @@ classdef NrModel < handle
                               mapOption.responseWindow);
         end
         
-        function responseMaxMap = calcResponseMax(self)
+        function [mapData,mapOption] = calcResponseMax(self,varargin)
+            if nargin == 4
+                mapOption = struct('offset',varargin{1}, ...
+                                   'fZeroWindow',varargin{2}, ...
+                                   'slidingWindowSize', ...
+                                       varargin{3});
+            end
+            mapData = dFoverFMax(self.rawMovie,mapOption.offset,...
+                                 mapOption.fZeroWindow,...
+                                 mapOption.slidingWindowSize);
         end
         
         function calcLocalCorrelation(self)
