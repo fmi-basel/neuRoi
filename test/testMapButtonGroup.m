@@ -11,7 +11,7 @@ fileName='BH18_25dpf_f2_OB_afterDp_food_001_.tif';
 filePath = fullfile(baseDir,fileName);
 
 loadMovieOption = struct('startFrame', 50, ...
-                         'nFrame', 100);
+                         'nFrame', 900);
 mymodel = NrModel(filePath,loadMovieOption);
 %% Calculate maps
 mymodel.calculateAndAddNewMap('anatomy');
@@ -40,7 +40,18 @@ mycontroller = NrController(mymodel);
 % responseMaxMap = dFoverFMax(rawMovie,offset,fZeroWindow, ...
 %                                      slidingWindowSize);
 %% Add map
-mycontroller.addMap('anatomy');
+% mycontroller.addMap('anatomy');
+
+%% Add map
+responseMaxOption=struct('offset',-10,...
+                         'fZeroWindow',[100 200],...
+                         'slidingWindowSize',100);
+mycontroller.addMap('responseMax',responseMaxOption);
+
+%% Add localCorrelation
+localCorrelationOption = struct('tileSize',16);
+mycontroller.addMap('localCorrelation',localCorrelationOption);
+
 %% Delete map
 mycontroller.deleteCurrentMap();
  

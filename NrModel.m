@@ -141,8 +141,8 @@ classdef NrModel < handle
                 [mapData,mapOption] = self.calcResponse(varargin{:});
               case 'responseMax'
                 [mapData,mapOption] = self.calcResponseMax(varargin{:});
-              % case 'localCorrelation'
-              %   newMap = self.calcLocalCorrelation(varargin{:});
+              case 'localCorrelation'
+                [mapData,mapOption] = self.calcLocalCorrelation(varargin{:});
             end
         end
 
@@ -219,15 +219,26 @@ classdef NrModel < handle
                                    'fZeroWindow',varargin{2}, ...
                                    'slidingWindowSize', ...
                                        varargin{3});
+            else
+                error('Wrong Usage!')
             end
             mapData = dFoverFMax(self.rawMovie,mapOption.offset,...
                                  mapOption.fZeroWindow,...
                                  mapOption.slidingWindowSize);
         end
         
-        function calcLocalCorrelation(self)
-            tilesize = 16;
-            self.localCorrMap = computeLocalCorrelation(self.rawMovie,tilesize);
+        function [mapData,mapOption] = calcLocalCorrelation(self, ...
+                                                            varargin)
+            if nargin == 2
+                if isstruct(varargin{1})
+                    mapOption = varargin{1};
+                else
+                    mapOption.tileSize = varargin{1};
+                end
+            else
+                error('Wrong Usage!');
+            end
+            mapData = computeLocalCorrelation(self.rawMovie,mapOption.tileSize);
         end
     end
     

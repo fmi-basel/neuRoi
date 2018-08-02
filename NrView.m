@@ -142,6 +142,12 @@ classdef NrView < handle
               case 'responseMax'
                 set(mapImage,'CData',map.data);
                 colormap(mapAxes,'default');
+              case 'localCorrelation'
+                set(mapImage,'CData',map.data);
+                colormap(mapAxes,'default');
+              otherwise
+                set(mapImage,'CData',map.data);
+                colormap(mapAxes,'default');
             end
         end
             
