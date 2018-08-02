@@ -71,7 +71,13 @@ classdef NrView < handle
         
         function assignCallbacks(self)
             set(self.guiHandles.mapButtonGroup,'SelectionChangedFcn',...
-                @(src,evnt)self.mapButtonSelected_Callback(src,evnt))
+                @self.mapButtonSelected_Callback);
+            
+            set(self.guiHandles.contrastMinSlider,'Callback', ...
+                              @self.contrastSlider_Callback);
+            set(self.guiHandles.contrastMaxSlider,'Callback', ...
+                              @self.contrastSlider_Callback);
+            
             
             set(self.guiHandles.addRoiButton,'Callback',...
                 @(src,evnt)self.addRoi_Callback(src,evnt));
@@ -92,8 +98,8 @@ classdef NrView < handle
                 
     end
 
-    % Methods for displaying maps
     methods
+        % Methods for displaying maps
         function selectMapButton(self,ind)
             mapButtonGroup = self.guiHandles.mapButtonGroup;
             mapButtonArray = mapButtonGroup.Children;
@@ -144,8 +150,8 @@ classdef NrView < handle
         end
         
         function ind = getCurrentMapInd(self)
-            tag = self.mapButtonGroup.SelectedObject.Tag;
-            ind = convertTagToInd(tag,'mapButton');
+            tag = self.guiHandles.mapButtonGroup.SelectedObject.Tag;
+            ind = NrView.convertTagToInd(tag,'mapButton');
         end
         
         function nMapButton = getNMapButton(self)
@@ -153,21 +159,19 @@ classdef NrView < handle
             mapButtonArray = mapButtonGroup.Children;
             nMapButton = length(mapButtonArray);
         end
-    end
     
-    % Callbacks for maps
-    methods
-        function addMapButton_Callback()
+        % Callbacks for maps
+        function addMapButton_Callback(self)
             self.controller.addMap(type,option);
         end
         
-        function mapButtonSelected_Callback(self,src,event)
-            tag = event.NewValue.Tag;
+        function mapButtonSelected_Callback(self,src,evnt)
+            tag = evnt.NewValue.Tag;
             ind = NrView.convertTagToInd(tag,'mapButton');
             self.controller.selectMap(ind);
         end
         
-        function deleteCurrentMapButton_Callback()
+        function deleteCurrentMapButton_Callback(self)
             ind = getCurrentMapInd(self);
             self.controller.deleteCurrentMap(ind);
         end
@@ -179,17 +183,81 @@ classdef NrView < handle
     end
     
     methods
-        function switchMap_Callback(self,newMapName)
-            if ~strcmp(self.currentMapName,newMapName)
-                currentContrastLim = self.getCurrentContrastLim();
-                self.contrastLimStc = setfield(self.contrastLimStc, ...
-                                               self.currentMapName,currentContrastLim);
-                self.currentMapName = newMapName;
-                self.plotMap(newMapName);
-                contrastLim = getfield(self.contrastLimStc,self.currentMapName);
-                self.setCurrentContrastLim(contrastLim);
+        % Methods for adjusting map contrast
+        function changeMapContrast(self,contrastLim)
+        % Usage: myview.changeMapContrast(contrastLim), contrastLim
+        % is a 1x2 array [cmin cmax]
+            caxis(self.guiHandles.mapAxes,contrastLim);
+        end
+        
+        function dataLim = getSliderDataLim(self)
+            contrastSliderArr= ...
+                self.guiHandles.contrastSliderGroup.Children;
+            dataLim(1) = contrastSliderArr(1).Min;
+            dataLim(2) = contrastSliderArr(1).Max;
+        end
+        
+        function setSliderDataLim(self,dataLim)
+            contrastSliderArr= ...
+                self.guiHandles.contrastSliderGroup.Children;
+            for k=1:2
+                contrastSliderArr(end+1-k).Min = dataLim(1);
+                contrastSliderArr(end+1-k).Max = dataLim(2);
             end
         end
+        
+        function contrastLim = getContrastLim(self)
+            contrastSliderArr= ...
+                self.guiHandles.contrastSliderGroup.Children;
+            for k=1:2
+                contrastLim(k) = contrastSliderArr(end+1-k).Value;
+            end
+        end
+        
+        function setContrastLim(self,contrastLim)
+            contrastSliderArr= ...
+                self.guiHandles.contrastSliderGroup.Children;
+            for k=1:2
+                contrastSliderArr(end+1-k).Value = contrastLim(k);
+            end
+        end
+        
+        function saveContrastLim(self,ind,contrastLim)
+            csg = self.guiHandles.contrastSliderGroup;
+            csg.UserData.contrastLimArray{ind} = contrastLim;
+        end
+
+        function contrastLim = getSavedContrastLim(self,ind)
+            csg = self.guiHandles.contrastSliderGroup;
+            contrastLimArray = csg.UserData.contrastLimArray;
+            try
+                contrastLim = contrastLimArray{ind};
+            catch ME
+                if strcmp(ME.identifier,'MATLAB:badsubscript')
+                    wm = sprintf('Cannot get contrast limit for index %d',ind);
+                    warning(wm);
+                    contrastLim = [];
+                else
+                    rethrow(ME);
+                end
+            end
+        end
+        
+        function deleteSavedContrastLim(self,ind)
+            csg = self.guiHandles.contrastSliderGroup;
+            csg.UserData.contrastLimArray(ind) = [];
+        end
+    end
+        
+    methods
+        function contrastSlider_Callback(self,src,evnt)
+            tag = src.Tag;
+            contrastSliderInd = NrView.convertTagToInd(tag, ...
+                                                       'contrastSlider');
+            self.controller.changeContrastLim(contrastSliderInd);
+        end
+    end
+    methods
         
         function addRoi_Callback(self,src,evnt)
             self.controller.addRoiInteract();
@@ -247,14 +315,6 @@ classdef NrView < handle
     end
 
     methods
-        function contrastLim = getCurrentContrastLim(self)
-            minSliderVal = get(self.guiHandles.contrastMinSlider, ...
-                               'Value');
-            maxSliderVal = get(self.guiHandles.contrastMaxSlider, ...
-                               'Value');
-            contrastLim = [minSliderVal,maxSliderVal];
-        end
-        
         function setCurrentContrastLim(self,contrastLim)
             set(self.guiHandles.contrastMinSlider,'Value',contrastLim(1));
             set(self.guiHandles.contrastMaxSlider,'Value',contrastLim(2));
@@ -370,7 +430,7 @@ classdef NrView < handle
             indStr = regexp(tag,[prefix '_(\d+)'],'tokens');
             ind = str2num(indStr{1}{1});
         end
-        
+                
         function updateMapDisplay(self,src,evnt)
             preContrastLim = self.getCurrentContrastLim();
             switch src.Name

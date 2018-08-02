@@ -210,8 +210,11 @@ classdef NrModel < handle
                               mapOption.responseWindow);
         end
         
-        function [mapData,mapOption] = calcResponseMax(self,varargin)
-            if nargin == 4
+        function [mapData,mapOption] = calcResponseMax(self, ...
+                                                       varargin)
+            if nargin == 2
+                mapOption = varargin{1};
+            elseif nargin == 4
                 mapOption = struct('offset',varargin{1}, ...
                                    'fZeroWindow',varargin{2}, ...
                                    'slidingWindowSize', ...

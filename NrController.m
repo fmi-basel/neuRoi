@@ -33,37 +33,97 @@ classdef NrController < handle
             end
             self.model.calculateAndAddNewMap(type,varargin{:});
             self.view.toggleMapButtonValidity(mapArrayLen+1);
-            self.view.selectMapButton(mapArrayLen+1);
-            self.selectMap(mapArrayLen+1);
+            self.selectMapWithMapButtonPressed(mapArrayLen+1);
         end
         
+        function selectMapWithMapButtonPressed(self,ind);
+            self.selectMap(ind);
+            self.view.selectMapButton(ind);
+        end
+            
         function selectMap(self,ind)
             disp(sprintf('selectMap: map #%d selected',ind));
             map = self.model.getMapByInd(ind);
             self.view.displayMap(map);
             self.view.enableMapOptionPanel(map);
+            
+            % Update contrast control
+            self.updateContrastForSelectedMap(ind,map);
         end
         
-        function deleteCurrentMap(self,ind)
+        function updateContrastForSelectedMap(self,ind,map)
+            dataLim = minMax(map.data);
+            dataLim(2) = dataLim(2) + eps;
+            self.view.setSliderDataLim(dataLim);
+            savedContrastLim = ...
+                self.view.getSavedContrastLim(ind);
+            if ~isempty(savedContrastLim)
+                % Calculate new contrast limit
+                ss = rangeIntersect(dataLim,savedContrastLim);
+                if ~isempty(ss)
+                    contrastLim = ss;
+                else
+                    contrastLim = dataLim;
+                end
+            else
+                contrastLim = dataLim;
+            end
+            self.view.setContrastLim(contrastLim);
+            self.view.saveContrastLim(ind,contrastLim);
+            self.view.changeMapContrast(contrastLim);
+        end
+
+        
+        function deleteCurrentMap(self)
+            ind = self.view.getCurrentMapInd();
             mapArrayLen = self.model.getMapArrayLength();
             if ind > mapArrayLen
                 error('Index exceeded total number of maps!');
             end
-            self.model.delete(ind);
+            self.model.deleteMap(ind);
+            self.view.deleteSavedContrastLim(ind);
             if ind == mapArrayLen
                 newInd = mapArrayLen-1;
             else
                 newInd = ind;
             end
-            self.view.selectMapButton(newInd);
-            self.selectMap(newInd);
+            self.selectMapWithMapButtonPressed(newInd);
             self.view.toggleMapButtonValidity(mapArrayLen-1);
         end
         
         function updateMap(self,ind,option)
             self.model.updateMap(ind,option);
-            self.view.selectMapButton(ind);
-            self.selectMap(ind);
+            self.selectMapWithMapButtonPressed(ind);
+        end
+        
+        function changeContrastLim(self,contrastSliderInd)
+        % Method to change contrast of map image
+            contrastLim = self.view.getContrastLim();
+            dataLim = self.view.getSliderDataLim();
+            % Check whether contrastLim is valid (min < max), otherwise set the
+            % other slider to a valid value based on the new value of
+            % the changed slider;
+            if contrastLim(1) >= contrastLim(2)
+                sn = 10000*eps; % a small number
+                switch contrastSliderInd
+                  case 1
+                    if contrastLim(1) >= dataLim(2)
+                        contrastLim(1) = dataLim(2)-sn;
+                    end
+                    contrastLim(2) = contrastLim(1)+sn;
+                  case 2
+                    if contrastLim(2) <= dataLim(1)
+                        contrastLim(2) = dataLim(1)+sn;
+                    end
+                    contrastLim(1) = contrastLim(2)-sn;
+                  otherwise
+                    error('contrastSliderInd should be 1 or 2 ');
+                end
+                self.view.setContrastLim(contrastLim);
+            end
+            mapInd = self.view.getCurrentMapInd();
+            self.view.saveContrastLim(mapInd,contrastLim);
+            self.view.changeMapContrast(contrastLim);
         end
         
         % Change ROI display state
