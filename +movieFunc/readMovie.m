@@ -1,6 +1,13 @@
-% read movie movie
-% implementation of the Tiff-read library by Anastasios Moressis (March 2016)
 function rawMovie = readMovie(filePath,meta,varargin)
+% READMOVIE read movie from TIFF file into a 3D array
+% Usage: readMovie(filePath,meta,[nFrame,startFrame])
+% filePath: the path to TIFF file.
+% meta: a structure that contains .numberframes(total number of
+% frames), .height and .width (height and width of image in number
+% of pixels)
+% nFrame: total number of frames to be read
+% startFrame: the number of the first frame to be read
+    
     if nargin == 2
         nFrame = meta.numberframes;
         startFrame = 1;
@@ -8,7 +15,8 @@ function rawMovie = readMovie(filePath,meta,varargin)
         nFrame = varargin{1};
         startFrame = varargin{2};
     else
-        error('Usage: readMovie(filePath,meta,[nFrame,startFrame])');
+        error('Wrong usage!');
+        help readMovie
     end
     
     if startFrame > meta.numberframes

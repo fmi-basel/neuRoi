@@ -32,52 +32,50 @@ classdef NrTrial < handle
     % end
     
     methods
-        function self = NrTrial(filePath,varargin)
-            if nargin == 1
-                loadMovieOption = struct('startFrame', 50, ...
-                                         'nFrame', 900);
-            elseif nargin == 2
-                loadMovieOption = varargin{1};
+        function self = NrTrial(varargin)
+            if nargin == 0
+                filePath = '';
+            elseif nargin == 1
+                filePath = varargin{1};
             else
-                error(['Usage: NrTrial(filePath,' ...
-                       '[loadMovieOption])']);
+                error(['Wrong usage!']);
+                help NrTrial
             end
+            
             self.filePath = filePath;
             [~,self.fileBaseName,~] = fileparts(filePath);
-            self.meta = readMeta(filePath);
-            
-            self.loadMovieOption = loadMovieOption;
-            self.loadMovie(filePath);
-            
+                        
             self.yxShift = [0 0];
-            
-            self.noSignalWindow = [1, 12];
-            self.preprocessMovie();
-            
-            % TODO calcDefaultResponseOption
-            self.defaultResponseOption = self.calcDefaultResponseOption();
-            
             
             % Initialize map array
             self.mapArray = {};
             
             % Initialize ROI array
             self.roiArray = {};
+            
         end
         
-        
-        function loadMovie(self,filePath)
-            if isempty(self.loadMovieOption)
-                self.loadMovieOption.startFrame = 1;
-                self.loadMovieOption.nFrame = self.meta.numberframes;
+        function readDataFromFile(self,loadMovieOption)
+            self.meta = movieFunc.readMeta(self.filePath);
+            if ~exist('loadMovieOption','var')
+                loadMovieOption.startFrame = 1;
+                loadMovieOption.nFrame = self.meta.numberframes;
             end
-            startFrame = self.loadMovieOption.startFrame;
-            nFrame = self.loadMovieOption.nFrame;
-            self.rawMovie = readMovie(filePath,self.meta,nFrame,startFrame);
+            self.loadMovie(self.filePath,loadMovieOption);
+            self.loadMovieOption = loadMovieOption;
         end
         
-        function preprocessMovie(self)
-            self.rawMovie = subtractPreampRing(self.rawMovie,self.noSignalWindow);
+        function loadMovie(self,filePath,loadMovieOption)
+            startFrame = loadMovieOption.startFrame;
+            nFrame = loadMovieOption.nFrame;
+            self.rawMovie = movieFunc.readMovie(filePath,self.meta,nFrame,startFrame);
+        end
+        
+        function preprocessMovie(self,noSignalWindow)
+            if ~exist('noSignalWindow','var')
+                noSignalWindow = [1, 12];
+            end
+            self.rawMovie = movieFunc.subtractPreampRing(self.rawMovie,noSignalWindow);
         end
         
         function shiftMovieYx(self,yxShift)
