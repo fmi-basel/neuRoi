@@ -1,5 +1,6 @@
-classdef NrModel < handle
-% NRMODEL the class in neuRoi that stores data and does computation
+classdef NrTrial < handle
+% NRTRIAL the class in neuRoi that stores data of a single trial
+% and does computation
 % Properties:
 % mapArray: the array that contains the 2-D maps that the user
 % refer to for ROI drawing.
@@ -31,14 +32,14 @@ classdef NrModel < handle
     % end
     
     methods
-        function self = NrModel(filePath,varargin)
+        function self = NrTrial(filePath,varargin)
             if nargin == 1
                 loadMovieOption = struct('startFrame', 50, ...
                                          'nFrame', 900);
             elseif nargin == 2
                 loadMovieOption = varargin{1};
             else
-                error(['Usage: NrModel(filePath,' ...
+                error(['Usage: NrTrial(filePath,' ...
                        '[loadMovieOption])']);
             end
             self.filePath = filePath;
@@ -276,7 +277,7 @@ classdef NrModel < handle
             else
                 % TODO add ROI from mask
                 error('Wrong usage!')
-                help NrModel.addRoi
+                help NrTrial.addRoi
             end
                     
             if isempty(self.roiArray)

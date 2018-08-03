@@ -161,17 +161,6 @@ classdef NrController < handle
             end
         end
 
-        % function selectRoi(self)
-        %     selectedObj = gco; % get(gco,'Parent');
-        %     tag = get(selectedObj,'Tag');
-        %     if and(~isempty(selectedObj),strfind(tag,'roi_'))
-        %         slRoi = getappdata(selectedObj,'roiHandle');
-        %         self.model.currentRoi = slRoi;
-        %     else
-        %         self.model.currentRoi = [];
-        %     end 
-        % end
-        
         function selectSingleRoi(self,varargin)
             if nargin == 1
                 selectedObj = gco; % get(gco,'Parent');
@@ -239,30 +228,6 @@ classdef NrController < handle
                 self.selectRoi(roiPatch);
             end
         end
-        
-        % function selectMultRoi(self)
-        %     selectedObj = gco; % get(gco,'Parent');
-        %     tag = get(selectedObj,'Tag');
-        %     if and(~isempty(selectedObj),strfind(tag,'roi_'))
-        %         if strcmp(selectedObj.Selected,'off')
-        %             self.view.selectRoiPatch(selectedObj);
-        %             slRoi = getappdata(selectedObj,'roiHandle');
-        %             self.model.selectRoi(slRoi);
-                    
-        %             self.view.holdTraceAxes('on');
-        %             trace = self.model.selectedTraceArray{end};
-        %             self.view.plotTimeTrace(trace,slRoi.id);
-        %         else
-        %             roiId = regexp(tag,'\d{4}','match');
-        %             roiId = str2num(roiId{:})
-        %             self.view.deleteTraceLine(roiId);
-
-        %             self.view.unselectRoiPatch(selectedObj);
-        %             slRoi = getappdata(selectedObj,'roiHandle');
-        %             self.model.unselectRoi(slRoi);
-        %         end
-        %     end
-        % end
         
         function deleteRoi(self)
             slRoiPatchArray = self.view.getSelectedRoiPatchArray;
