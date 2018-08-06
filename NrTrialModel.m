@@ -1,5 +1,5 @@
-classdef NrTrial < handle
-% NRTRIAL the class in neuRoi that stores data of a single trial
+classdef NrTrialModel < handle
+% NRTRIALMODEL the class in neuRoi that stores data of a single trial
 % and does computation
 % Properties:
 % mapArray: the array that contains the 2-D maps that the user
@@ -32,7 +32,7 @@ classdef NrTrial < handle
     % end
     
     methods
-        function self = NrTrial(varargin)
+        function self = NrTrialModel(varargin)
             if nargin == 0
                 filePath = '';
             elseif nargin == 1

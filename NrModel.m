@@ -1,5 +1,5 @@
 classdef NrModel < handle
-    properties
+    properties (SetObservable)
         filePathArray
         trialArray
     end
@@ -7,7 +7,11 @@ classdef NrModel < handle
     methods
         function self = NrModel(filePathArray)
             self.filePathArray = filePathArray;
-            self.trialArray = cellfun(@NrTrial,filePathArray);
+            self.trialArray = cellfun(@NrTrialModel,filePathArray);
+        end
+        
+        function addFilePath(self,filePath)
+            self.filePathArray{end+1} = filePath;
         end
         
         function trial = getTrialByInd(self,ind)
