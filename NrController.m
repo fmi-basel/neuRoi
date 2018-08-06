@@ -11,6 +11,10 @@ classdef NrController < handle
             self.view = NrView(mymodel,self);
         end
         
+        function setLoadMovieOption(self,loadMovieOption)
+            self.model.loadMovieOption = loadMovieOption;
+        end
+        
         function addFilePath_Callback(self,filePath)
             self.model.addFilePath(filePath);
         end
@@ -20,7 +24,15 @@ classdef NrController < handle
             if strcmp(fig.SelectionType,'open')
                 ind = src.Value;
                 trial = self.model.getTrialByInd(ind);
-                disp(trial)
+                if isempty(trial)
+                    self.model.loadTrial(ind);
+                    trial = self.model.getTrialByInd(ind);
+                    trialController = TrialController(trial);
+                    trialController.addMap('anatomy');
+                    trialControllerArray{ind} = trialController;
+                else
+                    disp('trial exist,will raise the trial window')
+                end
             end
         end
     end

@@ -9,9 +9,7 @@ function handles = trialGui(varargin)
         mapSize = [10,10];
     end
 
-    handles.mainFig = figureDM('Position',[600,300,750,650]); % figureDM is a
-                                                % function to
-                                                % create figure on dual monitor by Jan
+    handles.mainFig = figure('Position',[600,300,750,650]);
     handles.mapAxes = axes('Position',[0.15 0.1 0.8 0.72]);
     handles.mapImage  = imagesc(zeros(mapSize),'Parent',handles.mapAxes);
     
@@ -27,11 +25,6 @@ function handles = trialGui(varargin)
     for i=1:nMapButton
         mb{1} = createMapButton(handles.mapButtonGroup,i);
     end
-    
-    handles.addRoiButton  = uicontrol('Style','togglebutton',...
-                              'String','Add ROI',...
-                              'Units','normal',...
-                              'Position',[0.02,0.8,0.1,0.08]);
     
     % Sliders for contrast adjustment
     handles.contrastSliderGroup = uibuttongroup('Position',[0.7,0.9,0.25,0.1]);
@@ -49,8 +42,8 @@ function handles = trialGui(varargin)
     handles.contrastSliderGroup.UserData.contrastLimArray = cell(1,nMapButton);
     
     
-    handles.traceFig = figureDM('Name','Time Trace','Tag','traceFig',...
-                                'Position',[50,500,500,400],'Visible','off');
+    handles.traceFig = figure('Name','Time Trace','Tag','traceFig',...
+                              'Position',[50,500,500,400],'Visible','off');
     handles.traceAxes = axes();
     figure(handles.mainFig)
 
