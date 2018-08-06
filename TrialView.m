@@ -22,6 +22,12 @@ classdef TrialView < handle
             addlistener(self.model,'mapUpdated',@self.updateMapDisplay);
         end
         
+        function assignCallbacks(self)
+            set(self.guiHandles.mapButtonGroup,'SelectionChangedFcn', ...
+               @(s,e)self.controller.mapButtonSelected_Callback(s,e));
+
+        end
+        
         % Methods for displaying maps
         function selectAndDisplayMap(self,src,evnt)
             obj = evnt.AffectedObject;
@@ -107,11 +113,6 @@ classdef TrialView < handle
             optionStr = [sprintf(['%s; '],stringArray{1:end-1}), ...
                          stringArray{end}];
                 
-        end
-            
-        function ind = convertTagToInd(tag,prefix)
-            indStr = regexp(tag,[prefix '_(\d+)'],'tokens');
-            ind = str2num(indStr{1}{1});
         end
     end
 end

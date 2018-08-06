@@ -19,6 +19,14 @@ classdef NrController < handle
             self.model.addFilePath(filePath);
         end
         
+        function selectTrial(self,ind)
+            self.model.currentTrialInd = ind;
+        end
+        
+        function selectTrial_Callback(self,src,evnt)
+            disp('trial selected')
+        end
+        
         function fileListBox_Callback(self,src,evnt)
             fig = src.Parent;
             if strcmp(fig.SelectionType,'open')
@@ -28,8 +36,11 @@ classdef NrController < handle
                     self.model.loadTrial(ind);
                     trial = self.model.getTrialByInd(ind);
                     trialController = TrialController(trial);
+                    trialView = trialController.view;
+                    viewFig = trialView.guiHandles.mainFig;
+                    set(viewFig,'WindowButtonDownFcn',@self.selectTrial_Callback);
                     trialController.addMap('anatomy');
-                    trialControllerArray{ind} = trialController;
+                    self.trialControllerArray{ind} = trialController;
                 else
                     disp('trial exist,will raise the trial window')
                 end

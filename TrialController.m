@@ -19,6 +19,11 @@ classdef TrialController < handle
             self.model.calculateAndAddNewMap(type,varargin{:});
             self.model.selectMap(mapArrayLen+1);
         end
-
+        
+        function mapButtonSelected_Callback(self,src,evnt)
+            tag = evnt.NewValue.Tag;
+            ind = helper.convertTagToInd(tag,'mapButton');
+            self.model.selectMap(ind);
+        end
     end
 end

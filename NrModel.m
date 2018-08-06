@@ -3,6 +3,8 @@ classdef NrModel < handle
         filePathArray
         trialArray
         loadMovieOption
+        
+        currentTrialInd
     end
     
     methods

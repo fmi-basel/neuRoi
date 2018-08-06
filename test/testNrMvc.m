@@ -23,3 +23,8 @@ mymodel = NrModel(filePathArray);
 mycontroller = NrController(mymodel);
 loadMovieOption = struct('startFrame',10,'nFrame',10);
 mycontroller.setLoadMovieOption(loadMovieOption);
+%% Test current trial
+currentTrialInd = mymodel.currentTrialInd;
+currentTrialController = mycontroller.TrialControllerArray{ind};
+responseOption = struct('offset',-10,'fZeroWindow',[1 2],responseWindow,[3,4])
+currentTrialController.addMap('response',responseOption);
