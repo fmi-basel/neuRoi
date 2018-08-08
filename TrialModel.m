@@ -19,6 +19,7 @@ classdef TrialModel < handle
     events
         mapArrayLengthChanged
         mapUpdated
+        trialDeleted
     end
     
     methods
@@ -211,5 +212,10 @@ classdef TrialModel < handle
             mapData = computeLocalCorrelation(self.rawMovie,mapOption.tileSize);
         end
     end
-
+    
+    methods
+        function delete(self)
+            notify(self,'trialDeleted');
+        end
+    end
 end

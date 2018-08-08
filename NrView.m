@@ -18,8 +18,9 @@ classdef NrView < handle
         
         function assignCallbacks(self)
             set(self.guiHandles.fileListBox,'Callback',...
-                              @(s,e)self.controller.fileListBox_Callback(s,e));
-            
+                @(s,e)self.controller.fileListBox_Callback(s,e));
+            set(self.guiHandles.mainFig,'CloseRequestFcn',...
+                @(s,e)self.controller.mainFigClosed_Callback(s,e));
         end
         
         function listenToModel(self)
@@ -30,6 +31,17 @@ classdef NrView < handle
             filePathArray = self.model.filePathArray;
             set(self.guiHandles.fileListBox,'String',filePathArray);
         end
+        
+        function deleteFigures(self)
+            mainFig = self.guiHandles.mainFig;
+            delete(mainFig);
+        end
+        
+        function raiseMainWindow(self)
+            mainFig = self.guiHandles.mainFig;
+            figure(mainFig)
+        end
+
     end
 end
 

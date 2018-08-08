@@ -25,5 +25,27 @@ classdef TrialController < handle
             ind = helper.convertTagToInd(tag,'mapButton');
             self.model.selectMap(ind);
         end
+        
+        function setFigTagPrefix(self,prefix)
+            self.view.setFigTagPrefix(prefix);
+        end
+        
+        function raiseView(self)
+            self.view.raiseFigures();
+        end
+        
+        function mainFigClosed_Callback(self,src,evnt)
+            self.view.deleteFigures();
+            delete(self.view);
+            delete(self.model);
+            delete(self);
+        end
+        
+        function delete(self)
+            if isvalid(self.view)
+                self.view.deleteFigures();
+                delete(self.view)
+            end
+        end
     end
 end

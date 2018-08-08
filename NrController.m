@@ -3,12 +3,18 @@ classdef NrController < handle
         model
         view
         trialControllerArray
+        rootListener
     end
     
     methods
         function self = NrController(mymodel)
             self.model = mymodel;
             self.view = NrView(mymodel,self);
+            
+            nFile = self.model.getNFile();
+            self.trialControllerArray = cell(1,nFile);
+            % Listento MATLAB root object for changing of current figure
+            self.rootListener = listener(groot,'CurrentFigure','PostSet',@self.selectTrial_Callback);
         end
         
         function setLoadMovieOption(self,loadMovieOption)
@@ -17,33 +23,89 @@ classdef NrController < handle
         
         function addFilePath_Callback(self,filePath)
             self.model.addFilePath(filePath);
+            self.trialControllerArray{end+1} = [];
         end
         
         function selectTrial(self,ind)
             self.model.currentTrialInd = ind;
+            if isempty(ind)
+                disp('Unselect trial');
+            else 
+                disp(sprintf('trial #%d selected',ind));
+            end
         end
         
         function selectTrial_Callback(self,src,evnt)
-            disp('trial selected')
+            disp('selectTrial_Callback called')
+            fig = evnt.AffectedObject.(src.Name);
+            if ~isempty(fig)
+                tag = fig.Tag;
+                indStr =  regexp(tag,'trial_(\d+)*','tokens');
+                if ~isempty(indStr)
+                    ind = str2num(indStr{1}{1});
+                    self.selectTrial(ind);
+                end
+            end
+        end
+
+        function trialDeleted_Callback(self,src,evnt)
+            ind = [];
+            self.selectTrial(ind);
+            self.view.raiseMainWindow();
         end
         
         function fileListBox_Callback(self,src,evnt)
             fig = src.Parent;
             if strcmp(fig.SelectionType,'open')
                 ind = src.Value;
-                trial = self.model.getTrialByInd(ind);
-                if isempty(trial)
-                    self.model.loadTrial(ind);
-                    trial = self.model.getTrialByInd(ind);
-                    trialController = TrialController(trial);
-                    trialView = trialController.view;
-                    viewFig = trialView.guiHandles.mainFig;
-                    set(viewFig,'WindowButtonDownFcn',@self.selectTrial_Callback);
-                    trialController.addMap('anatomy');
-                    self.trialControllerArray{ind} = trialController;
+                if self.isTrialOpened(ind)
+                    self.raiseTrialView(ind);
                 else
-                    disp('trial exist,will raise the trial window')
+                    self.openTrial(ind);
                 end
+            end
+        end
+        
+        function res = isTrialOpened(self,ind)
+            trialController = self.trialControllerArray{ind};
+            trial = self.model.getTrialByInd(ind);
+            res = false;
+            if ~isempty(trialController) && ~isempty(trial)
+                if isvalid(trialController) && ...
+                        isvalid(trialController)
+                    res = true;
+                end
+            end
+        end
+        
+        function openTrial(self,ind)
+            self.model.loadTrial(ind);
+            trial = self.model.getTrialByInd(ind);
+            addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
+            trialController = TrialController(trial);
+            trialController.addMap('anatomy');
+            tagPrefix = sprintf('trial_%d',ind);
+            trialController.setFigTagPrefix(tagPrefix);
+            self.trialControllerArray{ind} = trialController;
+            trialController.raiseView();
+        end
+        
+        function raiseTrialView(self,ind)
+            trialController = self.trialControllerArray{ind};
+            trialController.raiseView();
+        end
+        
+        function mainFigClosed_Callback(self,src,evnt)
+            self.view.deleteFigures();
+            delete(self.view);
+            delete(self.model)
+            delete(self)
+        end
+
+        function delete(self)
+            if isvalid(self.view)
+                self.view.deleteFigures();
+                delete(self.view)
             end
         end
     end

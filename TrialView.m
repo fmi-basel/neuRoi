@@ -14,6 +14,7 @@ classdef TrialView < handle
             self.guiHandles = trialGui(mapSize);
             
             self.listenToModel();
+            self.assignCallbacks();
         end
         
         function listenToModel(self)
@@ -25,7 +26,8 @@ classdef TrialView < handle
         function assignCallbacks(self)
             set(self.guiHandles.mapButtonGroup,'SelectionChangedFcn', ...
                @(s,e)self.controller.mapButtonSelected_Callback(s,e));
-
+            set(self.guiHandles.mainFig,'CloseRequestFcn',...
+               @(s,e)self.controller.mainFigClosed_Callback(s,e));
         end
         
         % Methods for displaying maps
@@ -98,7 +100,28 @@ classdef TrialView < handle
                 colormap(mapAxes,'default');
             end
         end
+        
+        function setFigTagPrefix(self,prefix)
+            mainFig = self.guiHandles.mainFig;
+            traceFig = self.guiHandles.traceFig;
+            mainFigTag = mainFig.Tag;
+            set(mainFig,'Tag',[prefix '_' mainFigTag])
+            traceFigTag = traceFig.Tag;
+            set(traceFig,'Tag',[prefix '_' traceFigTag])
+        end
 
+        function raiseFigures(self)
+            mainFig = self.guiHandles.mainFig;
+            % traceFig = self.guiHandles.traceFig;
+            figure(mainFig)
+        end
+        
+        function deleteFigures(self)
+            mainFig = self.guiHandles.mainFig;
+            traceFig = self.guiHandles.traceFig;
+            delete(mainFig);
+            delete(traceFig);
+        end
     end
     
     methods (Static)

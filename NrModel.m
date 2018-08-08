@@ -2,8 +2,8 @@ classdef NrModel < handle
     properties (SetObservable)
         filePathArray
         trialArray
-        loadMovieOption
         
+        loadMovieOption
         currentTrialInd
     end
     
@@ -14,6 +14,10 @@ classdef NrModel < handle
             self.trialArray = cell(1,nFile);
         end
         
+        function nFile = getNFile(self)
+            nFile = length(self.filePathArray);
+        end
+            
         function addFilePath(self,filePath)
             self.filePathArray{end+1} = filePath;
         end
