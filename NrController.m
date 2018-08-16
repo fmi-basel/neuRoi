@@ -10,22 +10,36 @@ classdef NrController < handle
         function self = NrController(mymodel)
             self.model = mymodel;
             self.view = NrView(mymodel,self);
-            
+            self.view.toggleLoadRangeText('off');
+
             nFile = self.model.getNFile();
             self.trialControllerArray = cell(1,nFile);
             % Listento MATLAB root object for changing of current figure
             self.rootListener = listener(groot,'CurrentFigure','PostSet',@self.selectTrial_Callback);
         end
         
-        function setLoadMovieOption(self,loadMovieOption)
-            self.model.loadMovieOption = loadMovieOption;
-        end
+        % function setLoadMovieOption(self,loadMovieOption)
+        %     self.model.loadMovieOption = loadMovieOption;
+        % end
         
         function addFilePath_Callback(self,filePath)
             self.model.addFilePath(filePath);
             self.trialControllerArray{end+1} = [];
         end
         
+        function loadRangeGroup_Callback(self,src,evnt)
+            button = evnt.NewValue;
+            tag = button.Tag;
+            if strcmp(tag,'loadrange_radiobutton_2')
+                self.view.toggleLoadRangeText('on');
+                loadRange = self.view.getLoadRangeFromText();
+                self.model.loadMovieOption.zrange = loadRange;
+            else
+                self.view.toggleLoadRangeText('off');
+                self.model.loadMovieOption.zrange = 'all';
+            end
+        end
+
         function selectTrial(self,ind)
             self.model.currentTrialInd = ind;
             if isempty(ind)
@@ -80,6 +94,10 @@ classdef NrController < handle
         
         function openTrial(self,ind)
             self.model.loadTrial(ind);
+            % TODO loadMovieOption
+            % TODO preprocessing
+            % preprocessOption = self.view.getPreprocessOption();
+            % TODO trial.preprocess
             trial = self.model.getTrialByInd(ind);
             addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
             trialController = TrialController(trial);
@@ -101,7 +119,8 @@ classdef NrController < handle
             delete(self.model)
             delete(self)
         end
-
+        
+        
         function delete(self)
             if isvalid(self.view)
                 self.view.deleteFigures();

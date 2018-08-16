@@ -1,41 +1,56 @@
 function rawMovie = readMovie(filePath,meta,varargin)
 % READMOVIE read movie from TIFF file into a 3D array
-% Usage: readMovie(filePath,meta,[nFrame,startFrame])
+% Usage: readMovie(filePath,meta,[frameRange,[nFramePerStep]])
 % filePath: the path to TIFF file.
-% meta: a structure that contains .numberframes(total number of
+% meta: a structure that contains .totalNFrame(total number of
 % frames), .height and .width (height and width of image in number
 % of pixels)
-% nFrame: total number of frames to be read
-% startFrame: the number of the first frame to be read
+% frameRange: 1x2 array specifying the number of the starting and
+% ending frame;
+% nFramePerStep: the step size of loading the frame (load every
+% nFramePerStep frame from data);
     
     if nargin == 2
-        nFrame = meta.numberframes;
-        startFrame = 1;
+        frameRange = [1,meta.totalNFrame];;
+        nFramePerStep = 1;
+    elseif nargin == 3
+        frameRange = varargin{1};
+        nFramePerStep = 1;
     elseif nargin == 4
-        nFrame = varargin{1};
-        startFrame = varargin{2};
+        frameRange = varargin{1};
+        nFramePerStep = varargin{2};
     else
         error('Wrong usage!');
-        help readMovie
+        help movieFunc.readMovie
     end
     
-    if startFrame > meta.numberframes
-        error(sprintf(['Start frame %d exceeded total number of ' ...
-                       'frames %d!'],startFrame,meta.numberframes));
+    if frameRange(1) > frameRange(2)
+        error(sprintf(['End frame %d should be equal or larger than the ' ...
+                       'starting frame %d'],framgeRange(1), ...
+                      framgeRange(2)));
     end
     
-    if startFrame+nFrame-1 > meta.numberframes
-        error(sprintf(['Frame number (%d + %d) exceeded total number of ' ...
-               'frames (%d)!'],startFrame,nFrame,meta.numberframes));
+    if frameRange(2) > meta.totalNFrame
+        error(sprintf(['End frame %d exceeded total number of ' ...
+                       'frames %d!'],frameRange(2),meta.totalNFrame));
+    end
+    
+    if nFramePerStep <= 0
+        error('nFramePerStep should be a positive integer')
     end
     
     warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning')
     TifLink = Tiff(filePath, 'r');
+    frameNumArray = frameRange(1):nFramePerStep:frameRange(2);
+    nFrame = length(frameNumArray);
     rawMovie = zeros(meta.height,meta.width,nFrame,'uint16');
-    for i = 1:nFrame
-        if mod(i,50) == 0; disp(strcat(num2str(i),12,'frames read')); end
-        TifLink.setDirectory(startFrame+i-1);
-        rawMovie(:,:,i) = TifLink.read();
+
+    for k = frameNumArray
+        if mod(k,50) == 0
+            disp(sprintf('%d frames read',k))
+        end
+        TifLink.setDirectory(k);
+        rawMovie(:,:,k) = TifLink.read();
     end
     TifLink.close();
 end

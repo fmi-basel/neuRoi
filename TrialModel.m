@@ -24,16 +24,13 @@ classdef TrialModel < handle
     
     methods
         function self = TrialModel(varargin)
-            if nargin == 0
-                filePath = '';
-            elseif nargin == 1
+            if nargin == 1
                 filePath = varargin{1};
             elseif nargin == 2
                 filePath = varargin{1};
                 loadMovieOption = varargin{2};
             else
                 error(['Wrong usage!']);
-                help NrTrial
             end
             
             if ~exist(filePath,'file')
@@ -46,8 +43,8 @@ classdef TrialModel < handle
             % Read data from file
             self.meta = movieFunc.readMeta(self.filePath);
             if ~exist('loadMovieOption','var')
-                loadMovieOption.startFrame = 1;
-                loadMovieOption.nFrame = self.meta.numberframes;
+                loadMovieOption = ...
+                    self.calcDefaultLoadMovieOption();
             end
             self.loadMovieOption = loadMovieOption;
             self.loadMovie(self.filePath,loadMovieOption);
@@ -57,9 +54,20 @@ classdef TrialModel < handle
         end
         
         function loadMovie(self,filePath,loadMovieOption)
-            startFrame = loadMovieOption.startFrame;
-            nFrame = loadMovieOption.nFrame;
-            self.rawMovie = movieFunc.readMovie(filePath,self.meta,nFrame,startFrame);
+            if ~isnumeric(self.loadMovieOption.zrange)
+                if strcmp(self.loadMovieOption.zrange,'all')
+                    self.loadMovieOption.zrange = ...
+                        [1,self.meta.totalNFrame];
+                end
+            end
+            
+            disp(loadMovieOption)
+            disp('Loading movie ...')
+            
+            self.rawMovie = movieFunc.readMovie(filePath,...
+                                      self.meta,...
+                                      self.loadMovieOption.zrange,...
+                                      self.loadMovieOption.nFramePerStep);
         end
         
         function preprocessMovie(self,noSignalWindow)
@@ -216,6 +224,13 @@ classdef TrialModel < handle
     methods
         function delete(self)
             notify(self,'trialDeleted');
+        end
+    end
+    
+    methods (Static)
+        function option = calcDefaultLoadMovieOption(self)
+            option.zrange = 'all';
+            option.nFramePerStep = 1;
         end
     end
 end

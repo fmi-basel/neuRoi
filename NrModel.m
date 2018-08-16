@@ -4,6 +4,7 @@ classdef NrModel < handle
         trialArray
         
         loadMovieOption
+        preprocessOption
         currentTrialInd
     end
     
@@ -12,6 +13,9 @@ classdef NrModel < handle
             self.filePathArray = filePathArray;
             nFile = length(filePathArray);
             self.trialArray = cell(1,nFile);
+            
+            self.loadMovieOption = ...
+                TrialModel.calcDefaultLoadMovieOption();
         end
         
         function nFile = getNFile(self)
@@ -24,7 +28,9 @@ classdef NrModel < handle
         
         function loadTrial(self,ind)
             filePath = self.filePathArray{ind};
-            self.trialArray{ind} = TrialModel(filePath,self.loadMovieOption);
+            self.trialArray{ind} = TrialModel(filePath, ...
+                                              self.loadMovieOption);
+            % 2018-08-15 BO Hu
         end
         
         function trial = getTrialByInd(self,ind)
