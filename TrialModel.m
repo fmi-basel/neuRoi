@@ -70,6 +70,10 @@ classdef TrialModel < handle
                                       self.loadMovieOption.nFramePerStep);
         end
         
+        function nf = getNFrameRawMovie(self)
+            nf = size(self.rawMovie,3);
+        end
+        
         function preprocessMovie(self,noSignalWindow)
             if ~exist('noSignalWindow','var')
                 noSignalWindow = [1, 12];
@@ -87,6 +91,10 @@ classdef TrialModel < handle
         
         function mapArrayLen = getMapArrayLength(self)
             mapArrayLen = length(self.mapArray);
+        end
+        
+        function map = getCurrentMap(self)
+            map = self.mapArray{self.currentMapInd};
         end
         
         function calculateAndAddNewMap(self,mapType,varargin)
@@ -114,6 +122,11 @@ classdef TrialModel < handle
             [map.data,map.option] = self.calculateMap(map.type,mapOption);
             self.mapArray{mapInd} = map;
             notify(self,'mapUpdated',ArrayElementUpdateEvent(mapInd));
+        end
+        
+        function saveContrastLimToCurrentMap(self,contrastLim)
+            self.mapArray{self.currentMapInd}.contrastLim = ...
+                contrastLim;
         end
         
         function [mapData,mapOption] = calculateMap(self,mapType,varargin)
@@ -184,7 +197,7 @@ classdef TrialModel < handle
                 help TrialModel.calcResponse
             end
             
-            mapData = dFoverF(self.rawMovie,mapOption.offset, ...
+            mapData = movieFunc.dFoverF(self.rawMovie,mapOption.offset, ...
                               mapOption.fZeroWindow, ...
                               mapOption.responseWindow);
         end
@@ -201,7 +214,7 @@ classdef TrialModel < handle
             else
                 error('Wrong Usage!')
             end
-            mapData = dFoverFMax(self.rawMovie,mapOption.offset,...
+            mapData = movieFunc.dFoverFMax(self.rawMovie,mapOption.offset,...
                                  mapOption.fZeroWindow,...
                                  mapOption.slidingWindowSize);
         end
@@ -217,7 +230,7 @@ classdef TrialModel < handle
             else
                 error('Wrong Usage!');
             end
-            mapData = computeLocalCorrelation(self.rawMovie,mapOption.tileSize);
+            mapData = movieFunc.computeLocalCorrelation(self.rawMovie,mapOption.tileSize);
         end
     end
     

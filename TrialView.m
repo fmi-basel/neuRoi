@@ -28,16 +28,18 @@ classdef TrialView < handle
                @(s,e)self.controller.mapButtonSelected_Callback(s,e));
             set(self.guiHandles.mainFig,'CloseRequestFcn',...
                @(s,e)self.controller.mainFigClosed_Callback(s,e));
+            set(self.guiHandles.contrastMinSlider,'Callback',...
+               @(s,e)self.controller.contrastSlider_Callback(s,e));
+            set(self.guiHandles.contrastMaxSlider,'Callback',...
+               @(s,e)self.controller.contrastSlider_Callback(s,e));
         end
         
         % Methods for displaying maps
         function selectAndDisplayMap(self,src,evnt)
             obj = evnt.AffectedObject;
             ind = obj.currentMapInd;
-            map = obj.getMapByInd(ind);
-            
             self.selectMapButton(ind);
-            self.displayMap(map);
+            self.displayCurrentMap();
         end
         
         function toggleMapButtonValidity(self,src,evnt)
@@ -58,8 +60,7 @@ classdef TrialView < handle
             currInd = src.currentMapInd;
             updatedInd = evnt.ind;
             if currInd == updatedInd
-                map = self.model.getMapByInd(currInd);
-                self.displayMap(map);
+                self.displayCurrentMap();
             end
         end
         
@@ -69,9 +70,11 @@ classdef TrialView < handle
             mapButtonGroup.SelectedObject = mapButtonArray(end+1-ind);
         end
             
-        function displayMap(self,map)
+        function displayCurrentMap(self)
+            map = self.model.getCurrentMap();
             self.showMapOption(map);
             self.plotMap(map);
+            self.controller.updateContrastForCurrentMap();
         end
         
         function showMapOption(self,map)
@@ -100,6 +103,57 @@ classdef TrialView < handle
                 colormap(mapAxes,'default');
             end
         end
+        
+        % Methods for changing contrast
+        function changeMapContrast(self,contrastLim)
+        % Usage: myview.changeMapContrast(contrastLim), contrastLim
+        % is a 1x2 array [cmin cmax]
+            caxis(self.guiHandles.mapAxes,contrastLim);
+        end
+        
+        function setDataLimAndContrastLim(self,dataLim,contrastLim)
+            contrastSliderArr= ...
+                self.guiHandles.contrastSliderGroup.Children;
+            for k=1:2
+                cs = contrastSliderArr(end+1-k);
+                set(cs,'Min',dataLim(1),'Max',dataLim(2),...
+                       'Value',contrastLim(k));
+            end
+        end
+
+        function dataLim = getContrastSliderDataLim(self)
+            contrastSliderArr= ...
+                self.guiHandles.contrastSliderGroup.Children;
+            dataLim(1) = contrastSliderArr(1).Min;
+            dataLim(2) = contrastSliderArr(1).Max;
+        end
+        
+        function setContrastSliderDataLim(self,dataLim)
+            contrastSliderArr= ...
+                self.guiHandles.contrastSliderGroup.Children;
+            for k=1:2
+                contrastSliderArr(end+1-k).Min = dataLim(1);
+                contrastSliderArr(end+1-k).Max = dataLim(2);
+            end
+        end
+        
+        function contrastLim = getContrastLim(self)
+            contrastSliderArr= ...
+                self.guiHandles.contrastSliderGroup.Children;
+            for k=1:2
+                contrastLim(k) = contrastSliderArr(end+1-k).Value;
+            end
+        end
+        
+        function setContrastLim(self,contrastLim)
+            contrastSliderArr= ...
+                self.guiHandles.contrastSliderGroup.Children;
+            for k=1:2
+                contrastSliderArr(end+1-k).Value = contrastLim(k);
+            end
+        end
+        
+        
         
         function setFigTagPrefix(self,prefix)
             mainFig = self.guiHandles.mainFig;

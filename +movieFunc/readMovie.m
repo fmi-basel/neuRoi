@@ -45,11 +45,12 @@ function rawMovie = readMovie(filePath,meta,varargin)
     nFrame = length(frameNumArray);
     rawMovie = zeros(meta.height,meta.width,nFrame,'uint16');
 
-    for k = frameNumArray
+    for k = 1:nFrame
         if mod(k,50) == 0
             disp(sprintf('%d frames read',k))
         end
-        TifLink.setDirectory(k);
+        fn = frameNumArray(k);
+        TifLink.setDirectory(fn);
         rawMovie(:,:,k) = TifLink.read();
     end
     TifLink.close();

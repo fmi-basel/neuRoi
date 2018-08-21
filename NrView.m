@@ -12,6 +12,8 @@ classdef NrView < handle
             self.guiHandles = neuRoiGui();
             
             self.updateFileListBox();
+            self.displayLoadMovieOption();
+            
             self.listenToModel();
             self.assignCallbacks();
         end
@@ -23,6 +25,8 @@ classdef NrView < handle
                 @(s,e)self.controller.mainFigClosed_Callback(s,e));
             set(self.guiHandles.loadRangeGroup,'SelectionChangedFcn',...
                 @(s,e)self.controller.loadRangeGroup_Callback(s,e));
+            set(self.guiHandles.loadStepText,'Callback',...
+                @(s,e)self.controller.loadStepText_Callback(s,e));
         end
         
         function listenToModel(self)
@@ -34,6 +38,23 @@ classdef NrView < handle
             set(self.guiHandles.fileListBox,'String',filePathArray);
         end
         
+        function displayLoadMovieOption(self)
+            option = self.model.loadMovieOption;
+            nFramePerStep = option.nFramePerStep;
+            self.guiHandles.loadStepText.String = num2str(nFramePerStep);
+            zrange = option.zrange;
+            if isnumeric(zrange)
+                self.guiHandles.loadRangeButton2.Value = 1;
+                self.toggleLoadRangeText('on');
+                self.setLoadRangeText(zrange);
+            elseif strcmp(zrange,'all')
+                self.guiHandles.loadRangeButton1.Value = 1;
+                self.toggleLoadRangeText('off');
+            else
+                error('Cannot display load movie range!')
+            end
+        end
+        
         function toggleLoadRangeText(self,state)
             if strcmp(state,'on') || strcmp(state,'off')
                 set(self.guiHandles.loadRangeStartText,'Enable',state);
@@ -43,9 +64,16 @@ classdef NrView < handle
             end
         end
         
-        function lrange = getLoadRangeFromText(self);
-            lrange(1) = str2num(self.guiHandles.loadRangeStartText.String);
-            lrange(2) = str2num(self.guiHandles.loadRangeEndText.String);
+        function setLoadRangeText(self,zrange)
+            set(self.guiHandles.loadRangeStartText,'String', ...
+                              num2str(zrange(1)));
+            set(self.guiHandles.loadRangeEndText,'String', ...
+                              num2str(zrange(2)));
+        end
+        
+        function zrange = getLoadRangeFromText(self);
+            zrange(1) = str2num(self.guiHandles.loadRangeStartText.String);
+            zrange(2) = str2num(self.guiHandles.loadRangeEndText.String);
         end
         
         function deleteFigures(self)

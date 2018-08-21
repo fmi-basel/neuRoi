@@ -4,7 +4,7 @@ classdef NrModel < handle
         trialArray
         
         loadMovieOption
-        preprocessOption
+        noSignalWindow
         currentTrialInd
     end
     
@@ -16,6 +16,7 @@ classdef NrModel < handle
             
             self.loadMovieOption = ...
                 TrialModel.calcDefaultLoadMovieOption();
+            self.noSignalWindow = [1 12];
         end
         
         function nFile = getNFile(self)
@@ -28,9 +29,10 @@ classdef NrModel < handle
         
         function loadTrial(self,ind)
             filePath = self.filePathArray{ind};
-            self.trialArray{ind} = TrialModel(filePath, ...
-                                              self.loadMovieOption);
-            % 2018-08-15 BO Hu
+            trial = TrialModel(filePath, ...
+                               self.loadMovieOption);
+            trial.preprocessMovie(self.noSignalWindow);
+            self.trialArray{ind} = trial;
         end
         
         function trial = getTrialByInd(self,ind)

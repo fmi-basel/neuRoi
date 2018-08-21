@@ -10,7 +10,6 @@ classdef NrController < handle
         function self = NrController(mymodel)
             self.model = mymodel;
             self.view = NrView(mymodel,self);
-            self.view.toggleLoadRangeText('off');
 
             nFile = self.model.getNFile();
             self.trialControllerArray = cell(1,nFile);
@@ -38,6 +37,12 @@ classdef NrController < handle
                 self.view.toggleLoadRangeText('off');
                 self.model.loadMovieOption.zrange = 'all';
             end
+        end
+        
+        function loadStepText_Callback(self,src,evnt)
+            stepStr = src.String;
+            nFramePerStep = str2num(stepStr);
+            self.model.loadMovieOption.nFramePerStep = nFramePerStep;
         end
 
         function selectTrial(self,ind)
