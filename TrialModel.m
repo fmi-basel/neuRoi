@@ -6,6 +6,9 @@ classdef TrialModel < handle
         noSignalWindow
         loadMovieOption
         rawMovie
+        
+        roiArray
+        selectedRoiIndArray
     end
         
     properties (Access = private)
@@ -34,7 +37,10 @@ classdef TrialModel < handle
             end
             
             if ~exist(filePath,'file')
-                error('The file path does not exist!')
+                warning(['The file path does not exist! returning ' ...
+                         'an empty TrialModel object.'])
+                self.filePath = filePath;
+                return
             end
             
             self.filePath = filePath;
@@ -51,6 +57,9 @@ classdef TrialModel < handle
             
             % Initialize map array
             self.mapArray = {};
+            
+            % Initialize ROI array
+            self.roiArray = RoiFreehand.empty();
         end
         
         function loadMovie(self,filePath,loadMovieOption)
@@ -232,6 +241,63 @@ classdef TrialModel < handle
             end
             mapData = movieFunc.computeLocalCorrelation(self.rawMovie,mapOption.tileSize);
         end
+        
+        % Methods for ROI-based processing
+        function addRoi(self,varargin)
+        % ADDROI add ROI to ROI array
+        % input arguments can be a ROI structure
+        % or position of a ROI, imageSize information
+            
+            if nargin == 3
+                % isnumeric(varargin{1}) && ~isempty(varargin{2})
+                % Add ROI from position
+                position = varargin{1};
+                imageInfo = varargin{2};
+                invalidPosition = ~isempty(position) && ...
+                    ~isequal(size(position,2),2);
+                if invalidPosition
+                    error('Invalid Position')
+                end
+                roi = RoiFreehand(0,position,imageInfo);
+            elseif nargin == 2
+                % Add ROI from structure
+                if isstruct(varargin{1})
+                    roiStruct = varargin{1}
+                    roi = RoiFreehand(roiStruct)
+                else
+                    error(['Input should be a stucture!'])
+                end
+            else
+                % TODO add ROI from mask
+                error('Wrong usage!')
+                help TrialModel.addRoi
+            end
+
+            roi.id = length(self.roiArray)+1;
+            self.roiArray(end+1) = roi;
+        end
+        
+        function selectRoi(self,ind)
+            if isempty(self.selectedRoiIndArray) ||...
+                    ~ismember(ind,self.selectedRoiIndArray)
+                self.selectedRoiIndArray(end)  = ind;
+            end
+        end
+        
+        function updateRoi(self,ind,freshRoi)
+            freshRoi.id = ind;
+            self.roiArray(ind) = freshRoi;
+        end
+        
+        function deleteRoi(self,ind)
+            self.roiArray(ind) = [];
+            if ind < length(self.roiArray)
+                for k=ind:length(self.roiArray)
+                    self.roiArray(k).id = k;
+                end
+            end
+        end
+        
     end
     
     methods
