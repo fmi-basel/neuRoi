@@ -8,7 +8,7 @@ classdef TrialModel < handle
         rawMovie
         
         roiArray
-        selectedRoiIndArray
+        selectedRoiTagArray
     end
         
     properties (Access = private)
@@ -36,24 +36,30 @@ classdef TrialModel < handle
                 error(['Wrong usage!']);
             end
             
+            self.filePath = filePath;
             if ~exist(filePath,'file')
                 warning(['The file path does not exist! returning ' ...
-                         'an empty TrialModel object.'])
-                self.filePath = filePath;
-                return
+                         'an TrialModel object with a random ' ...
+                         'movie.'])
+                [~,self.fileBaseName,~] = fileparts(filePath);
+                self.meta = struct('width',12,...
+                                   'height',10,...
+                                   'totalNFrame',5);
+                self.rawMovie = rand(self.meta.height,...
+                                     self.meta.width,...
+                                     self.meta.totalNFrame);
+            else
+                [~,self.fileBaseName,~] = fileparts(filePath);
+                
+                % Read data from file
+                self.meta = movieFunc.readMeta(self.filePath);
+                if ~exist('loadMovieOption','var')
+                    loadMovieOption = ...
+                        self.calcDefaultLoadMovieOption();
+                end
+                self.loadMovieOption = loadMovieOption;
+                self.loadMovie(self.filePath,loadMovieOption);
             end
-            
-            self.filePath = filePath;
-            [~,self.fileBaseName,~] = fileparts(filePath);
-            
-            % Read data from file
-            self.meta = movieFunc.readMeta(self.filePath);
-            if ~exist('loadMovieOption','var')
-                loadMovieOption = ...
-                    self.calcDefaultLoadMovieOption();
-            end
-            self.loadMovieOption = loadMovieOption;
-            self.loadMovie(self.filePath,loadMovieOption);
             
             % Initialize map array
             self.mapArray = {};
@@ -90,8 +96,8 @@ classdef TrialModel < handle
             self.rawMovie = movieFunc.subtractPreampRing(self.rawMovie,noSignalWindow);
         end
         
-        function mapsize = getMapSize(self)
-            mapsize = size(self.rawMovie(:,:,1));
+        function mapSize = getMapSize(self)
+            mapSize = size(self.rawMovie(:,:,1));
         end
         
         function map = getMapByInd(self,ind)
@@ -243,61 +249,77 @@ classdef TrialModel < handle
         end
         
         % Methods for ROI-based processing
+        % TODO set roiArray to private
         function addRoi(self,varargin)
         % ADDROI add ROI to ROI array
-        % input arguments can be a ROI structure
-        % or position of a ROI, imageSize information
+        % input arguments can be a RoiFreehand object
+        % or a structure containing position and imageSize
             
-            if nargin == 3
-                % isnumeric(varargin{1}) && ~isempty(varargin{2})
-                % Add ROI from position
-                position = varargin{1};
-                imageInfo = varargin{2};
-                invalidPosition = ~isempty(position) && ...
-                    ~isequal(size(position,2),2);
-                if invalidPosition
-                    error('Invalid Position')
-                end
-                roi = RoiFreehand(0,position,imageInfo);
-            elseif nargin == 2
-                % Add ROI from structure
-                if isstruct(varargin{1})
-                    roiStruct = varargin{1}
-                    roi = RoiFreehand(roiStruct)
+            if nargin == 2
+                if isa(varargin{1},'RoiFreehand')
+                    roi = varargin{1};
+                elseif isstruct(varargin{1})
+                    % Add ROI from structure
+                    roiStruct = varargin{1};
+                    roi = RoiFreehand(roiStruct);
                 else
-                    error(['Input should be a stucture!'])
+                    % TODO add ROI from mask
+                    error('Wrong usage!')
+                    help TrialModel.addRoi
                 end
             else
-                % TODO add ROI from mask
                 error('Wrong usage!')
                 help TrialModel.addRoi
             end
+            
+            self.checkRoiImageSize(roi);
 
-            roi.id = length(self.roiArray)+1;
+            if isempty(self.roiArray)
+                roi.tag = 1;
+            else
+                roi.tag = self.roiArray(end).tag+1;
+            end
             self.roiArray(end+1) = roi;
         end
         
-        function selectRoi(self,ind)
-            if isempty(self.selectedRoiIndArray) ||...
-                    ~ismember(ind,self.selectedRoiIndArray)
-                self.selectedRoiIndArray(end)  = ind;
+        function selectRoi(self,tag)
+            if ~ismember(tag,self.selectedRoiTagArray)
+                ind = self.findRoiByTag(tag);
+                self.selectedRoiTagArray(end+1)  = tag;
             end
         end
         
-        function updateRoi(self,ind,freshRoi)
-            freshRoi.id = ind;
+        function updateRoi(self,tag,freshRoi)
+            if ~isa(freshRoi,'RoiFreehand')
+                error(['Input freshRoi should be a RoiFreehand ' ...
+                       'object!'])
+            end
+            self.checkRoiImageSize(freshRoi);
+            ind = self.findRoiByTag(tag);
+            freshRoi.tag = tag;
             self.roiArray(ind) = freshRoi;
         end
         
-        function deleteRoi(self,ind)
+        function deleteRoi(self,tag)
+            ind = self.findRoiByTag(tag);
             self.roiArray(ind) = [];
-            if ind < length(self.roiArray)
-                for k=ind:length(self.roiArray)
-                    self.roiArray(k).id = k;
-                end
+        end
+        
+        function checkRoiImageSize(self,roi)
+            mapSize = self.getMapSize();
+            if ~isequal(roi.imageSize,mapSize)
+                error(['Image size of ROI does not match the map size ' ...
+                       '(pixel size in x and y)!'])
             end
         end
         
+        function ind = findRoiByTag(self,tag)
+            ind = find(arrayfun(@(x) isequal(x.tag,tag), ...
+                                self.roiArray));
+            if isempty(ind)
+                error(sprintf('Cannot find the ROI with tag %d!',tag))
+            end
+        end
     end
     
     methods

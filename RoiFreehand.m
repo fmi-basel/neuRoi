@@ -1,29 +1,45 @@
-classdef RoiFreehand < handle
+classdef RoiFreehand
     properties
-        id
+        tag
         position
         imageSize
     end
     
     methods
         function self = RoiFreehand(varargin)
-            if nargin == 2
+            if nargin == 1
+                try
+                    roiStruct = varargin{1};
+                    imageSize = roiStruct.imageSize;
+                    position = roiStruct.position;
+                catch
+                    error(['Input should be a structure with imageSize ' ...
+                           'and position!'])
+                end
+            elseif nargin == 2
                 if isnumeric(varargin{1})
-                    self.imageSize = varargin{1};
-                    self.position = varargin{2};
+                    imageSize = varargin{1};
+                    position = varargin{2};
                 elseif ishandle(varargin{1})
                     parent = varargin{1};
                     roiRaw = varargin{2};
                     axesPosition = roiRaw.getPosition();
-                    self.imageSize = size(getimage(parent));
-                    self.position = ...
-                        getPixelPosition(parent,axesPosition);
+                    imageSize = size(getimage(parent));
+                    position = getPixelPosition(parent, ...
+                                                axesPosition);
                 else
                     error('Wrong usage!')
                 end
             else
                 error('Wrong usage!')
             end
+            
+            if isempty(position) || ~isequal(size(position,2),2)
+                error('Invalid Position!')
+            end
+            
+            self.imageSize = imageSize;
+            self.position = position;
         end
         
         function mask = createMask(self)
