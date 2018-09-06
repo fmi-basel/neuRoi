@@ -9,6 +9,22 @@ classdef TrialController < handle
             self.model = mymodel;
             self.nMapMax = 6;
             self.view = TrialView(self.model,self);
+            
+            % Initialize map display
+            self.view.toggleMapButtonValidity(self.model);
+            self.view.displayCurrentMap();
+        end
+        
+        function keyPressCallback(self,src,evnt)
+            if isempty(evnt.Modifier)
+                switch evnt.Key
+                  case 'f'
+                    self.addRoiByDrawing()
+                  case 'd'
+                    self.deleteSelectedRoi()
+                end
+            end
+
         end
         
         function addMap(self,type,varargin)
@@ -87,6 +103,47 @@ classdef TrialController < handle
             self.view.changeMapContrast(vcl);
         end
         
+        % Methods for ROI based processing
+        function addRoiByDrawing(self)
+            rawRoi = imfreehand;
+            if ~isempty(rawRoi)
+                position = rawRoi.getPosition();
+                mapAxes = self.view.guiHandles.mapAxes;
+                if ~isempty(position)
+                    freshRoi = RoiFreehand(mapAxes,position);
+                    self.model.addRoi(freshRoi);
+                    self.model.selectSingleRoi('last');
+                else
+                    disp('Empty ROI. Not added to ROI array.')
+                end
+                delete(rawRoi)
+            end
+        end
+        
+        function selectRoi_Callback(self,src,evnt)
+            selectedObj = gco; % get(gco,'Parent');
+            if RoiFreehand.isaRoiPatch(selectedObj)
+                ptTag = selectedObj.Tag;
+                roiTag = helper.convertTagToInd(ptTag,'roi');
+
+                selectionType = get(gcf,'SelectionType');
+                if strcmp(selectionType,'normal')
+                    self.model.selectSingleRoi(roiTag);
+                elseif strcmp(selectionType,'alt') % Ctrl pressed
+                    if strcmp(selectedObj.Selected,'on')
+                        self.model.unselectRoi(roiTag);
+                    else
+                        self.model.selectRoi(roiTag);
+                    end
+                end
+            end
+        end
+        
+        function deleteSelectedRoi(self)
+            self.model.deleteSelectedRoi();
+        end
+        
+        
         function setFigTagPrefix(self,prefix)
             self.view.setFigTagPrefix(prefix);
         end
@@ -103,9 +160,11 @@ classdef TrialController < handle
         end
         
         function delete(self)
-            if isvalid(self.view)
-                self.view.deleteFigures();
-                delete(self.view)
+            if ishandle(self.view)
+                if isvalid(self.view)
+                    self.view.deleteFigures();
+                    delete(self.view)
+                end
             end
         end
     end

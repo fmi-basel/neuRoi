@@ -8,7 +8,6 @@ classdef TrialModel < handle
         rawMovie
         
         roiArray
-        selectedRoiTagArray
     end
         
     properties (Access = private)
@@ -17,11 +16,16 @@ classdef TrialModel < handle
     
     properties (SetObservable)
         currentMapInd
+        selectedRoiTagArray
     end
     
     events
         mapArrayLengthChanged
         mapUpdated
+        
+        roiAdded
+        roiDeleted
+        
         trialDeleted
     end
     
@@ -55,7 +59,7 @@ classdef TrialModel < handle
                 self.meta = movieFunc.readMeta(self.filePath);
                 if ~exist('loadMovieOption','var')
                     loadMovieOption = ...
-                        self.calcDefaultLoadMovieOption();
+                        TrialModel.calcDefaultLoadMovieOption();
                 end
                 self.loadMovieOption = loadMovieOption;
                 self.loadMovie(self.filePath,loadMovieOption);
@@ -63,6 +67,9 @@ classdef TrialModel < handle
             
             % Initialize map array
             self.mapArray = {};
+
+            % Calculate anatomy map
+            self.calculateAndAddNewMap('anatomy');
             
             % Initialize ROI array
             self.roiArray = RoiFreehand.empty();
@@ -124,6 +131,8 @@ classdef TrialModel < handle
         
         function addMap(self,newMap)
             self.mapArray{end+1} = newMap;
+            mapArrayLen = self.getMapArrayLength();
+            self.selectMap(mapArrayLen);
             notify(self,'mapArrayLengthChanged');
         end
         
@@ -136,7 +145,7 @@ classdef TrialModel < handle
             map = self.mapArray{mapInd};
             [map.data,map.option] = self.calculateMap(map.type,mapOption);
             self.mapArray{mapInd} = map;
-            notify(self,'mapUpdated',ArrayElementUpdateEvent(mapInd));
+            notify(self,'mapUpdated',NrEvent.ArrayElementUpdateEvent(mapInd));
         end
         
         function saveContrastLimToCurrentMap(self,contrastLim)
@@ -280,6 +289,26 @@ classdef TrialModel < handle
                 roi.tag = self.roiArray(end).tag+1;
             end
             self.roiArray(end+1) = roi;
+            notify(self,'roiAdded')
+        end
+        
+        function selectSingleRoi(self,varargin)
+            if nargin == 2
+                if strcmp(varargin{1},'last')
+                    ind = length(self.roiArray);
+                    tag = self.roiArray(ind).tag;
+                else
+                    tag = varargin{1};
+                    ind = self.findRoiByTag(tag);
+                end
+            else
+                error('Too Many/few input args!')
+            end
+            
+            if ~isequal(self.selectedRoiTagArray,[tag])
+                self.selectedRoiTagArray = [tag];
+                disp(sprintf('Roi #%d selected',tag))
+            end
         end
         
         function selectRoi(self,tag)
@@ -287,6 +316,22 @@ classdef TrialModel < handle
                 ind = self.findRoiByTag(tag);
                 self.selectedRoiTagArray(end+1)  = tag;
             end
+        end
+        
+        function unselectRoi(self,tag)
+            tagArray = self.selectedRoiTagArray;
+            tagInd = find(tagArray == tag);
+            if tagInd
+                self.selectedRoiTagArray(tagInd) = [];
+            end
+        end
+        
+        function selectAllRoi(self)
+        % TODO
+        end
+        
+        function unselectAllRoi(self)
+            self.selectedRoiTagArray = [];
         end
         
         function updateRoi(self,tag,freshRoi)
@@ -300,9 +345,19 @@ classdef TrialModel < handle
             self.roiArray(ind) = freshRoi;
         end
         
+        function deleteSelectedRoi(self)
+            tagArray = self.selectedRoiTagArray;
+            self.unselectAllRoi();
+            indArray = self.findRoiByTagArray(tagArray);
+            self.roiArray(indArray) = [];
+            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
+        end
+        
         function deleteRoi(self,tag)
             ind = self.findRoiByTag(tag);
+            self.unselecRoi(tag);
             self.roiArray(ind) = [];
+            notify(self,'roiDeleted',RoiDeletedEvent([tag]));
         end
         
         function checkRoiImageSize(self,roi)
@@ -315,11 +370,20 @@ classdef TrialModel < handle
         
         function ind = findRoiByTag(self,tag)
             ind = find(arrayfun(@(x) isequal(x.tag,tag), ...
-                                self.roiArray));
-            if isempty(ind)
-                error(sprintf('Cannot find the ROI with tag %d!',tag))
+                                self.roiArray),1);
+            if ~isempty(ind)
+                ind = ind(1);
+            else
+                error(sprintf('Cannot find ROI with tag %d!',tag))
             end
+
         end
+        
+        function roiIndArray = findRoiByTagArray(self,tagArray)
+            roiIndArray = arrayfun(@(x) self.findRoiByTag(x), ...
+                                   tagArray);
+        end
+        
     end
     
     methods

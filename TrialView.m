@@ -13,6 +13,7 @@ classdef TrialView < handle
             mapSize = self.model.getMapSize();
             self.guiHandles = trialGui(mapSize);
             
+            
             self.listenToModel();
             self.assignCallbacks();
         end
@@ -20,7 +21,12 @@ classdef TrialView < handle
         function listenToModel(self)
             addlistener(self.model,'currentMapInd','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'mapArrayLengthChanged',@self.toggleMapButtonValidity);
-            addlistener(self.model,'mapUpdated',@self.updateMapDisplay);
+            addlistener(self.model,'mapUpdated',...
+                        @self.updateMapDisplay);
+            addlistener(self.model,'roiAdded',@self.addRoiPatch);
+            addlistener(self.model,'selectedRoiTagArray','PostSet',...
+                        @self.updateRoiPatchSelection);
+            addlistener(self.model,'roiDeleted',@self.deleteRoiPatch);
         end
         
         function assignCallbacks(self)
@@ -32,7 +38,15 @@ classdef TrialView < handle
                @(s,e)self.controller.contrastSlider_Callback(s,e));
             set(self.guiHandles.contrastMaxSlider,'Callback',...
                @(s,e)self.controller.contrastSlider_Callback(s,e));
+            
+            set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
+                @(s,e)self.controller.selectRoi_Callback(s,e));
+
+            
+            set(self.guiHandles.mainFig,'WindowKeyPressFcn', ...
+                @(s,e)self.controller.keyPressCallback(s,e));
         end
+        
         
         % Methods for displaying maps
         function selectAndDisplayMap(self,src,evnt)
@@ -153,6 +167,46 @@ classdef TrialView < handle
             end
         end
         
+        % Methods for ROI based processing
+        function addRoiPatch(self,src,evnt)
+            roi = src.roiArray(end);
+            roiPatch = roi.createRoiPatch();
+        end
+        
+        function updateRoiPatchSelection(self,src,evnt)
+            tagArray = evnt.AffectedObject.selectedRoiTagArray;
+            roiPatchArray = self.getRoiPatchArray();
+            for k=1:length(roiPatchArray)
+                roiPatch = roiPatchArray(k);
+                ptTag = get(roiPatch,'Tag');
+                roiTag = helper.convertTagToInd(ptTag,'roi');
+                if ismember(roiTag,tagArray)
+                    roiPatch.Selected = 'on';
+                else
+                    roiPatch.Selected = 'off';
+                end
+            end
+        end
+        
+        function roiPatchArray = getRoiPatchArray(self)
+            mapAxes = self.guiHandles.mapAxes;
+            children = mapAxes.Children;
+            patchInd = arrayfun(@RoiFreehand.isaRoiPatch,children);
+            roiPatchArray = children(patchInd);
+        end
+
+        function deleteRoiPatch(self,src,evnt)
+            tagArray = evnt.tagArray;
+            roiPatchArray = self.getRoiPatchArray();
+            for k=1:length(roiPatchArray)
+                roiPatch = roiPatchArray(k);
+                ptTag = get(roiPatch,'Tag');
+                roiTag = helper.convertTagToInd(ptTag,'roi');
+                if ismember(roiTag,tagArray)
+                    delete(roiPatch);
+                end
+            end
+        end
         
         
         function setFigTagPrefix(self,prefix)

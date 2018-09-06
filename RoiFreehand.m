@@ -22,8 +22,7 @@ classdef RoiFreehand
                     position = varargin{2};
                 elseif ishandle(varargin{1})
                     parent = varargin{1};
-                    roiRaw = varargin{2};
-                    axesPosition = roiRaw.getPosition();
+                    axesPosition = varargin{2};
                     imageSize = size(getimage(parent));
                     position = getPixelPosition(parent, ...
                                                 axesPosition);
@@ -75,19 +74,32 @@ classdef RoiFreehand
             roiPatch = patch(axesPosition(:,1),axesPosition(:,2),ptcolor,'Parent',parent);
             set(roiPatch,'FaceAlpha',0.5)
             set(roiPatch,'LineStyle','none');
-            set(roiPatch,'Tag',sprintf('roi_%04d',self.id))
-            setappdata(roiPatch,'roiHandle',self);
+            set(roiPatch,'Tag',sprintf('roi_%04d',self.tag))
             % moveit2(roiPatch)
         end
     end
+    
+    methods (Static)
+        function result = isaRoiPatch(hobj)
+            result = false;
+            if ishandle(hobj) && isvalid(hobj) && isprop(hobj,'Tag')
+                tag = get(hobj,'Tag');
+                if strfind(tag,'roi_')
+                    result = true;
+                end
+            end
+        end
+    end
+    
 end
+
 
 function pixelPos = getPixelPosition(parent,axesPos)
     [xdata,ydata,cdata] = getimage(parent);
     imageSize = size(cdata);
 
     if isDefaultCoordinate(imageSize,xdata,ydata)
-        axesPos = pixelPos;
+        pixelPos = axesPos;
     else
         [xWorldLim,yWorldLim] = getWorldLim(imageSize,xdata,ydata);
         refObj = imref2d(imageSize,xWorldLim,yWorldLim);
@@ -130,9 +142,7 @@ end
 function tf = isDefaultCoordinate(imageSize,xdata,ydata)
     if isequal(xdata,[1 imageSize(2)]) && isequal(ydata,[1 imageSize(1)])
         tf = true;
-        disp('default coordinates')
     else
         tf = false;
-        disp('not default coordinates')
     end
 end

@@ -106,7 +106,7 @@ classdef NrController < handle
             trial = self.model.getTrialByInd(ind);
             addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
             trialController = TrialController(trial);
-            trialController.addMap('anatomy');
+            % trialController.addMap('anatomy');
             tagPrefix = sprintf('trial_%d',ind);
             trialController.setFigTagPrefix(tagPrefix);
             self.trialControllerArray{ind} = trialController;
