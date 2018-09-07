@@ -39,8 +39,9 @@ classdef TrialView < handle
             set(self.guiHandles.contrastMaxSlider,'Callback',...
                @(s,e)self.controller.contrastSlider_Callback(s,e));
             
-            set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
-                @(s,e)self.controller.selectRoi_Callback(s,e));
+            % Callbacks of selecting ROI is added to each roiPatch
+            set(self.guiHandles.mapImage,'ButtonDownFcn',...
+                @(s,e)self.controller.mapImageSelected_Callback(s,e));
 
             
             set(self.guiHandles.mainFig,'WindowKeyPressFcn', ...
@@ -171,6 +172,9 @@ classdef TrialView < handle
         function addRoiPatch(self,src,evnt)
             roi = src.roiArray(end);
             roiPatch = roi.createRoiPatch();
+            % Add callback to roiPatch
+            set(roiPatch,'ButtonDownFcn',...
+                @(s,e)self.controller.roiSelected_Callback(s,e));
         end
         
         function updateRoiPatchSelection(self,src,evnt)

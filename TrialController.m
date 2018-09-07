@@ -20,7 +20,7 @@ classdef TrialController < handle
                 switch evnt.Key
                   case 'f'
                     self.addRoiByDrawing()
-                  case 'd'
+                  case {'d','delete','backspace'}
                     self.deleteSelectedRoi()
                 end
             end
@@ -120,8 +120,8 @@ classdef TrialController < handle
             end
         end
         
-        function selectRoi_Callback(self,src,evnt)
-            selectedObj = gco; % get(gco,'Parent');
+        function roiSelected_Callback(self,src,evnt)
+            selectedObj = src;
             if RoiFreehand.isaRoiPatch(selectedObj)
                 ptTag = selectedObj.Tag;
                 roiTag = helper.convertTagToInd(ptTag,'roi');
@@ -137,6 +137,11 @@ classdef TrialController < handle
                     end
                 end
             end
+        end
+        
+        function mapImageSelected_Callback(self,src,evnt)
+        % Callback for unselect all ROIs
+            self.model.unselectAllRoi();
         end
         
         function deleteSelectedRoi(self)

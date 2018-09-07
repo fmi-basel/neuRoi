@@ -63,6 +63,10 @@ classdef TrialModel < handle
                 end
                 self.loadMovieOption = loadMovieOption;
                 self.loadMovie(self.filePath,loadMovieOption);
+                
+                % Preprocess movie
+                % TODO let user specify preprocessing option
+                self.preprocessMovie();
             end
             
             % Initialize map array
