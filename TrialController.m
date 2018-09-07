@@ -23,8 +23,11 @@ classdef TrialController < handle
                   case {'d','delete','backspace'}
                     self.deleteSelectedRoi()
                 end
+            elseif strcmp(evnt.Modifier,'control')
+                switch evnt.Key
+                % TODO select all ROI
+                end
             end
-
         end
         
         function addMap(self,type,varargin)
@@ -121,20 +124,22 @@ classdef TrialController < handle
         end
         
         function roiSelected_Callback(self,src,evnt)
-            selectedObj = src;
-            if RoiFreehand.isaRoiPatch(selectedObj)
-                ptTag = selectedObj.Tag;
-                roiTag = helper.convertTagToInd(ptTag,'roi');
+            roiPatch = src;
+            ptTag = roiPatch.Tag;
+            roiTag = helper.convertTagToInd(ptTag,'roi');
 
-                selectionType = get(gcf,'SelectionType');
-                if strcmp(selectionType,'normal')
+            selectionType = get(gcf,'SelectionType');
+            if strcmp(selectionType,'normal')
+                self.model.selectSingleRoi(roiTag);
+            elseif strcmp(selectionType,'extend')
+                if strcmp(roiPatch.Selected,'on')
+                    self.model.unselectRoi(roiTag);
+                else
+                    self.model.selectRoi(roiTag);
+                end
+            elseif strcmp(selectionType,'alt')
+                if strcmp(roiPatch.Selected,'off')
                     self.model.selectSingleRoi(roiTag);
-                elseif strcmp(selectionType,'alt') % Ctrl pressed
-                    if strcmp(selectedObj.Selected,'on')
-                        self.model.unselectRoi(roiTag);
-                    else
-                        self.model.selectRoi(roiTag);
-                    end
                 end
             end
         end
@@ -146,6 +151,10 @@ classdef TrialController < handle
         
         function deleteSelectedRoi(self)
             self.model.deleteSelectedRoi();
+        end
+        
+        function moveRoi_Callback(self)
+            
         end
         
         

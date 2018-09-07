@@ -338,15 +338,9 @@ classdef TrialModel < handle
             self.selectedRoiTagArray = [];
         end
         
-        function updateRoi(self,tag,freshRoi)
-            if ~isa(freshRoi,'RoiFreehand')
-                error(['Input freshRoi should be a RoiFreehand ' ...
-                       'object!'])
-            end
-            self.checkRoiImageSize(freshRoi);
+        function updateRoiPosition(self,tag,varargin)
             ind = self.findRoiByTag(tag);
-            freshRoi.tag = tag;
-            self.roiArray(ind) = freshRoi;
+            self.roiArray(ind).updatePosition(varargin{:});
         end
         
         function deleteSelectedRoi(self)

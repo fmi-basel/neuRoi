@@ -43,6 +43,8 @@ classdef TrialView < handle
             set(self.guiHandles.mapImage,'ButtonDownFcn',...
                 @(s,e)self.controller.mapImageSelected_Callback(s,e));
 
+            set(self.guiHandles.roiMenuEntry1,'Callback',...
+                @(~,~)self.controller.moveRoi_Callback())
             
             set(self.guiHandles.mainFig,'WindowKeyPressFcn', ...
                 @(s,e)self.controller.keyPressCallback(s,e));
@@ -175,6 +177,8 @@ classdef TrialView < handle
             % Add callback to roiPatch
             set(roiPatch,'ButtonDownFcn',...
                 @(s,e)self.controller.roiSelected_Callback(s,e));
+            % Add context menu for right click
+            roiPatch.UIContextMenu = self.guiHandles.roiMenu;
         end
         
         function updateRoiPatchSelection(self,src,evnt)

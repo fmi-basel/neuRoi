@@ -40,6 +40,11 @@ function handles = trialGui(varargin)
                                           'Units','normal',...
                                           'Position',[0 0 1 0.4]);
     
+    % UIContextMenu for ROI
+    handles.roiMenu = uicontextmenu(handles.mainFig);
+    handles.roiMenuEntry1 = uimenu(handles.roiMenu,'Label','Move ROI(s)');
+
+    
     
     handles.traceFig = figure('Name','Time Trace','Tag','traceFig',...
                               'Position',[50,500,500,400],'Visible','off');
