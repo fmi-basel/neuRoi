@@ -5,6 +5,10 @@ classdef TrialView < handle
         guiHandles
     end
     
+    properties (Constant)
+        DEFAULT_PATCH_COLOR = 'red'
+    end
+    
     methods
         function self = TrialView(mymodel,mycontroller)
             self.model = mymodel;
@@ -26,7 +30,9 @@ classdef TrialView < handle
             addlistener(self.model,'roiAdded',@self.addRoiPatch);
             addlistener(self.model,'selectedRoiTagArray','PostSet',...
                         @self.updateRoiPatchSelection);
-            addlistener(self.model,'roiDeleted',@self.deleteRoiPatch);
+            addlistener(self.model,'roiDeleted',@ ...
+                        self.deleteRoiPatch);
+            addlistener(self.model,'roiUpdated',@self.updateRoiPatchPosition);
         end
         
         function assignCallbacks(self)
@@ -39,12 +45,11 @@ classdef TrialView < handle
             set(self.guiHandles.contrastMaxSlider,'Callback',...
                @(s,e)self.controller.contrastSlider_Callback(s,e));
             
-            % Callbacks of selecting ROI is added to each roiPatch
-            set(self.guiHandles.mapImage,'ButtonDownFcn',...
-                @(s,e)self.controller.mapImageSelected_Callback(s,e));
+            set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
+                @(s,e)self.controller.selectRoi_Callback(s,e));
 
             set(self.guiHandles.roiMenuEntry1,'Callback',...
-                @(~,~)self.controller.moveRoi_Callback())
+                @(~,~)self.controller.enterMoveRoiMode())
             
             set(self.guiHandles.mainFig,'WindowKeyPressFcn', ...
                 @(s,e)self.controller.keyPressCallback(s,e));
@@ -173,10 +178,8 @@ classdef TrialView < handle
         % Methods for ROI based processing
         function addRoiPatch(self,src,evnt)
             roi = src.roiArray(end);
-            roiPatch = roi.createRoiPatch();
-            % Add callback to roiPatch
-            set(roiPatch,'ButtonDownFcn',...
-                @(s,e)self.controller.roiSelected_Callback(s,e));
+            roiPatch = roi.createRoiPatch(self.guiHandles.mapAxes, ...
+                                          self.DEFAULT_PATCH_COLOR);
             % Add context menu for right click
             roiPatch.UIContextMenu = self.guiHandles.roiMenu;
         end
@@ -192,6 +195,38 @@ classdef TrialView < handle
                     roiPatch.Selected = 'on';
                 else
                     roiPatch.Selected = 'off';
+                end
+            end
+        end
+        
+        function changeRoiPatchColor(self,ptcolor,varargin)
+            if nargin == 3
+                if strcmp(ptcolor,'default')
+                    ptcolor = self.DEFAULT_PATCH_COLOR;
+                end
+                roiPatchArray = self.getRoiPatchArray();
+                if strcmp(varargin{1},'selected')
+                    for k=1:length(roiPatchArray)
+                        roiPatch = roiPatchArray(k);
+                        if strcmp(roiPatch.Selected,'on')
+                            set(roiPatch,'Facecolor',ptcolor);
+                        end
+                    end
+                end
+            end
+        end
+        
+        function updateRoiPatchPosition(self,src,evnt)
+            disp('About to update roiPatch pos, wait...')
+            pause(5)
+            updRoi = evnt.roi;
+            roiPatchArray = self.getRoiPatchArray();
+            for k=1:length(roiPatchArray)
+                roiPatch = roiPatchArray(k);
+                ptTag = get(roiPatch,'Tag');
+                roiTag = helper.convertTagToInd(ptTag,'roi');
+                if isequal(roiTag,updRoi.tag)
+                    updRoi.updateRoiPatchPos(roiPatch);
                 end
             end
         end

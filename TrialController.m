@@ -122,41 +122,96 @@ classdef TrialController < handle
                 delete(rawRoi)
             end
         end
+       
+        function selectRoi_Callback(self,src,evnt)
+            selectedObj = gco;
+            if RoiFreehand.isaRoiPatch(selectedObj)
+                self.roiClicked_Callback(selectedObj);
+            elseif isequal(selectedObj,self.view.guiHandles.mapImage)
+                self.model.unselectAllRoi();
+            end
+        end
         
-        function roiSelected_Callback(self,src,evnt)
-            roiPatch = src;
+        function roiClicked_Callback(self,roiPatch)
             ptTag = roiPatch.Tag;
             roiTag = helper.convertTagToInd(ptTag,'roi');
 
             selectionType = get(gcf,'SelectionType');
-            if strcmp(selectionType,'normal')
+            switch selectionType
+              case {'normal','alt'}
                 self.model.selectSingleRoi(roiTag);
-            elseif strcmp(selectionType,'extend')
+              case 'extend'
                 if strcmp(roiPatch.Selected,'on')
                     self.model.unselectRoi(roiTag);
                 else
                     self.model.selectRoi(roiTag);
                 end
-            elseif strcmp(selectionType,'alt')
-                if strcmp(roiPatch.Selected,'off')
-                    self.model.selectSingleRoi(roiTag);
-                end
             end
         end
         
-        function mapImageSelected_Callback(self,src,evnt)
-        % Callback for unselect all ROIs
-            self.model.unselectAllRoi();
+        % Functions for moving selected ROIs
+        function enterMoveRoiMode(self)
+        % ENTERMOVEROIMODE callback to enter moving mode of
+        % selected ROIs
+            self.view.changeRoiPatchColor('y','selected');
+            mainFig = self.view.guiHandles.mainFig;
+            set(mainFig,'WindowButtonDownFcn',@ ...
+                        self.moveRoi_Callback);
+            % TODO press Esc Callback
+        end
+
+        function exitMoveRoiMode(self,src)
+        % if exit with success
+            thisFig = ancestor(src,'figure');
+            thisAxes = get(thisFig,'CurrentAxes');
+            usrData = get(thisFig,'UserData');
+            startPoint = usrData.moveitData.startPoint;
+            relativePos = usrData.moveitData.pos;
+            movedPatch = usrData.moveitData.currentHandle;
+            if ~isempty(startPoint) && ~isempty(relativePos)
+                pttag = movedPatch.Tag;
+                roiTag = helper.convertTagToInd(pttag,'roi');
+                axesPos = [movedPatch.XData,movedPatch.YData];
+                self.model.updateRoi(roiTag,thisAxes,axesPos);
+            end
+            self.view.changeRoiPatchColor('default','selected');
+
+            rmfield(usrData,'moveitData');
+            set(thisFig,'UserData',usrData);
+            %     self.model.updateRoiPosition by position shift
+            % else
+            %     move back the roiPatch to original position
+            % end
+            
+            % set(mainFig,'WindowButtonDownFcn',@self.selectRoi_Callback)
+
+        end
+        
+        function moveRoi_Callback(self,src,evnt)
+            selectedObj = gco;
+            selectionType = get(gcf,'SelectionType');
+            % If the selected object is a roiPatch that has been
+            % already selected, then start to move it
+            if RoiFreehand.isaRoiPatch(selectedObj)
+                if strcmp(selectedObj.Selected,'on')
+                    switch selectionType
+                      case 'normal'
+                        disp('start moving ROIs')
+                        moveit.startmovit(selectedObj);
+                        % start point and relative position to
+                        % start point are saved in
+                        % UserData of parent figure
+                      case 'open'
+                        self.exitMoveRoiMode(selectedObj);
+                    end
+                end
+            end
         end
         
         function deleteSelectedRoi(self)
             self.model.deleteSelectedRoi();
         end
-        
-        function moveRoi_Callback(self)
-            
-        end
-        
+
         
         function setFigTagPrefix(self,prefix)
             self.view.setFigTagPrefix(prefix);

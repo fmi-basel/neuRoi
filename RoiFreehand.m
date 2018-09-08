@@ -41,23 +41,6 @@ classdef RoiFreehand
             self.position = position;
         end
         
-        function updatePosition(self,varargin)
-            if nargin == 1
-                position = varargin{1};
-            elseif nargin == 2
-                parent = varargin{1};
-                axesPosition = varargin{2};
-                imageSize = size(getimage(parent));
-                if ~isequal(imageSize,self.imageSize)
-                    error(['Input image size should be the same as ' ...
-                           'the ROI image size!'])
-                end
-                position = getPixelPosition(parent, ...
-                                            axesPosition);
-            end
-            self.position = position;
-        end
-        
         function mask = createMask(self)
             mask = poly2mask(self.position(:,1),...
                              self.position(:,2),...
@@ -93,6 +76,13 @@ classdef RoiFreehand
             set(roiPatch,'LineStyle','none');
             set(roiPatch,'Tag',sprintf('roi_%04d',self.tag))
             % moveit2(roiPatch)
+        end
+        
+        function updateRoiPatchPos(self,roiPatch)
+            parent = ancestor(roiPatch,'Axes');
+            pixelPosition = self.position;
+            axesPosition = getAxesPosition(parent,pixelPosition);
+            set(roiPatch,'XData',axesPosition(:,1),'YData',axesPosition(:,2));
         end
     end
     

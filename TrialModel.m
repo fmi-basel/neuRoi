@@ -25,6 +25,7 @@ classdef TrialModel < handle
         
         roiAdded
         roiDeleted
+        roiUpdated
         
         trialDeleted
     end
@@ -338,9 +339,16 @@ classdef TrialModel < handle
             self.selectedRoiTagArray = [];
         end
         
-        function updateRoiPosition(self,tag,varargin)
+        function updateRoi(self,tag,varargin)
             ind = self.findRoiByTag(tag);
-            self.roiArray(ind).updatePosition(varargin{:});
+            oldRoi = self.roiArray(ind);
+            freshRoi = RoiFreehand(varargin{:});
+            freshRoi.tag = tag;
+            self.checkRoiImageSize(freshRoi);
+            self.roiArray(ind) = freshRoi;
+            notify(self,'roiUpdated', ...
+                   NrEvent.RoiUpdatedEvent(self.roiArray(ind)));
+            disp(sprintf('Roi #%d updated',tag))
         end
         
         function deleteSelectedRoi(self)
@@ -374,7 +382,6 @@ classdef TrialModel < handle
             else
                 error(sprintf('Cannot find ROI with tag %d!',tag))
             end
-
         end
         
         function roiIndArray = findRoiByTagArray(self,tagArray)
