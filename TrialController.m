@@ -19,13 +19,15 @@ classdef TrialController < handle
             if isempty(evnt.Modifier)
                 switch evnt.Key
                   case 'f'
-                    self.addRoiByDrawing()
+                    self.addRoiByDrawing();
                   case {'d','delete','backspace'}
-                    self.deleteSelectedRoi()
+                    self.deleteSelectedRoi();
                 end
             elseif strcmp(evnt.Modifier,'control')
                 switch evnt.Key
                 % TODO select all ROI
+                  case 's'
+                    self.saveRoiArray();
                 end
             end
         end
@@ -155,8 +157,12 @@ classdef TrialController < handle
         % selected ROIs
             self.view.changeRoiPatchColor('y','selected');
             mainFig = self.view.guiHandles.mainFig;
+            usrData = get(mainFig,'UserData');
+            usrData.oldWindowButtonDownFcn = get(mainFig,'WindowButtonDownFcn');
             set(mainFig,'WindowButtonDownFcn',@ ...
                         self.moveRoi_Callback);
+            set(mainFig,'UserData',usrData);
+
             % TODO press Esc Callback
         end
 
@@ -176,8 +182,13 @@ classdef TrialController < handle
             end
             self.view.changeRoiPatchColor('default','selected');
 
+            set(thisFig,'WindowButtonDownFcn',...
+                        usrData.oldWindowButtonDownFcn);
             rmfield(usrData,'moveitData');
+            rmfield(usrData,'oldWindowButtonDownFcn');
             set(thisFig,'UserData',usrData);
+            
+
             %     self.model.updateRoiPosition by position shift
             % else
             %     move back the roiPatch to original position
@@ -212,6 +223,35 @@ classdef TrialController < handle
             self.model.deleteSelectedRoi();
         end
 
+        function saveRoiArray(self)
+            defFileName = [self.model.fileBaseName ...
+                               '_RoiArray.mat'];
+            defFilePath = fullfile(self.model.resultDir,defFileName);
+            [filePath,fileDir] = uiputfile('*.mat','Save ROIs',defFilePath);
+            if filePath
+                self.model.resultDir = fileDir;
+                self.model.saveRoiArray(filePath);
+            end
+        end
+        
+        function loadRoiArray(self)
+            [filePath,fileDir] = uigetfile('*.mat','Load ROIs', ...
+                                           self.model.resultDir);
+            if filePath
+                % Ask user whether to merge with existing ROIs or
+                % replace the ROIs
+                answer = questdlg('How would you like to load new ROIs?', ...
+                                  'Load ROIs', ...
+                                  'Cancel','Merge','Replace', ...
+                                  'Replace');
+                if strcmp(answer,'Cancel')
+                    return
+                else
+                    option = lower(answer);
+                    self.model.loadRoiArray(filePath,option);
+                end
+            end
+        end
         
         function setFigTagPrefix(self,prefix)
             self.view.setFigTagPrefix(prefix);

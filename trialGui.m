@@ -10,6 +10,15 @@ function handles = trialGui(varargin)
     end
 
     handles.mainFig = figure('Position',[600,300,750,650]);
+    deleteDefaultFigureMenu(handles.mainFig);
+    
+    handles.fileMenu = uimenu(handles.mainFig,'Text','File');
+    handles.saveRoiMenu = uimenu(handles.fileMenu,'Text',....
+                                 'Save ROIs','Accelerator','S');
+    handles.loadRoiMenu = uimenu(handles.fileMenu,'Text',...
+                                 'Load ROIs');
+    
+    
     handles.mapAxes = axes('Position',[0.15 0.1 0.8 0.72]);
     handles.mapImage  = imagesc(zeros(mapSize),'Parent',handles.mapAxes);
     
@@ -50,14 +59,23 @@ function handles = trialGui(varargin)
                               'Position',[50,500,500,400],'Visible','off');
     handles.traceAxes = axes();
     figure(handles.mainFig)
-
-    function button = createMapButton(buttonGroup,ind)
-        position = [0.15*(ind-1),0,0.15,1];
-        tag = sprintf('mapButton_%d',ind);
-        button = uicontrol(buttonGroup,...
-                           'Style','togglebutton',...
-                           'Tag',tag,...
-                           'String',num2str(ind),...
-                           'Units','normal',...
-                           'Position',position);
     
+
+function button = createMapButton(buttonGroup,ind)
+    position = [0.15*(ind-1),0,0.15,1];
+    tag = sprintf('mapButton_%d',ind);
+    button = uicontrol(buttonGroup,...
+                       'Style','togglebutton',...
+                       'Tag',tag,...
+                       'String',num2str(ind),...
+                       'Units','normal',...
+                       'Position',position);
+
+function deleteDefaultFigureMenu(fig)
+    tagArray = {'figMenuHelp','figMenuWindow','figMenuDesktop','figMenuTools',...
+'figMenuInsert','figMenuView','figMenuEdit','figMenuFile'};
+    for k=1:length(tagArray)
+        tag = tagArray{k};
+        hobj = findobj(fig,'Tag',tag);
+        delete(hobj)
+    end

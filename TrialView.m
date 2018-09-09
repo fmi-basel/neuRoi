@@ -27,12 +27,15 @@ classdef TrialView < handle
             addlistener(self.model,'mapArrayLengthChanged',@self.toggleMapButtonValidity);
             addlistener(self.model,'mapUpdated',...
                         @self.updateMapDisplay);
-            addlistener(self.model,'roiAdded',@self.addRoiPatch);
+            addlistener(self.model,'roiAdded',@self.drawLastRoiPatch);
             addlistener(self.model,'selectedRoiTagArray','PostSet',...
                         @self.updateRoiPatchSelection);
-            addlistener(self.model,'roiDeleted',@ ...
-                        self.deleteRoiPatch);
-            addlistener(self.model,'roiUpdated',@self.updateRoiPatchPosition);
+            addlistener(self.model,'roiDeleted',...
+                        @self.deleteRoiPatch);
+            addlistener(self.model,'roiUpdated',...
+                        @self.updateRoiPatchPosition);
+            addlistener(self.model,'roiArrayReplaced',...
+                        @(~,~)self.redrawAllRoiPatch());
         end
         
         function assignCallbacks(self)
@@ -53,6 +56,11 @@ classdef TrialView < handle
             
             set(self.guiHandles.mainFig,'WindowKeyPressFcn', ...
                 @(s,e)self.controller.keyPressCallback(s,e));
+            
+            set(self.guiHandles.saveRoiMenu,'Callback',...
+                @(~,~)self.controller.saveRoiArray());
+            set(self.guiHandles.loadRoiMenu,'Callback',...
+                @(~,~)self.controller.loadRoiArray());
         end
         
         
@@ -176,8 +184,18 @@ classdef TrialView < handle
         end
         
         % Methods for ROI based processing
-        function addRoiPatch(self,src,evnt)
-            roi = src.roiArray(end);
+        function drawLastRoiPatch(self,src,evnt)
+            roi = src.getRoiByTag('end');
+            self.addRoiPatch(roi);
+        end
+        
+        function redrawAllRoiPatch(self)
+            self.deleteAllRoiPatch();
+            roiArray = self.model.getRoiArray();
+            arrayfun(@(x) self.addRoiPatch(x),roiArray);
+        end
+        
+        function addRoiPatch(self,roi)
             roiPatch = roi.createRoiPatch(self.guiHandles.mapAxes, ...
                                           self.DEFAULT_PATCH_COLOR);
             % Add context menu for right click
@@ -217,8 +235,6 @@ classdef TrialView < handle
         end
         
         function updateRoiPatchPosition(self,src,evnt)
-            disp('About to update roiPatch pos, wait...')
-            pause(5)
             updRoi = evnt.roi;
             roiPatchArray = self.getRoiPatchArray();
             for k=1:length(roiPatchArray)
@@ -236,6 +252,11 @@ classdef TrialView < handle
             children = mapAxes.Children;
             patchInd = arrayfun(@RoiFreehand.isaRoiPatch,children);
             roiPatchArray = children(patchInd);
+        end
+        
+        function deleteAllRoiPatch(self)
+            roiPatchArray = self.getRoiPatchArray();
+            arrayfun(@(x) delete(x), roiPatchArray);
         end
 
         function deleteRoiPatch(self,src,evnt)

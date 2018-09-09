@@ -2,6 +2,8 @@ classdef TrialModel < handle
     properties
         filePath
         fileBaseName
+        resultDir
+        
         meta
         noSignalWindow
         loadMovieOption
@@ -26,6 +28,7 @@ classdef TrialModel < handle
         roiAdded
         roiDeleted
         roiUpdated
+        roiArrayReplaced
         
         trialDeleted
     end
@@ -69,6 +72,9 @@ classdef TrialModel < handle
                 % TODO let user specify preprocessing option
                 self.preprocessMovie();
             end
+
+            % Directory for saving results
+            self.resultDir = pwd;
             
             % Initialize map array
             self.mapArray = {};
@@ -364,6 +370,35 @@ classdef TrialModel < handle
             self.unselecRoi(tag);
             self.roiArray(ind) = [];
             notify(self,'roiDeleted',RoiDeletedEvent([tag]));
+        end
+        
+        function roiArray = getRoiArray(self)
+            roiArray = self.roiArray;
+        end
+        
+        function roi = getRoiByTag(self,tag)
+            if strcmp(tag,'end')
+                roi = self.roiArray(end);
+            else
+                ind = self.findRoiByTag(tag);
+                roi = self.roiArray(ind);
+            end
+        end
+        
+        function saveRoiArray(self,filePath)
+            roiArray = self.roiArray;
+            save(filePath,'roiArray');
+        end
+        
+        function loadRoiArray(self,filePath,option)
+            foo = load(filePath);
+            roiArray = foo.roiArray;
+            if strcmp(option,'merge')
+                arrayfun(@(x) self.addRoi(x),roiArray);
+            elseif strcmp(option,'replace')
+                self.roiArray = roiArray;
+                notify(self,'roiArrayReplaced');
+            end
         end
         
         function checkRoiImageSize(self,roi)
