@@ -107,6 +107,7 @@ classdef NrController < handle
             addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
             trialController = TrialController(trial);
             % trialController.addMap('anatomy');
+            trialController.setSyncTimeTrace(true);
             tagPrefix = sprintf('trial_%d',ind);
             trialController.setFigTagPrefix(tagPrefix);
             self.trialControllerArray{ind} = trialController;

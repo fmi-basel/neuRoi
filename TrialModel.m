@@ -9,6 +9,9 @@ classdef TrialModel < handle
         loadMovieOption
         rawMovie
         
+        yxShift
+        
+        roiFilePath
         roiArray
         
         intensityOffset
@@ -84,7 +87,10 @@ classdef TrialModel < handle
                 % TODO let user specify preprocessing option
                 self.preprocessMovie();
             end
-
+            
+            % Offset from original movie
+            self.yxShift = [0 0];
+            
             % Directory for saving results
             self.resultDir = pwd;
             
@@ -95,6 +101,7 @@ classdef TrialModel < handle
             self.calculateAndAddNewMap('anatomy');
             
             % Initialize ROI array
+            self.roiVisible = true;
             self.roiArray = RoiFreehand.empty();
             
         end
@@ -127,6 +134,21 @@ classdef TrialModel < handle
             self.rawMovie = movieFunc.subtractPreampRing(self.rawMovie,noSignalWindow);
         end
         
+        function shiftMovieYx(self,yxShift)
+            self.yxShift = self.yxShift+yxShift;
+            self.rawMovie = circshift(self.rawMovie,[yxShift 0]);
+            nMap = self.getMapArrayLength();
+            for k=1:nMap
+                map = self.getMapByInd(nMap);
+                map.data = circshift(map.data,yxShift);
+                self.mapArray{k} = map;
+                notify(self,'mapUpdated', ...
+                   NrEvent.ArrayElementUpdateEvent(k));
+            end
+
+        end
+
+        
         function mapSize = getMapSize(self)
             mapSize = size(self.rawMovie(:,:,1));
         end
@@ -143,7 +165,7 @@ classdef TrialModel < handle
             map = self.mapArray{self.currentMapInd};
         end
         
-        function calculateAndAddNewMap(self,mapType,varargin)
+        function map = calculateAndAddNewMap(self,mapType,varargin)
             map.type = mapType;
             [map.data,map.option] = self.calculateMap(mapType,varargin{:});
             self.addMap(map);

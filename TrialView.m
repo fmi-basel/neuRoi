@@ -18,8 +18,9 @@ classdef TrialView < handle
             self.guiHandles = trialGui(mapSize);
             
 
-            self.changeTraceFigVisibility();
+            self.displayTitle();
             self.displayMeta();
+            self.changeTraceFigVisibility();
             
             self.listenToModel();
             self.assignCallbacks();
@@ -83,6 +84,12 @@ classdef TrialView < handle
                 @(s,e)self.controller.traceFigClosed_Callback(s,e));
         end
         
+        function displayTitle(self)
+            set(self.guiHandles.mainFig,'Name', ...
+                              self.model.fileBaseName);
+            set(self.guiHandles.traceFig,'Name', ...
+                              [self.model.fileBaseName '_time_trace']);
+        end
         function displayMeta(self)
             meta = self.model.meta;
             metaStr = TrialView.convertOptionToString(meta);

@@ -29,12 +29,16 @@ classdef TrialController < handle
                     self.deleteSelectedRoi();
                   case 'r'
                     self.toggleRoiVisibility();
+                  case 'q'
+                    self.selectMap(1);
+                  case 'w'
+                    self.selectMap(2);
+                  case 'e'
+                    self.selectMap(3);
                 end
             elseif strcmp(evnt.Modifier,'control')
                 switch evnt.Key
                 % TODO select all ROI
-                  case 's'
-                    self.saveRoiArray();
                 end
             end
         end
@@ -47,6 +51,11 @@ classdef TrialController < handle
             self.model.calculateAndAddNewMap(type,varargin{:});
             self.model.selectMap(mapArrayLen+1);
         end
+        
+        function selectMap(self,ind)
+            self.model.selectMap(ind);
+        end
+        
         
         function mapButtonSelected_Callback(self,src,evnt)
             tag = evnt.NewValue.Tag;
@@ -117,7 +126,12 @@ classdef TrialController < handle
         
         % Methods for ROI based processing
         function toggleRoiVisibility(self)
-            self.model.roiVisible = ~self.model.roiVisible;
+            if self.model.roiVisible
+                self.model.roiVisible = false;
+            else
+                self.model.roiVisible = true;
+            end
+            % self.model.roiVisible = ~self.model.roiVisible;
         end
         
         function addRoiByDrawing(self)
@@ -239,13 +253,18 @@ classdef TrialController < handle
         end
 
         function saveRoiArray(self)
-            defFileName = [self.model.fileBaseName ...
+            if self.model.roiFilePath
+                self.model.saveRoiArray(self.model.roiFilePath);
+            else
+                defFileName = [self.model.fileBaseName ...
                                '_RoiArray.mat'];
-            defFilePath = fullfile(self.model.resultDir,defFileName);
-            [filePath,fileDir] = uiputfile('*.mat','Save ROIs',defFilePath);
-            if filePath
-                self.model.resultDir = fileDir;
-                self.model.saveRoiArray(filePath);
+                defFilePath = fullfile(self.model.resultDir,defFileName);
+                [filePath,fileDir] = uiputfile('*.mat','Save ROIs',defFilePath);
+                if filePath
+                    self.model.resultDir = fileDir;
+                    self.model.roiFilePath = filePath;
+                    self.model.saveRoiArray(filePath);
+                end
             end
         end
         
@@ -266,6 +285,10 @@ classdef TrialController < handle
                     self.model.loadRoiArray(filePath,option);
                 end
             end
+        end
+        
+        function setSyncTimeTrace(self,state)
+            self.model.syncTimeTrace = state;
         end
         
         function setFigTagPrefix(self,prefix)

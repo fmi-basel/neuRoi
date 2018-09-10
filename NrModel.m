@@ -2,9 +2,13 @@ classdef NrModel < handle
     properties (SetObservable)
         filePathArray
         trialArray
+
+        offsetYxMat
         
         loadMovieOption
         noSignalWindow
+        intensityOffset
+        
         currentTrialInd
     end
     
@@ -31,7 +35,12 @@ classdef NrModel < handle
             filePath = self.filePathArray{ind};
             trial = TrialModel(filePath, ...
                                self.loadMovieOption);
-            trial.preprocessMovie(self.noSignalWindow);
+            if self.offsetYxMat
+                offsetYx = offsetYxMat(ind,:);
+                trial.shiftMovieYx(offsetYx);
+            end
+            % trial.preprocessMovie(self.noSignalWindow);
+            trial.intensityOffset = self.intensityOffset;
             self.trialArray{ind} = trial;
         end
         

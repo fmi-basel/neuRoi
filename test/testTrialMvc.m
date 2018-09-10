@@ -18,6 +18,8 @@ trial = TrialModel(filePath,loadMovieOption);
 trcon = TrialController(trial);
 trial.syncTimeTrace = true;
 trial.intensityOffset = -10;
+%% anatomy map
+trcon.addMap('anatomy')
 %% response map
 responseOption = struct('offset',-10,'fZeroWindow',[100 200], ...
                         'responseWindow',[300 500]);
