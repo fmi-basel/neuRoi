@@ -10,6 +10,8 @@ classdef TrialModel < handle
         rawMovie
         
         roiArray
+        
+        intensityOffset
     end
         
     properties (Access = private)
@@ -18,7 +20,13 @@ classdef TrialModel < handle
     
     properties (SetObservable)
         currentMapInd
+        roiVisible
         selectedRoiTagArray
+        syncTimeTrace
+    end
+    
+    properties (Constant)
+        MAX_N_ROI = 200
     end
     
     events
@@ -29,6 +37,10 @@ classdef TrialModel < handle
         roiDeleted
         roiUpdated
         roiArrayReplaced
+        
+        roiSelected
+        roiUnSelected
+        roiSelectionCleared
         
         trialDeleted
     end
@@ -84,6 +96,7 @@ classdef TrialModel < handle
             
             % Initialize ROI array
             self.roiArray = RoiFreehand.empty();
+            
         end
         
         function loadMovie(self,filePath,loadMovieOption)
@@ -292,6 +305,11 @@ classdef TrialModel < handle
                 help TrialModel.addRoi
             end
             
+            nRoi = length(self.roiArray);
+            if nRoi >= self.MAX_N_ROI
+                error('Maximum number of ROIs exceeded!')
+            end
+            
             self.checkRoiImageSize(roi);
 
             if isempty(self.roiArray)
@@ -300,6 +318,7 @@ classdef TrialModel < handle
                 roi.tag = self.roiArray(end).tag+1;
             end
             self.roiArray(end+1) = roi;
+            
             notify(self,'roiAdded')
         end
         
@@ -317,8 +336,8 @@ classdef TrialModel < handle
             end
             
             if ~isequal(self.selectedRoiTagArray,[tag])
-                self.selectedRoiTagArray = [tag];
-                disp(sprintf('Roi #%d selected',tag))
+                self.unselectAllRoi();
+                self.selectRoi(tag);
             end
         end
         
@@ -326,6 +345,8 @@ classdef TrialModel < handle
             if ~ismember(tag,self.selectedRoiTagArray)
                 ind = self.findRoiByTag(tag);
                 self.selectedRoiTagArray(end+1)  = tag;
+                notify(self,'roiSelected',NrEvent.RoiEvent(tag));
+                disp(sprintf('ROI #%d selected',tag))
             end
         end
         
@@ -334,6 +355,7 @@ classdef TrialModel < handle
             tagInd = find(tagArray == tag);
             if tagInd
                 self.selectedRoiTagArray(tagInd) = [];
+                notify(self,'roiUnSelected',NrEvent.RoiEvent(tag));
             end
         end
         
@@ -343,6 +365,7 @@ classdef TrialModel < handle
         
         function unselectAllRoi(self)
             self.selectedRoiTagArray = [];
+            notify(self,'roiSelectionCleared');
         end
         
         function updateRoi(self,tag,varargin)
@@ -352,6 +375,7 @@ classdef TrialModel < handle
             freshRoi.tag = tag;
             self.checkRoiImageSize(freshRoi);
             self.roiArray(ind) = freshRoi;
+
             notify(self,'roiUpdated', ...
                    NrEvent.RoiUpdatedEvent(self.roiArray(ind)));
             disp(sprintf('Roi #%d updated',tag))
@@ -365,12 +389,12 @@ classdef TrialModel < handle
             notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
         end
         
-        function deleteRoi(self,tag)
-            ind = self.findRoiByTag(tag);
-            self.unselecRoi(tag);
-            self.roiArray(ind) = [];
-            notify(self,'roiDeleted',RoiDeletedEvent([tag]));
-        end
+        % function deleteRoi(self,tag)
+        %     ind = self.findRoiByTag(tag);
+        %     self.unselecRoi(tag);
+        %     self.roiArray(ind) = [];
+        %     notify(self,'roiDeleted',NrEvent.RoiDeletedEvent([tag]));
+        % end
         
         function roiArray = getRoiArray(self)
             roiArray = self.roiArray;
@@ -393,6 +417,10 @@ classdef TrialModel < handle
         function loadRoiArray(self,filePath,option)
             foo = load(filePath);
             roiArray = foo.roiArray;
+            nRoi = length(roiArray);
+                if nRoi >= self.MAX_N_ROI
+                    error('Maximum number of ROIs exceeded!')
+                end
             if strcmp(option,'merge')
                 arrayfun(@(x) self.addRoi(x),roiArray);
             elseif strcmp(option,'replace')
@@ -424,6 +452,14 @@ classdef TrialModel < handle
                                    tagArray);
         end
         
+        % Methods for time trace
+        function timeTrace = getTimeTraceByTag(self,tag)
+            ind = self.findRoiByTag(tag);
+            roi = self.roiArray(ind);
+            timeTrace = TrialModel.getTimeTrace(self.rawMovie,roi,...
+                                                self.intensityOffset);
+        end
+        
     end
     
     methods
@@ -436,6 +472,33 @@ classdef TrialModel < handle
         function option = calcDefaultLoadMovieOption(self)
             option.zrange = 'all';
             option.nFramePerStep = 1;
+        end
+        
+        function timeTraceDf = getTimeTrace(rawMovie,roi,varargin)
+        % GETTIMETRACE get time trace of dF/F within a ROI
+        % from the input raw movie
+        % Usage: getTimeTrace(rawMovie,roi,[intensityOffset])
+            
+            if nargin == 2
+                intensityOffset = 0;
+            elseif nargin == 3
+                intensityOffset = varargin{1};
+            else
+                error('Usage: getTimeTrace(rawMovie,roi,[intensityOffset])')
+            end
+            
+            mask = roi.createMask;
+            [maskIndX maskIndY] = find(mask==1);
+            roiMovie = rawMovie(maskIndX,maskIndY,:);
+            timeTraceRaw = mean(mean(roiMovie,1),2);
+            timeTraceRaw =timeTraceRaw(:);
+
+            timeTraceFg = timeTraceRaw - intensityOffset;
+            timeTraceSm = smooth(timeTraceFg,10);
+            fZero = quantile(timeTraceSm(10:end-10),0.1);
+            
+            % Time trace of dF/F, unit in percent
+            timeTraceDf = (timeTraceSm - fZero) / fZero * 100;
         end
     end
 end

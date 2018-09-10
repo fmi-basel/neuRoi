@@ -35,7 +35,12 @@ classdef NrView < handle
         
         function updateFileListBox(self)
             filePathArray = self.model.filePathArray;
-            set(self.guiHandles.fileListBox,'String',filePathArray);
+            fileNameArray = {};
+            for k = 1:length(filePathArray)
+                filePath = filePathArray{k};
+                [~,fileNameArray{k},~] = fileparts(filePath);
+            end
+            set(self.guiHandles.fileListBox,'String',fileNameArray);
         end
         
         function displayLoadMovieOption(self)

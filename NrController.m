@@ -47,15 +47,15 @@ classdef NrController < handle
 
         function selectTrial(self,ind)
             self.model.currentTrialInd = ind;
-            if isempty(ind)
-                disp('Unselect trial');
-            else 
-                disp(sprintf('trial #%d selected',ind));
-            end
+            % if isempty(ind)
+            %     disp('Unselect trial');
+            % else 
+            %     disp(sprintf('trial #%d selected',ind));
+            % end
         end
         
         function selectTrial_Callback(self,src,evnt)
-            disp('selectTrial_Callback called')
+        % disp('selectTrial_Callback called')
             fig = evnt.AffectedObject.(src.Name);
             if ~isempty(fig)
                 tag = fig.Tag;

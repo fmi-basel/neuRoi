@@ -17,6 +17,9 @@ classdef TrialView < handle
             mapSize = self.model.getMapSize();
             self.guiHandles = trialGui(mapSize);
             
+
+            self.changeTraceFigVisibility();
+            self.displayMeta();
             
             self.listenToModel();
             self.assignCallbacks();
@@ -27,6 +30,9 @@ classdef TrialView < handle
             addlistener(self.model,'mapArrayLengthChanged',@self.toggleMapButtonValidity);
             addlistener(self.model,'mapUpdated',...
                         @self.updateMapDisplay);
+            
+            addlistener(self.model,'roiVisible','PostSet',...
+                        @self.changeRoiVisibility);
             addlistener(self.model,'roiAdded',@self.drawLastRoiPatch);
             addlistener(self.model,'selectedRoiTagArray','PostSet',...
                         @self.updateRoiPatchSelection);
@@ -36,6 +42,15 @@ classdef TrialView < handle
                         @self.updateRoiPatchPosition);
             addlistener(self.model,'roiArrayReplaced',...
                         @(~,~)self.redrawAllRoiPatch());
+            
+            addlistener(self.model,'syncTimeTrace','PostSet',...
+                        @(~,~)self.changeTraceFigVisibility());
+            addlistener(self.model,'roiSelected',...
+                        @self.updateTimeTraceDisplay);
+            addlistener(self.model,'roiUnSelected',...
+                        @self.updateTimeTraceDisplay);
+            addlistener(self.model,'roiSelectionCleared',...
+                        @self.updateTimeTraceDisplay);
         end
         
         function assignCallbacks(self)
@@ -61,8 +76,18 @@ classdef TrialView < handle
                 @(~,~)self.controller.saveRoiArray());
             set(self.guiHandles.loadRoiMenu,'Callback',...
                 @(~,~)self.controller.loadRoiArray());
+            
+            set(self.guiHandles.traceFig,'WindowKeyPressFcn',...
+                @(s,e)self.controller.keyPressCallback(s,e));
+            set(self.guiHandles.traceFig,'CloseRequestFcn', ...
+                @(s,e)self.controller.traceFigClosed_Callback(s,e));
         end
         
+        function displayMeta(self)
+            meta = self.model.meta;
+            metaStr = TrialView.convertOptionToString(meta);
+            set(self.guiHandles.metaText,'String',metaStr);
+        end
         
         % Methods for displaying maps
         function selectAndDisplayMap(self,src,evnt)
@@ -272,6 +297,52 @@ classdef TrialView < handle
             end
         end
         
+        function changeRoiVisibility(self,src,evnt)
+            if self.model.roiVisible
+                roiState = 'on';
+            else
+                roiState = 'off';
+            end
+            roiPatchArray = self.getRoiPatchArray();
+            arrayfun(@(x) set(x,'Visible',roiState), roiPatchArray);
+        end
+        
+        
+        % Methods for displaying time traces
+        function updateTimeTraceDisplay(self,src,evnt)
+            if self.model.syncTimeTrace
+                switch evnt.EventName
+                  case 'roiSelected'
+                    tag = evnt.tag;
+                    timeTrace = self.model.getTimeTraceByTag(tag);
+                    self.plotTimeTrace(timeTrace,tag);
+                  case 'roiUnSelected'
+                    tag = evnt.tag;
+                    lineTag = sprintf('trace_%04d',tag);
+                    hline = findobj(self.guiHandles.traceAxes,'Tag',lineTag);
+                    delete(hline)
+                  case 'roiSelectionCleared'
+                    cla(self.guiHandles.traceAxes)
+                    hold(self.guiHandles.traceAxes,'on')
+                end
+            end
+            figure(self.guiHandles.mainFig)
+        end
+        
+        function hline = plotTimeTrace(self,timeTrace,tag)
+            lineTag = sprintf('trace_%04d',tag);
+            hline = plot(self.guiHandles.traceAxes,timeTrace,...
+                         'Tag',lineTag);
+        end
+        
+        function changeTraceFigVisibility(self);
+            if self.model.syncTimeTrace
+                set(self.guiHandles.traceFig,'Visible','on');
+            else
+                set(self.guiHandles.traceFig,'Visible','off');
+            end
+            figure(self.guiHandles.mainFig)
+        end
         
         function setFigTagPrefix(self,prefix)
             mainFig = self.guiHandles.mainFig;

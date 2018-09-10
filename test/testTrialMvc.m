@@ -12,7 +12,17 @@ filePathArray = cellfun(@(x) fullfile(dataDir,subDir,[x '.tif']), ...
                         fileBaseNameArray,'UniformOutput',false);
 %% Initiate TrialModel
 filePath = filePathArray{1};
-loadMovieOption.zrange = [1 100];
+loadMovieOption.zrange = [1 100] %[101 2000];
 loadMovieOption.nFramePerStep = 2;
 trial = TrialModel(filePath,loadMovieOption);
 trcon = TrialController(trial);
+trial.syncTimeTrace = true;
+trial.intensityOffset = -10;
+%% response map
+responseOption = struct('offset',-10,'fZeroWindow',[100 200], ...
+                        'responseWindow',[300 500]);
+trcon.addMap('response',responseOption);
+%% max response map
+responseMaxOption = struct('offset',-10,'fZeroWindow',[100 200], ...
+                        'slidingWindowSize',100);
+trcon.addMap('responseMax',responseMaxOption);

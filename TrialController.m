@@ -16,12 +16,19 @@ classdef TrialController < handle
         end
         
         function keyPressCallback(self,src,evnt)
+            if strcmp(src.Tag,'traceFig')
+                disp('switch to main figure')
+                figure(self.view.guiHandles.mainFig)
+            end
+
             if isempty(evnt.Modifier)
                 switch evnt.Key
                   case 'f'
                     self.addRoiByDrawing();
                   case {'d','delete','backspace'}
                     self.deleteSelectedRoi();
+                  case 'r'
+                    self.toggleRoiVisibility();
                 end
             elseif strcmp(evnt.Modifier,'control')
                 switch evnt.Key
@@ -109,7 +116,12 @@ classdef TrialController < handle
         end
         
         % Methods for ROI based processing
+        function toggleRoiVisibility(self)
+            self.model.roiVisible = ~self.model.roiVisible;
+        end
+        
         function addRoiByDrawing(self)
+            self.model.roiVisible = true;
             rawRoi = imfreehand;
             if ~isempty(rawRoi)
                 position = rawRoi.getPosition();
@@ -129,8 +141,11 @@ classdef TrialController < handle
             selectedObj = gco;
             if RoiFreehand.isaRoiPatch(selectedObj)
                 self.roiClicked_Callback(selectedObj);
-            elseif isequal(selectedObj,self.view.guiHandles.mapImage)
-                self.model.unselectAllRoi();
+            elseif isequal(selectedObj, ...
+                           self.view.guiHandles.mapImage)
+                if ~isempty(self.model.selectedRoiTagArray)
+                    self.model.unselectAllRoi();
+                end
             end
         end
         
@@ -259,6 +274,14 @@ classdef TrialController < handle
         
         function raiseView(self)
             self.view.raiseFigures();
+        end
+        
+        function traceFigClosed_Callback(self,src,evnt)
+            if isvalid(self.view.guiHandles.mainFig)
+                src.Visible = 'off';
+            else
+                delete(src)
+            end
         end
         
         function mainFigClosed_Callback(self,src,evnt)
