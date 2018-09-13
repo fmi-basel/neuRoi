@@ -1,5 +1,5 @@
-function mapData = getMapData(filePath,loadMovieOption,varargin)
-trial = TrialModel(filePath,loadMovieOption);
+function mapData = getMapData(filePath,loadMovieOption,preprocessOption,varargin)
+trial = TrialModel(filePath,loadMovieOption,preprocessOption);
 map = trial.calculateAndAddNewMap(varargin{:});
 mapData = map.data;
 

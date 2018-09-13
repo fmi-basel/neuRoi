@@ -99,10 +99,6 @@ classdef NrController < handle
         
         function openTrial(self,ind)
             self.model.loadTrial(ind);
-            % TODO loadMovieOption
-            % TODO preprocessing
-            % preprocessOption = self.view.getPreprocessOption();
-            % TODO trial.preprocess
             trial = self.model.getTrialByInd(ind);
             addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
             trialController = TrialController(trial);

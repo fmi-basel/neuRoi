@@ -5,7 +5,7 @@ classdef TrialModel < handle
         resultDir
         
         meta
-        noSignalWindow
+        preprocessOption
         loadMovieOption
         rawMovie
         
@@ -55,6 +55,10 @@ classdef TrialModel < handle
             elseif nargin == 2
                 filePath = varargin{1};
                 loadMovieOption = varargin{2};
+            elseif nargin == 3
+                filePath = varargin{1};
+                loadMovieOption = varargin{2};
+                preprocessOption = varargin{3}
             else
                 error(['Wrong usage!']);
             end
@@ -84,8 +88,17 @@ classdef TrialModel < handle
                 self.loadMovie(self.filePath,loadMovieOption);
                 
                 % Preprocess movie
-                % TODO let user specify preprocessing option
-                self.preprocessMovie();
+                if ~exist('preprocessOption','var')
+                    self.preprocessOption = struct('process',true,...
+                                              'noSignalWindow',[1 ...
+                                        12]);
+                else
+                    self.preprocessOption = preprocessOption;
+                end
+                
+                if self.preprocessOption.process
+                    self.preprocessMovie(self.preprocessOption.noSignalWindow);
+                end
             end
             
             % Offset from original movie
@@ -135,6 +148,8 @@ classdef TrialModel < handle
         end
         
         function shiftMovieYx(self,yxShift)
+            disp('Shift movie by yxShift')
+            disp(yxShift)
             self.yxShift = self.yxShift+yxShift;
             self.rawMovie = circshift(self.rawMovie,[yxShift 0]);
             nMap = self.getMapArrayLength();
@@ -148,6 +163,9 @@ classdef TrialModel < handle
 
         end
 
+        function transfromMovie2D(self,tform)
+        end
+        
         
         function mapSize = getMapSize(self)
             mapSize = size(self.rawMovie(:,:,1));
@@ -411,12 +429,12 @@ classdef TrialModel < handle
             notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
         end
         
-        % function deleteRoi(self,tag)
-        %     ind = self.findRoiByTag(tag);
-        %     self.unselecRoi(tag);
-        %     self.roiArray(ind) = [];
-        %     notify(self,'roiDeleted',NrEvent.RoiDeletedEvent([tag]));
-        % end
+        function deleteRoi(self,tag)
+            ind = self.findRoiByTag(tag);
+            self.unselectRoi(tag);
+            self.roiArray(ind) = [];
+            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent([tag]));
+        end
         
         function roiArray = getRoiArray(self)
             roiArray = self.roiArray;
@@ -481,6 +499,26 @@ classdef TrialModel < handle
             timeTrace = TrialModel.getTimeTrace(self.rawMovie,roi,...
                                                 self.intensityOffset);
         end
+        
+        function [timeTraceMat,roiTagArray] = ...
+                extractTimeTraceMat(self,varargin)
+            if nargin == 1
+                % intensityOffset does not change
+            elseif nargin ==2
+                self.intensityOffset = varargin{2};
+            end
+            nRoi = length(self.roiArray);
+            timeTraceMat = zeros(nRoi,size(self.rawMovie,3));
+            roiTagArray = zeros(1,nRoi);
+            for k=1:nRoi
+                roi = self.roiArray(k);
+                timeTrace = TrialModel.getTimeTrace(self.rawMovie,roi,...
+                                       self.intensityOffset);
+                timeTraceMat(k,:) = timeTrace;
+                roiTagArray(k) = roi.tag;
+            end
+        end
+        
         
     end
     

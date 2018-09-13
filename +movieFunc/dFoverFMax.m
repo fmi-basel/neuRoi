@@ -18,6 +18,6 @@ dfOvrF = cellfun(@(x) conv2(x,fspecial('gaussian',[3 3], 2), ...
                             'same'),dfOvrFRaw,'UniformOutput', false);
 dfOvrF = cell2mat(dfOvrF);
 
-responseMaxMap = max(dfOvrF,[],3);
+responseMaxMap = max(abs(dfOvrF),[],3);
 
 

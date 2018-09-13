@@ -259,9 +259,10 @@ classdef TrialController < handle
                 defFileName = [self.model.fileBaseName ...
                                '_RoiArray.mat'];
                 defFilePath = fullfile(self.model.resultDir,defFileName);
-                [filePath,fileDir] = uiputfile('*.mat','Save ROIs',defFilePath);
-                if filePath
+                [fileName,fileDir] = uiputfile('*.mat','Save ROIs',defFilePath);
+                if fileName
                     self.model.resultDir = fileDir;
+                    filePath = fullfile(fileDir,fileName);
                     self.model.roiFilePath = filePath;
                     self.model.saveRoiArray(filePath);
                 end
@@ -269,9 +270,9 @@ classdef TrialController < handle
         end
         
         function loadRoiArray(self)
-            [filePath,fileDir] = uigetfile('*.mat','Load ROIs', ...
+            [fileName,fileDir] = uigetfile('*.mat','Load ROIs', ...
                                            self.model.resultDir);
-            if filePath
+            if fileName
                 % Ask user whether to merge with existing ROIs or
                 % replace the ROIs
                 answer = questdlg('How would you like to load new ROIs?', ...
@@ -281,6 +282,7 @@ classdef TrialController < handle
                 if strcmp(answer,'Cancel')
                     return
                 else
+                    filePath = fullfile(fileDir,fileName)
                     option = lower(answer);
                     self.model.loadRoiArray(filePath,option);
                 end

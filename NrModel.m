@@ -6,21 +6,33 @@ classdef NrModel < handle
         offsetYxMat
         
         loadMovieOption
-        noSignalWindow
+        preprocessOption
         intensityOffset
+        
+        resultDir
         
         currentTrialInd
     end
     
     methods
-        function self = NrModel(filePathArray)
+        function self = NrModel(filePathArray,varargin)
             self.filePathArray = filePathArray;
             nFile = length(filePathArray);
             self.trialArray = cell(1,nFile);
             
-            self.loadMovieOption = ...
-                TrialModel.calcDefaultLoadMovieOption();
-            self.noSignalWindow = [1 12];
+            if nargin == 1
+                self.loadMovieOption = ...
+                    TrialModel.calcDefaultLoadMovieOption();
+                self.preprocessOption = struct('process',true,...
+                                               'noSignalWindow',[1 ...
+                                    12]);
+            elseif nargin == 3
+                self.loadMovieOption = varargin{1};
+                self.preprocessOption = varargin{2};
+            else
+                error('Wrong usage!')
+            end
+                
         end
         
         function nFile = getNFile(self)
@@ -34,13 +46,14 @@ classdef NrModel < handle
         function loadTrial(self,ind)
             filePath = self.filePathArray{ind};
             trial = TrialModel(filePath, ...
-                               self.loadMovieOption);
-            if self.offsetYxMat
-                offsetYx = offsetYxMat(ind,:);
+                               self.loadMovieOption,...
+                               self.preprocessOption);
+            if ~isempty(self.offsetYxMat)
+                offsetYx = self.offsetYxMat(ind,:);
                 trial.shiftMovieYx(offsetYx);
             end
-            % trial.preprocessMovie(self.noSignalWindow);
             trial.intensityOffset = self.intensityOffset;
+            trial.resultDir = self.resultDir;
             self.trialArray{ind} = trial;
         end
         
