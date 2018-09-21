@@ -1,8 +1,8 @@
-function plotMapStack(mapArray,filePathArray,zlim,nCol)
+function fig = plotMapStack(mapArray,filePathArray,zlim,nCol,mapType)
 nMap = length(mapArray);
-nRow = ceil(nMap/nCol);
+nRow = ceil((nMap+1)/nCol);
 
-figWidth = 1700;
+figWidth = 1800;
 figHeight = 300*nRow;
 fig = figure('InnerPosition',[200 500 figWidth figHeight]);
 for k=1:nMap
@@ -15,7 +15,17 @@ for k=1:nMap
     title(titleStr);
     set(get(ax,'Title'),'Visible','on');
     caxis(zlim)
+    if strcmp(mapType,'anatomy')
+        colormap(gray)
+    end
 end
+subplot(nRow,nCol,nMap+1)
+caxis(zlim)
+if strcmp(mapType,'anatomy')
+    colormap(gray)
+end
+colorbar('Location','west')
+axis off
 
 function depth = getDepth(filePath)
 [~,fileBaseName,~] = fileparts(filePath);

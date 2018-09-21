@@ -1,4 +1,4 @@
-function handles = shiftImageManually(fixedImg,movingImg)
+function handles = shiftImageManually(movingImg,fixedImg)
 shiftLim = [-20 20];
 fig = figure;
 gdt.fixedImg = fixedImg;
