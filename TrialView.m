@@ -338,6 +338,7 @@ classdef TrialView < handle
         
         function hline = plotTimeTrace(self,timeTrace,tag)
             lineTag = sprintf('trace_%04d',tag);
+            figure(self.guiHandles.traceFig)
             hline = plot(self.guiHandles.traceAxes,timeTrace,...
                          'Tag',lineTag);
         end
