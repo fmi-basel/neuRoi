@@ -553,11 +553,12 @@ classdef TrialModel < handle
             timeTraceRaw = mean(mean(roiMovie,1),2);
             timeTraceRaw =timeTraceRaw(:);
 
-            timeTraceSm = smooth(timeTraceRaw,10);
+            timeTraceFg = timeTraceRaw - intensityOffset;
+            timeTraceSm = smooth(timeTraceFg,10);
             fZero = quantile(timeTraceSm(10:end-10),0.1);
             
             % Time trace of dF/F, unit in percent
-            timeTraceDf = (timeTraceSm - fZero) / (fZero - intensityOffset) * 100;
+            timeTraceDf = (timeTraceSm - fZero) / fZero * 100;
         end
     end
 end
