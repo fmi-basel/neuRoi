@@ -54,17 +54,34 @@ currentTrialInd = mymodel.currentTrialInd;
 trial = mymodel.getTrialByInd(currentTrialInd);
 % trcon = mycontroller.trialControllerArray(currentTrialInd);
 %% responseMap
+currentTrialInd = mymodel.currentTrialInd;
+trial = mymodel.getTrialByInd(currentTrialInd);
 responseOption = struct('offset',mymodel.intensityOffset,...
                         'fZeroWindow',[100 200],...
                         'responseWindow',[400 600]);
 trial.calculateAndAddNewMap('response',responseOption);
 %trial.updateMap(2,responseOption)
 %% responseMax map
+currentTrialInd = mymodel.currentTrialInd;
+trial = mymodel.getTrialByInd(currentTrialInd);
 responseMaxOption = struct('offset',mymodel.intensityOffset,...
                         'fZeroWindow',[100 200],...
                         'slidingWindowSize',100);
 trial.calculateAndAddNewMap('responseMax',responseMaxOption);
+%% Import anatomy map from external file
+currentTrialInd = mymodel.currentTrialInd;
+trial = mymodel.getTrialByInd(currentTrialInd);
+
+% The external map should be a TIFF file with one plane
+% and same width and height as the movie file
+rfpMapFile = '/home/hubo/Desktop/C2-AVG_NT0012_f1_57dpf_lOB_Ala_003_.tif';
+trial.importMap(rfpMapFile);
+
+
+
 %% localCorrelation map
+currentTrialInd = mymodel.currentTrialInd;
+trial = mymodel.getTrialByInd(currentTrialInd);
 localCorrelationOption.tileSize = 16;
 trial.calculateAndAddNewMap('localCorrelation', ...
                             localCorrelationOption);
