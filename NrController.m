@@ -39,6 +39,35 @@ classdef NrController < handle
             end
         end
         
+        function loadRangeText_Callback(self,src,evnt)
+            startText = self.view.guiHandles.loadRangeStartText;
+            endText = self.view.guiHandles.loadRangeEndText;
+            startStr = startText.String;
+            endStr = endText.String;
+            startFrameNum = round(str2num(startStr));
+            endFrameNum = round(str2num(endStr));
+            
+            switch src.Tag
+              case 'loadrange_start_text'
+                if startFrameNum < 1
+                    startFramenNum = 1;
+                end
+                if startFrameNum > endFrameNum
+                    startFrameNum = endFrameNum;
+                end
+                self.model.loadMovieOption.zrange = ...
+                    [startFrameNum,endFrameNum];
+                set(src,'String',num2str(startFrameNum));
+              case 'loadrange_end_text'
+                if endFrameNum < startFrameNum
+                    endFrameNum = startFrameNum;
+                end
+                self.model.loadMovieOption.zrange = ...
+                    [startFrameNum,endFrameNum];
+                set(src,'String',num2str(endFrameNum));
+            end
+        end
+        
         function loadStepText_Callback(self,src,evnt)
             stepStr = src.String;
             nFramePerStep = str2num(stepStr);

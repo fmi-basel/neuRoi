@@ -212,6 +212,15 @@ classdef TrialModel < handle
             notify(self,'mapUpdated',NrEvent.ArrayElementUpdateEvent(mapInd));
         end
         
+        function importMap(self,mapFilePath)
+            map.type = 'import';
+            [~,map.option.fileName,~] = fileparts(mapFilePath);
+            
+            TifLink = Tiff(mapFilePath, 'r');
+            map.data = TifLink.read();
+            self.addMap(map);
+        end
+        
         function saveContrastLimToCurrentMap(self,contrastLim)
             self.mapArray{self.currentMapInd}.contrastLim = ...
                 contrastLim;

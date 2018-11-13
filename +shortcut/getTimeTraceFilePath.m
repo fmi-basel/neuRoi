@@ -1,5 +1,13 @@
-function ttFilePath = getTimeTraceFilePath(filePath,traceResultDir)
+function ttFilePath = getTimeTraceFilePath(filePath,traceResultDir, ...
+                                                    appendix)
+if ~exist('appendix','var')
+    appendix = '';
+end
 [~,fileBaseName,~] = fileparts(filePath);
-resFileName = [fileBaseName '_traceResult.mat'];
+if appendix
+    resFileName = [fileBaseName '_traceResult_' appendix '.mat'];
+else
+    resFileName = [fileBaseName '_traceResult.mat'];
+end
 ttFilePath = fullfile(traceResultDir,resFileName);
 

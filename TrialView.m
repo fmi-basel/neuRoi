@@ -147,21 +147,19 @@ classdef TrialView < handle
         function plotMap(self,map)
             mapAxes = self.guiHandles.mapAxes;
             mapImage = self.guiHandles.mapImage;
+            set(mapImage,'CData',map.data);
             switch map.type
               case 'anatomy'
-                set(mapImage,'CData',map.data);
                 colormap(mapAxes,gray);
               case 'response'
-                set(mapImage,'CData',map.data);
                 colormap(mapAxes,'default');
               case 'responseMax'
-                set(mapImage,'CData',map.data);
                 colormap(mapAxes,'default');
               case 'localCorrelation'
-                set(mapImage,'CData',map.data);
                 colormap(mapAxes,'default');
+              case 'import'
+                colormap(mapAxes,gray);
               otherwise
-                set(mapImage,'CData',map.data);
                 colormap(mapAxes,'default');
             end
         end

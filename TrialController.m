@@ -51,7 +51,7 @@ classdef TrialController < handle
             self.model.calculateAndAddNewMap(type,varargin{:});
             self.model.selectMap(mapArrayLen+1);
         end
-        
+                
         function selectMap(self,ind)
             self.model.selectMap(ind);
         end

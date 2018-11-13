@@ -12,7 +12,7 @@ for k=1:nMap
     ax.Visible = 'off';
     depth = getDepth(filePathArray{k});
     titleStr = sprintf('%d um',depth);
-    title(titleStr);
+    title(titleStr,'FontSize', 24);
     set(get(ax,'Title'),'Visible','on');
     caxis(zlim)
     if strcmp(mapType,'anatomy')
@@ -26,6 +26,7 @@ if strcmp(mapType,'anatomy')
 end
 colorbar('Location','west')
 axis off
+set(gca, 'FontSize', 22)
 
 function depth = getDepth(filePath)
 [~,fileBaseName,~] = fileparts(filePath);
