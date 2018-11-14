@@ -2,7 +2,7 @@ classdef NrController < handle
     properties
         model
         view
-        trialControllerArray
+        trialContrlArray
         rootListener
     end
     
@@ -11,9 +11,9 @@ classdef NrController < handle
             self.model = mymodel;
             self.view = NrView(mymodel,self);
 
-            nFile = self.model.getNFile();
-            self.trialControllerArray = cell(1,nFile);
-            % Listento MATLAB root object for changing of current figure
+            % nFile = self.model.getNFile();
+            self.trialContrlArray = TrialController.empty;
+            % Listen to MATLAB root object for changing of current figure
             self.rootListener = listener(groot,'CurrentFigure','PostSet',@self.selectTrial_Callback);
         end
         
@@ -114,6 +114,18 @@ classdef NrController < handle
             end
         end
         
+        function openTrial_Callback(self,src,evnt)
+            [fileName,fileDir] = uigetfile({'*.tif','TIFF files (*.tif)'});
+            filePath = fullfile(fileDir,fileName);
+            trial = self.model.loadTrial(filePath);
+            addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
+            trialContrl = TrialController(trial);
+            trialContrl.setSyncTimeTrace(true);
+            self.trialContrlArray(end+1) = trialContrl;
+            trialContrl.raiseView();
+        end
+        
+        
         function res = isTrialOpened(self,ind)
             trialController = self.trialControllerArray{ind};
             trial = self.model.getTrialByInd(ind);
@@ -126,17 +138,13 @@ classdef NrController < handle
             end
         end
         
-        function openTrial(self,ind)
-            self.model.loadTrial(ind);
-            trial = self.model.getTrialByInd(ind);
+        function openTrial(self,filePath,varargin)
+            trial = self.model.loadTrial(filePath,varargin{:});
             addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
-            trialController = TrialController(trial);
-            % trialController.addMap('anatomy');
-            trialController.setSyncTimeTrace(true);
-            tagPrefix = sprintf('trial_%d',ind);
-            trialController.setFigTagPrefix(tagPrefix);
-            self.trialControllerArray{ind} = trialController;
-            trialController.raiseView();
+            trialContrl = TrialController(trial);
+            trialContrl.setSyncTimeTrace(true);
+            self.trialContrlArray(end+1) = trialContrl;
+            trialContrl.raiseView();
         end
         
         function raiseTrialView(self,ind)

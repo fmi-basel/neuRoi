@@ -1,65 +1,57 @@
 classdef NrModel < handle
     properties (SetObservable)
-        filePathArray
         trialArray
-
-        offsetYxMat
-        
-        loadMovieOption
-        preprocessOption
-        intensityOffset
-        
-        resultDir
-        
         currentTrialInd
+
+        %loadMovieOption
+        %preprocessOption
+        %intensityOffset
+        % offsetYxMat
+        
     end
     
     methods
-        function self = NrModel(filePathArray,varargin)
-            self.filePathArray = filePathArray;
-            nFile = length(filePathArray);
-            self.trialArray = cell(1,nFile);
-            
-            if nargin == 1
-                self.loadMovieOption = ...
-                    TrialModel.calcDefaultLoadMovieOption();
-                self.preprocessOption = struct('process',true,...
-                                               'noSignalWindow',[1 ...
-                                    12]);
-            elseif nargin == 3
-                self.loadMovieOption = varargin{1};
-                self.preprocessOption = varargin{2};
-            else
-                error('Wrong usage!')
+        function self = NrModel()
+            self.trialArray = TrialModel.empty;
+        end
+        
+        function trial = loadTrial(self,varargin)
+            tagArray = arrayfun(@(x) x.tag,self.trialArray, ...
+                                'Uniformoutput',false);
+            tag = helper.generateRandomTag(6);
+            nstep = 1;
+            while ismember(tag,tagArray) && nstep < 100
+                tag = helper.generateRandomTag(5);
+                nstep = nstep+1;
             end
-                
-        end
-        
-        function nFile = getNFile(self)
-            nFile = length(self.filePathArray);
-        end
             
-        function addFilePath(self,filePath)
-            self.filePathArray{end+1} = filePath;
+            trial = TrialModel(varargin{:});
+            trial.tag = tag;
+            self.trialArray(end+1) = trial;
         end
         
-        function loadTrial(self,ind)
-            filePath = self.filePathArray{ind};
-            trial = TrialModel(filePath, ...
-                               self.loadMovieOption,...
-                               self.preprocessOption);
-            if ~isempty(self.offsetYxMat)
-                offsetYx = self.offsetYxMat(ind,:);
-                trial.shiftMovieYx(offsetYx);
-            end
-            trial.intensityOffset = self.intensityOffset;
-            trial.resultDir = self.resultDir;
-            self.trialArray{ind} = trial;
+        function deleteTrial(self,tag)
+            self.trialArray(ind) = [];
         end
         
-        function trial = getTrialByInd(self,ind)
-            trial = self.trialArray{ind};
+        function trial = getTrial(self,tag)
+            trial = self.trialArray(ind);
+        end
+        
+        function ind = getTrialInd(self,tag)
+        %a
+        end
+           
+        function calcAndAddMapWrap(self,tagArray,varargin)
+        %a
+        end
+        
+        function updateMapWrap(self,tagArray,varargin)
+        %a
+        end
+        
+        function importMapWrap(self,tagArray,varargin)
+        %a
         end
     end
-    
 end

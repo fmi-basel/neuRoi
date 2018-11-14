@@ -11,8 +11,8 @@ classdef NrView < handle
             self.controller = mycontroller;
             self.guiHandles = neuRoiGui();
             
-            self.updateFileListBox();
-            self.displayLoadMovieOption();
+            % self.updateFileListBox();
+            % self.displayLoadMovieOption();
             
             self.listenToModel();
             self.assignCallbacks();
@@ -34,7 +34,7 @@ classdef NrView < handle
         end
         
         function listenToModel(self)
-            addlistener(self.model,'filePathArray','PostSet',@self.updateFileListBox);
+        % addlistener(self.model,'filePathArray','PostSet',@self.updateFileListBox);
         end
         
         function updateFileListBox(self)

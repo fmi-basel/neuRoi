@@ -77,8 +77,6 @@ trial = mymodel.getTrialByInd(currentTrialInd);
 rfpMapFile = '/home/hubo/Desktop/C2-AVG_NT0012_f1_57dpf_lOB_Ala_003_.tif';
 trial.importMap(rfpMapFile);
 
-
-
 %% localCorrelation map
 currentTrialInd = mymodel.currentTrialInd;
 trial = mymodel.getTrialByInd(currentTrialInd);

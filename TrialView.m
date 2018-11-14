@@ -86,9 +86,13 @@ classdef TrialView < handle
         
         function displayTitle(self)
             set(self.guiHandles.mainFig,'Name', ...
-                              self.model.fileBaseName);
+                              self.model.name);
             set(self.guiHandles.traceFig,'Name', ...
-                              [self.model.fileBaseName '_time_trace']);
+                              [self.model.name '_time_trace']);
+            
+            set(self.guiHandles.mainFig,'Tag',self.model.tag);
+            set(self.guiHandles.traceFig,'Tag',[self.model.tag ...
+                                '_time_trace']);
         end
         function displayMeta(self)
             meta = self.model.meta;
@@ -350,14 +354,14 @@ classdef TrialView < handle
             figure(self.guiHandles.mainFig)
         end
         
-        function setFigTagPrefix(self,prefix)
-            mainFig = self.guiHandles.mainFig;
-            traceFig = self.guiHandles.traceFig;
-            mainFigTag = mainFig.Tag;
-            set(mainFig,'Tag',[prefix '_' mainFigTag])
-            traceFigTag = traceFig.Tag;
-            set(traceFig,'Tag',[prefix '_' traceFigTag])
-        end
+        % function setFigTagPrefix(self,prefix)
+        %     mainFig = self.guiHandles.mainFig;
+        %     traceFig = self.guiHandles.traceFig;
+        %     mainFigTag = mainFig.Tag;
+        %     set(mainFig,'Tag',[prefix '_' mainFigTag])
+        %     traceFigTag = traceFig.Tag;
+        %     set(traceFig,'Tag',[prefix '_' traceFigTag])
+        % end
 
         function raiseFigures(self)
             mainFig = self.guiHandles.mainFig;

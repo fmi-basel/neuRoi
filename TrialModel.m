@@ -1,20 +1,23 @@
 classdef TrialModel < handle
     properties
         filePath
+        loadMovieOption
+        preprocessOption
+
+        yxShift
+        intensityOffset
+
         fileBaseName
-        resultDir
+        tag
+        name
+        
         
         meta
-        preprocessOption
-        loadMovieOption
         rawMovie
         
-        yxShift
-        
-        roiFilePath
         roiArray
-        
-        intensityOffset
+        resultDir
+        roiFilePath
     end
         
     properties (Access = private)
@@ -69,6 +72,7 @@ classdef TrialModel < handle
                          'an TrialModel object with a random ' ...
                          'movie.'])
                 [~,self.fileBaseName,~] = fileparts(filePath);
+                self.name = self.fileBaseName;
                 self.meta = struct('width',12,...
                                    'height',10,...
                                    'totalNFrame',5);
@@ -77,6 +81,7 @@ classdef TrialModel < handle
                                      self.meta.totalNFrame);
             else
                 [~,self.fileBaseName,~] = fileparts(filePath);
+                self.name = self.fileBaseName;
                 
                 % Read data from file
                 self.meta = movieFunc.readMeta(self.filePath);
