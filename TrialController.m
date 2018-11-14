@@ -310,9 +310,9 @@ classdef TrialController < handle
         end
         
         function mainFigClosed_Callback(self,src,evnt)
+            delete(self.model);
             self.view.deleteFigures();
             delete(self.view);
-            delete(self.model);
             delete(self);
         end
         

@@ -74,32 +74,23 @@ classdef NrController < handle
             self.model.loadMovieOption.nFramePerStep = nFramePerStep;
         end
 
-        function selectTrial(self,ind)
-            self.model.currentTrialInd = ind;
-            % if isempty(ind)
-            %     disp('Unselect trial');
-            % else 
-            %     disp(sprintf('trial #%d selected',ind));
-            % end
-        end
-        
         function selectTrial_Callback(self,src,evnt)
-        % disp('selectTrial_Callback called')
             fig = evnt.AffectedObject.(src.Name);
             if ~isempty(fig)
                 tag = fig.Tag;
-                indStr =  regexp(tag,'trial_(\d+)*','tokens');
-                if ~isempty(indStr)
-                    ind = str2num(indStr{1}{1});
-                    self.selectTrial(ind);
+                trialTag = regexp(tag,'trial_([a-zA-Z0-9]+)_','tokens');
+                if ~isempty(trialTag)
+                    self.model.selectTrial(trialTag{1}{1});
                 end
             end
         end
 
         function trialDeleted_Callback(self,src,evnt)
-            ind = [];
-            self.selectTrial(ind);
-            self.view.raiseMainWindow();
+            trialTag = src.tag;
+            idx = self.model.getTrialIdx(trialTag);
+            self.model.selectTrial([]);
+            self.model.trialArray(idx) = [];
+            self.trialContrlArray(idx) = [];
         end
         
         function fileListBox_Callback(self,src,evnt)

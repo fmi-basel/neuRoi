@@ -89,10 +89,9 @@ classdef TrialView < handle
                               self.model.name);
             set(self.guiHandles.traceFig,'Name', ...
                               [self.model.name '_time_trace']);
-            
-            set(self.guiHandles.mainFig,'Tag',self.model.tag);
-            set(self.guiHandles.traceFig,'Tag',[self.model.tag ...
-                                '_time_trace']);
+            ttag = ['trial_' self.model.tag];
+            set(self.guiHandles.mainFig,'Tag',[ttag '_main_fig']);
+            set(self.guiHandles.traceFig,'Tag',[ttag '_time_trace']);
         end
         function displayMeta(self)
             meta = self.model.meta;
