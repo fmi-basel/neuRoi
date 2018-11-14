@@ -4,18 +4,20 @@ addpath('..');
 clear all
 close all
 %% File paths
-dataDir = '/home/hubo/Projects/Ca_imaging/data/';
+dataDir = '/home/hubo/Projects/Ca_imaging/data/2018-07-06-OB3trial';
 subDir = '2018-08-15-OBGCmarker/';
-fileBaseNameArray={'BH25_34dpf_OGB_2channel_longOdor_70um_trp_004_',...
-                  'BH25_34dpf_OGB_2channel_longOdor_70um_food_004_'};
-filePathArray = cellfun(@(x) fullfile(dataDir,subDir,[x '.tif']), ...
+fileBaseNameArray={'BH18_30dpf_f6_rOB_55um_sr1_1ala_001_.tif',...
+                   'BH18_30dpf_f6_rOB_55um_sr1_2trp_003_.tif'}
+
+filePathArray = cellfun(@(x) fullfile(dataDir,x), ...
                         fileBaseNameArray,'UniformOutput',false);
 %% NrMvc
 mymodel = NrModel();
 mycon = NrController(mymodel);
-mycon.openTrial(filePathArray{1});
+zrange = [1 200]
+mycon.openTrial(filePathArray{1},zrange);
 %% Open another trial
-mycon.openTrial(filePathArray{2});
+mycon.openTrial(filePathArray{2},zrange);
 % %% Initialize model
 % mymodel = NrModel(filePathArray);
 % mymodel.loadMovieOption.zrange = [1 100];

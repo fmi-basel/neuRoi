@@ -52,22 +52,31 @@ classdef TrialModel < handle
     end
     
     methods
-        function self = TrialModel(varargin)
-            if nargin == 1
-                filePath = varargin{1};
-            elseif nargin == 2
-                filePath = varargin{1};
-                loadMovieOption = varargin{2};
-            elseif nargin == 3
-                filePath = varargin{1};
-                loadMovieOption = varargin{2};
-                preprocessOption = varargin{3}
-            else
-                error(['Wrong usage!']);
-            end
+        function self = TrialModel(filePath,varargin)
+            defaultLoadMovieOption = struct('zrange','all',...
+                                            'nFramePerStep',1);
+            defaultPreprocessOption = struct('process',false);
+
+            pa = inputParser;
+            addRequired(pa,'filePath',@ischar);
+            addOptional(pa,'zrange','all');
+            addOptional(pa,'nFramePerStep',1)
+            addOptional(pa,'process',false);
+            addOptional(pa,'noSignalWindow',[1 12]);
+            validYxShift = @(x) isequal(size(x),[1 2]);
+            addParameter(pa,'yxShift',[0 0],validYxShift);
+            addParameter(pa,'intensityOffset',0);
+            addParameter(pa,'resultDir',pwd());
+            parse(pa,filePath,varargin{:})
+            pr = pa.Results;
             
-            self.filePath = filePath;
-            if ~exist(filePath,'file')
+            self.filePath = pr.filePath;
+            self.loadMovieOption = struct('zrange',pr.zrange,...
+                                          'nFramePerStep', ...
+                                          pr.nFramePerStep);
+            self.preprocessOption = struct('process',pr.process,...
+                                           'noSignalWindow',pr.noSignalWindow);
+            if ~exist(self.filePath,'file')
                 warning(['The file path does not exist! returning ' ...
                          'an TrialModel object with a random ' ...
                          'movie.'])
@@ -80,37 +89,17 @@ classdef TrialModel < handle
                                      self.meta.width,...
                                      self.meta.totalNFrame);
             else
-                [~,self.fileBaseName,~] = fileparts(filePath);
+                [~,self.fileBaseName,~] = fileparts(self.filePath);
                 self.name = self.fileBaseName;
                 
                 % Read data from file
                 self.meta = movieFunc.readMeta(self.filePath);
-                if ~exist('loadMovieOption','var')
-                    loadMovieOption = ...
-                        TrialModel.calcDefaultLoadMovieOption();
-                end
-                self.loadMovieOption = loadMovieOption;
-                self.loadMovie(self.filePath,loadMovieOption);
-                
-                % Preprocess movie
-                if ~exist('preprocessOption','var')
-                    self.preprocessOption = struct('process',true,...
-                                              'noSignalWindow',[1 ...
-                                        12]);
-                else
-                    self.preprocessOption = preprocessOption;
-                end
+                self.loadMovie(self.filePath,self.loadMovieOption);
                 
                 if self.preprocessOption.process
                     self.preprocessMovie(self.preprocessOption.noSignalWindow);
                 end
             end
-            
-            % Offset from original movie
-            self.yxShift = [0 0];
-            
-            % Directory for saving results
-            self.resultDir = pwd;
             
             % Initialize map array
             self.mapArray = {};
@@ -542,12 +531,7 @@ classdef TrialModel < handle
         end
     end
     
-    methods (Static)
-        function option = calcDefaultLoadMovieOption(self)
-            option.zrange = 'all';
-            option.nFramePerStep = 1;
-        end
-        
+    methods (Static)        
         function timeTraceDf = getTimeTrace(rawMovie,roi,varargin)
         % GETTIMETRACE get time trace of dF/F within a ROI
         % from the input raw movie
