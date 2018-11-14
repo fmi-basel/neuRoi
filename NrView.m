@@ -31,6 +31,10 @@ classdef NrView < handle
                 @(s,e)self.controller.loadRangeText_Callback(s,e));
             set(self.guiHandles.loadStepText,'Callback',...
                 @(s,e)self.controller.loadStepText_Callback(s,e));
+            
+            set(self.guiHandles.addResponseMapButton,'Callback',...
+                @(s,e)self.controller.addResponseMap_Callback(s,e));
+
         end
         
         function listenToModel(self)

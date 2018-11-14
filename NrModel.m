@@ -60,8 +60,11 @@ classdef NrModel < handle
         end
         
            
-        function calcAndAddMapWrap(self,tagArray,varargin)
-        %a
+        function addMapWrap(self,tagArray,varargin)
+            if strcmp(tagArray,'current')
+                trial = self.trialArray(self.currentTrialIdx);
+                trial.calculateAndAddNewMap(varargin{:})
+            end
         end
         
         function updateMapWrap(self,tagArray,varargin)

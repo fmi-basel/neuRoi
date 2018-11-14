@@ -143,6 +143,17 @@ classdef NrController < handle
             trialController.raiseView();
         end
         
+        
+        % Map related callbacks
+        function addResponseMap_Callback(self,src,evnt)
+            responseOption = struct('offset',-10,...
+                                    'fZeroWindow',[10 20],...
+                                    'responseWindow',[40 50]);
+            self.model.addMapWrap('current','response',responseOption);
+        end
+        
+        
+        
         function mainFigClosed_Callback(self,src,evnt)
             self.view.deleteFigures();
             delete(self.view);
