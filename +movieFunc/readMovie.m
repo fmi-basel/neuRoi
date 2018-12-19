@@ -54,4 +54,5 @@ function rawMovie = readMovie(filePath,meta,varargin)
         rawMovie(:,:,k) = TifLink.read();
     end
     TifLink.close();
+    warning('on','all');
 end

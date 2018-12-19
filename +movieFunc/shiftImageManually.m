@@ -1,13 +1,19 @@
-function handles = shiftImageManually(movingImg,fixedImg)
+function handles = shiftImageManually(movingImg,fixedImg,climit)
 shiftLim = [-20 20];
 fig = figure;
-gdt.fixedImg = fixedImg;
-gdt.movingImg = movingImg;
+
+if exist('climit')
+    gdt.fixedImg = imadjust(mat2gray(fixedImg),climit);
+    gdt.movingImg = imadjust(mat2gray(movingImg),climit);
+else
+    gdt.fixedImg = fixedImg;
+    gdt.movingImg = movingImg;
+end
 gdt.shiftXy = [0 0];
 gdt.handles.imgAxes = axes('Position',[0.15 0.3 0.7 0.68]);
+handles.imgAxes = gdt.handles.imgAxes;
 % imshowpair(fixedImg, movingImg,'Scaling','joint','Parent',gdt.handles.imgAxes);
-imshowpair(fixedImg, movingImg,'Scaling','independent','Parent',gdt.handles.imgAxes);
-% imshowpair(fixedImg, movingImg,'diff','Parent',gdt.handles.imgAxes);
+imshowpair(gdt.fixedImg, gdt.movingImg,'Scaling','joint','Parent',gdt.handles.imgAxes);
 
 xText = uicontrol(fig,'Style','text',...
                   'String','X',...
@@ -47,8 +53,5 @@ switch src.Tag
 end
 newImg = imtranslate(gdt.movingImg,shiftXy);
 imshowpair(gdt.fixedImg, newImg,'Scaling','joint','Parent',gdt.handles.imgAxes);
-imshowpair(gdt.fixedImg, newImg,'Scaling','joint','Parent',gdt.handles.imgAxes);
-% imshowpair(gdt.fixedImg,
-% newImg,'diff','Parent',gdt.handles.imgAxes);
 gdt.shiftXy = shiftXy;
 guidata(src,gdt);

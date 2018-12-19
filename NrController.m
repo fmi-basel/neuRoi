@@ -108,12 +108,7 @@ classdef NrController < handle
         function openTrial_Callback(self,src,evnt)
             [fileName,fileDir] = uigetfile({'*.tif','TIFF files (*.tif)'});
             filePath = fullfile(fileDir,fileName);
-            trial = self.model.loadTrial(filePath);
-            addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
-            trialContrl = TrialController(trial);
-            trialContrl.setSyncTimeTrace(true);
-            self.trialContrlArray(end+1) = trialContrl;
-            trialContrl.raiseView();
+            self.openTrial(filePath)
         end
         
         

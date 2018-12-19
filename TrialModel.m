@@ -90,7 +90,8 @@ classdef TrialModel < handle
                                      self.meta.totalNFrame);
             else
                 [~,self.fileBaseName,~] = fileparts(self.filePath);
-                self.name = self.fileBaseName;
+                self.name = ...
+                    TrialModel.getDefaultTrialName(self.fileBaseName,pr.zrange,pr.nFramePerStep);
                 
                 % Read data from file
                 self.meta = movieFunc.readMeta(self.filePath);
@@ -99,7 +100,21 @@ classdef TrialModel < handle
                 if self.preprocessOption.process
                     self.preprocessMovie(self.preprocessOption.noSignalWindow);
                 end
+                
+                if pr.resultDir
+                    self.resultDir = pr.resultDir;
+                end
             end
+            
+            % Intensity offset for calculating dF/F
+            self.intensityOffset = pr.intensityOffset;
+            
+            % shift movie in x and y axis
+            self.yxShift = [0 0];
+            if pr.yxShift
+                self.shiftMovieYx(pr.yxShift)
+            end
+
             
             % Initialize map array
             self.mapArray = {};
@@ -183,6 +198,12 @@ classdef TrialModel < handle
             self.addMap(map);
         end
         
+        function findAndUpdateMap(self,mapType,mapOption)
+            mapInd = find(cellfun(@(x) strcmp(x.type,mapType),self.mapArray));
+            mapInd = mapInd(1);
+            self.updateMap(mapInd,mapOption);
+        end
+            
         function selectMap(self,ind)
             self.currentMapInd = ind;
         end
@@ -237,23 +258,18 @@ classdef TrialModel < handle
         % Method to calculate anatomy map
         % Usage: anatomyMap = nrmodel.calcAnatomy([nFrameLimit])
         % nFrameLimit: 1x2 array of two integers that specify the
-        % beginning and end number of frames used to calculate the anatomy.
-            if nargin == 1
-                nFrameLimit = [1 size(self.rawMovie,3)];
-            elseif nargin == 2
-                if isfield(varargin{1},'nFrameLimit')
-                    nFrameLimit = varargin{1}.nFrameLimit;
-                else
-                    nFrameLimit = varargin{1};
-                end
-            else
-                error('Usage: nrmodel.calcAnatomy(''nFrameLimit'',nFrameLimit)')
-            end
+        % beginning and end number of frames used to calculate the
+        % anatomy.
+            pp = inputParser;
             
-            if isempty(nFrameLimit)
-                nFrameLimit = [1 size(self.rawMovie,3)];
-            end
-
+            defaultNFrameLimit = [1 size(self.rawMovie,3)];
+            addOptional(pp,'nFrameLimit',defaultNFrameLimit);
+            addParameter(pp,'sigma',0);
+            
+            parse(pp,varargin{:});
+            pr = pp.Results;
+            
+            nFrameLimit = pr.nFrameLimit;
             if ~(length(nFrameLimit) && nFrameLimit(2)>= ...
                  nFrameLimit(1))
                 error(['nFrameLimit should be an 1x2 integer array with ' ...
@@ -266,6 +282,10 @@ classdef TrialModel < handle
             
             mapData = mean(self.rawMovie(:,:,nFrameLimit(1): ...
                                             nFrameLimit(2)),3);
+            if pr.sigma
+                mapData = conv2(mapData,fspecial('gaussian',[3 3], pr.sigma),'same');
+                mapOption.sigma = pr.sigma;
+            end
             mapOption.nFrameLimit = nFrameLimit;
         end
         
@@ -558,5 +578,13 @@ classdef TrialModel < handle
             % Time trace of dF/F, unit in percent
             timeTraceDf = (timeTraceSm - fZero) / fZero * 100;
         end
+        
+        function dfName = getDefaultTrialName(fileBaseName,zrange, ...
+                                                           nFramePerStep)
+            dfName = sprintf('%s_frame%dto%dby%d',fileBaseName, ...
+                             zrange(1),zrange(2),nFramePerStep);
+        end
+                
+
     end
 end

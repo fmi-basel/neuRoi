@@ -55,24 +55,29 @@ classdef NrModel < handle
             self.trialArray(idx) = [];
         end
         
-        function trial = getTrial(self,tag)
-            trial = self.trialArray(ind);
+        function trial = getCurrentTrial(self)
+            trial = self.trialArray(self.currentTrialIdx);
         end
-        
            
         function addMapWrap(self,tagArray,varargin)
             if strcmp(tagArray,'current')
                 trial = self.trialArray(self.currentTrialIdx);
-                trial.calculateAndAddNewMap(varargin{:})
+                trial.calculateAndAddNewMap(varargin{:});
             end
         end
         
         function updateMapWrap(self,tagArray,varargin)
-        %a
+            if strcmp(tagArray,'current')
+                trial = self.trialArray(self.currentTrialIdx);
+                trial.findAndUpdateMap(varargin{:});
+            end
         end
         
         function importMapWrap(self,tagArray,varargin)
-        %a
+            if strcmp(tagArray,'current')
+                trial = self.trialArray(self.currentTrialIdx);
+                trial.importMap(varargin{:});
+            end
         end
     end
 end
