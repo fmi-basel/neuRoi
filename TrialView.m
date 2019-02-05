@@ -322,7 +322,7 @@ classdef TrialView < handle
                 switch evnt.EventName
                   case 'roiSelected'
                     tag = evnt.tag;
-                    timeTrace = self.model.getTimeTraceByTag(tag);
+                    timeTrace = self.model.getTimeTraceByTag(tag,true);
                     self.plotTimeTrace(timeTrace,tag);
                   case 'roiUnSelected'
                     tag = evnt.tag;

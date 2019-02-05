@@ -59,7 +59,7 @@ classdef TrialModel < handle
 
             pa = inputParser;
             addRequired(pa,'filePath',@ischar);
-            addOptional(pa,'zrange','all');
+            addOptional(pa,'zrange','all', @(s) ischar(s)|ismatrix(s));
             addOptional(pa,'nFramePerStep',1)
             addOptional(pa,'process',false);
             addOptional(pa,'noSignalWindow',[1 12]);
@@ -516,11 +516,17 @@ classdef TrialModel < handle
         end
         
         % Methods for time trace
-        function timeTrace = getTimeTraceByTag(self,tag)
+        function timeTrace = getTimeTraceByTag(self,tag,varargin)
+            if nargin == 2
+                sm = false;
+            elseif nargin == 3
+                sm = varargin{1};
+            end
+
             ind = self.findRoiByTag(tag);
             roi = self.roiArray(ind);
             timeTrace = TrialModel.getTimeTrace(self.rawMovie,roi,...
-                                                self.intensityOffset);
+                                                self.intensityOffset,sm);
         end
         
         function [timeTraceMat,roiTagArray] = ...
@@ -559,8 +565,13 @@ classdef TrialModel < handle
             
             if nargin == 2
                 intensityOffset = 0;
+                sm = false;
             elseif nargin == 3
                 intensityOffset = varargin{1};
+                sm = false;
+            elseif nargin == 4
+                intensityOffset = varargin{1};
+                sm = varargin{2};
             else
                 error('Usage: getTimeTrace(rawMovie,roi,[intensityOffset])')
             end
@@ -572,11 +583,18 @@ classdef TrialModel < handle
             timeTraceRaw =timeTraceRaw(:);
 
             timeTraceFg = timeTraceRaw - intensityOffset;
-            timeTraceSm = smooth(timeTraceFg,10);
-            fZero = quantile(timeTraceSm(10:end-10),0.1);
-            
-            % Time trace of dF/F, unit in percent
-            timeTraceDf = (timeTraceSm - fZero) / fZero * 100;
+            if sm
+                timeTraceSm = smooth(timeTraceFg,10);
+                fZero = quantile(timeTraceSm(10:end-10),0.1);
+                
+                % Time trace of dF/F, unit in percent
+                timeTraceDf = (timeTraceSm - fZero) / fZero;
+            else
+                fZero = quantile(timeTraceRaw(10:end-10),0.15);
+                
+                % Time trace of dF/F, unit in percent
+                timeTraceDf = (timeTraceRaw - fZero) / fZero;
+            end
         end
         
         function dfName = getDefaultTrialName(fileBaseName,zrange, ...
