@@ -3,7 +3,7 @@ function binned = binMovie(rawMovie,shrinkFactors,binMethod)
 %     Args:
 %         rawMovie (NxMxL matrix): matrix containing raw movie
 %         data with each axis representing x, y, and z (time).
-%         shrinkFactors (1x3): shrink factor on x, y and z axis.
+%         shrinkFactors (1x3 array): shrink factor on x, y and z axis.
 %         binMethod (char): method for binning the data, can be
 %         'mean', 'max' or 'min'.
 %     Returns:
@@ -50,19 +50,12 @@ function binned = binMovie(rawMovie,shrinkFactors,binMethod)
     
     if doBinningZ
         % shrink in Z
-        binned = zeros(binnedSize);
         if doBinningXy
             movieToBin = binnedXy;
         else
             movieToBin = rawMovie;
         end
-        movieToBinSize = size(movieToBin)
-        for kx = 1:movieToBinSize(1)
-            for ky = 1:movieToBinSize(2)
-                binned(kx,ky,:) = bin1D(movieToBin(kx,ky,:),shrinkFactors(3),...
-                                            binMethod);
-            end
-        end
+        binned = binZ(movieToBin,shrinkFactors(3));
     end
     
 function binnedVec = bin1D(vec,shrinkFactor,binMethod)
@@ -92,3 +85,15 @@ function binnedMat = bin2D(mat,shrinkFactors,binMethod)
           shrinkFactors(2),matSize(2)/shrinkFactors(2)];
     binnedMat = permute(reshape(mat,shp),[1 3 2 4]);
     binnedMat = squeeze(mean(mean(binnedMat,1),2));
+
+    
+function binnedMat = binZ(mat,shrinkFactor,binMethod)
+    if mod(size(mat,3),shrinkFactor)
+        error('Shrink factor must divide the length in Z!')
+    end
+    
+    matSize = size(mat);
+    shp = [matSize(1),matSize(2),shrinkFactor,matSize(3)/ ...
+           shrinkFactor];
+    binnedMat = reshape(mat,shp);
+    binnedMat = squeeze(mean(binnedMat,3));

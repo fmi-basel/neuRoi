@@ -59,10 +59,10 @@ classdef TrialModel < handle
 
             pa = inputParser;
             addRequired(pa,'filePath',@ischar);
-            addOptional(pa,'zrange','all', @(s) ischar(s)|ismatrix(s));
-            addOptional(pa,'nFramePerStep',1)
-            addOptional(pa,'process',false);
-            addOptional(pa,'noSignalWindow',[1 12]);
+            addParameter(pa,'zrange','all', @(s) ischar(s)|ismatrix(s));
+            addParameter(pa,'nFramePerStep',1)
+            addParameter(pa,'process',false);
+            addParameter(pa,'noSignalWindow',[1 12]);
             validYxShift = @(x) isequal(size(x),[1 2]);
             addParameter(pa,'yxShift',[0 0],validYxShift);
             addParameter(pa,'intensityOffset',0);

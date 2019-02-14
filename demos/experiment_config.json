@@ -1,0 +1,28 @@
+{"expInfo": {
+  "name": "Example experiment",
+  "zposList": [0],
+  "nPlane": 1,
+  "nTrial": 3,
+  "odorList": ["ala",
+               "trp",
+               "ser",
+               "acsf"
+               ],
+
+  "rawFile":{"ala": ["f1.tif","f2.tif"]}
+}}
+
+
+pos1
+zpos = 0
+planeNum = 1
+rawFile = ala: f1.tif, f2.tif
+          trp: fx1.tif, fx2.tif
+
+
+pos2
+zpos = 5
+planeNum = 1
+rawFile = ala: f1.tif, f2.tif
+          trp: fx1.tif, fx2.tif
+

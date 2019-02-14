@@ -1,15 +1,15 @@
-function anatomyArray = calcAnatomyFromFile(inDir, fileNameArray, trialOpt, ...
-                                    outDir)
+function anatomyArray = calcAnatomyFromFile(inDir,fileNameArray, ...
+                                            trialOpt,outDir)
 % CALCANATOMY Calculate anatomy map from files in a directory
 % Args:
-%     inDir (string): input directory
-%     fileNameArray (cell array): array containing input file names
-%     trialOption (structure): options for load trials
-%     outDir (string): output directory
+%     inDir (char): input directory.
+%     fileNameArray (cell array): array containing input file names.
+%     trialOption (structure): options for load trials.
+%     outDir (char): output directory.
 % Returns:
 %     anatomyArray (N*M*K matrix): array of anatomy images, N and M
 %     are dimensions of the anatomy images, K is the dimension of
-%     each file
+%     each file.
 nFile = length(fileNameArray)
 filePathArray = cellfun(@(x) fullfile(inDir,x), ...
                         fileNameArray,'UniformOutput',false);
