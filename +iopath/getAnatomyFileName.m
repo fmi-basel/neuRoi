@@ -1,6 +1,4 @@
-function anaFileName = getAnatomyFileName(fileName, trialOpt)
+function anaFileName = getAnatomyFileName(fileName)
 [~,fileBaseName,~] = fileparts(fileName);
-trialName = TrialModel.getDefaultTrialName(fileBaseName, ...
-                                           trialOpt.zrange,trialOpt.nFramePerStep);
-anaFileName = ['anatomy_' trialName '.tif'];
+anaFileName = ['anatomy_' fileBaseName '.tif'];
 

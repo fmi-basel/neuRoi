@@ -19,6 +19,8 @@ expInfo.rawFileList = {'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2
 '20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s3_o3ala_001_.tif',...
 '20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s3_o4acsf_001_.tif'};
 
+% Frame rate of acquisition TODO in the future read from file
+expInfo.frameRate = 30;
 expInfo.rawFileList = expInfo.rawFileList(1);
 %% Define file path
 dataRootDir = '/media/hubo/Bo_FMI/Ca_imaging/';
@@ -27,33 +29,29 @@ resultRootDir = '/home/hubo/Projects/Ca_imaging/results';
 rawDataDir = fullfile(dataRootDir,'raw_data',expInfo.name);
 procDataDir = fullfile(dataRootDir,'processed_data',expInfo.name);
 
-
-
+anatomyDir = fullfile(resultRootDir,expInfo.name,'anatomy_map');
 %% Binning raw moive
 % TODO deal with file not exist in TrialModel
-% TODO number of frames after binning wrong
 if ~exist(procDataDir)
     mkdir(procDataDir)
 end
 shrinkZ = 5;
 shrinkFactors = [1, 1, shrinkZ];
 noSignalWindow = [0 12];
-% batch.binMovieFromFile(rawDataDir,expInfo.rawFileList, ...
-%                        shrinkFactors,procDataDir,...
-%                        'process',true,'noSignalWindow',noSignalWindow);
-filePath = fullfile(rawDataDir,expInfo.rawFileList{1});
-trial = TrialModel(filePath);
-binned = movieFunc.binMovie(trial.rawMovie,shrinkFactors, ...
-                                'mean');
-%% Save Tiff
-binnedCut = binned(:,:,1:5);
-size(binnedCut)
-outFilePath = '~/Desktop/test.tif';
-movieFunc.saveTiff(movieFunc.convertToUint(binnedCut,8), ...
-                   outFilePath);
-
+batch.binMovieFromFile(rawDataDir,expInfo.rawFileList, ...
+                       shrinkFactors,procDataDir,...
+                       'process',true,'noSignalWindow',noSignalWindow);
 %% Calculate anatomy maps (average over frames)
+if ~exist(anatomyDir)
+    mkdir(anatomyDir)
+end
+binnedNameList = cellfun(@(x) iopath.getBinnedFileName(x,shrinkFactors),...
+                         expInfo.rawFileList,'Uniformoutput',false)
+anatomyArray = batch.calcAnatomyFromFile(procDataDir, binnedNameList, anatomyDir);
+
+
 %% Align trials
+
 %% Draw ROIs on representative trials
 % todo automate combine ROI map?
 %% Extract time trace with template ROI in all trials

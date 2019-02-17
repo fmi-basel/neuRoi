@@ -1,4 +1,4 @@
-function binMovieFromFile(inDir,fileNameArray,shrinkFactors,outDir,varargin)
+function outFileNameArray = binMovieFromFile(inDir,fileNameArray,shrinkFactors,outDir,varargin)
 % BINMOVIEFROMFILE bin movies from files in a directory
 %     Args:
 %         inDir (char): input directory
