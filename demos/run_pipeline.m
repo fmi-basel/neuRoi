@@ -19,7 +19,7 @@ expInfo.rawFileList = {'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2
 '20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s3_o3ala_001_.tif',...
 '20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s3_o4acsf_001_.tif'};
 
-expInfo.rawFileList = expInfo.rawFileList(1:2);
+expInfo.rawFileList = expInfo.rawFileList(1);
 %% Define file path
 dataRootDir = '/media/hubo/Bo_FMI/Ca_imaging/';
 resultRootDir = '/home/hubo/Projects/Ca_imaging/results';
@@ -38,9 +38,19 @@ end
 shrinkZ = 5;
 shrinkFactors = [1, 1, shrinkZ];
 noSignalWindow = [0 12];
-batch.binMovieFromFile(rawDataDir,expInfo.rawFileList, ...
-                       shrinkFactors,procDataDir,...
-                       'process',true,'noSignalWindow',noSignalWindow);
+% batch.binMovieFromFile(rawDataDir,expInfo.rawFileList, ...
+%                        shrinkFactors,procDataDir,...
+%                        'process',true,'noSignalWindow',noSignalWindow);
+filePath = fullfile(rawDataDir,expInfo.rawFileList{1});
+trial = TrialModel(filePath);
+binned = movieFunc.binMovie(trial.rawMovie,shrinkFactors, ...
+                                'mean');
+%% Save Tiff
+binnedCut = binned(:,:,1:5);
+size(binnedCut)
+outFilePath = '~/Desktop/test.tif';
+movieFunc.saveTiff(movieFunc.convertToUint(binnedCut,8), ...
+                   outFilePath);
 
 %% Calculate anatomy maps (average over frames)
 %% Align trials

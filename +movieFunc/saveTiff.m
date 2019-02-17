@@ -24,10 +24,7 @@ if ndims(movieMat) == 2
     setTag(tifHandle,tagStruct);
     write(tifHandle,movieMat);
 elseif ndims(movieMat) == 3
-    tagStruct1 = tagStruct;
-    tagStruct1.SubIFD = 2 ;  % required to create subdirectories
-    setTag(tifHandle,tagStruct1)
-
+    setTag(tifHandle,tagStruct)
     write(tifHandle,movieMat(:,:,1));
     for k=2:size(movieMat,3)
         writeDirectory(tifHandle);
