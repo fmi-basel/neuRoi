@@ -2,12 +2,11 @@
 addpath('../')
 %% Create experiment database
 clear expInfo
-expInfo.odorList = {'ala','trp','ser','acsf','spont'};
+expInfo.odorList = {'ala','trp','ser','acsf','tca','tdca','gca''spont'};
 expInfo.nTrial = 3;
 expInfo.name = '2018-12-21-OBTel';
 expInfo.rawFileList = {'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s1_o1trp_001_.tif',...
 '20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s1_o2ala_001_.tif',...
-'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s1_o2ala_reference_002_.tif',...
 '20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s1_o3ser_001_.tif',...
 '20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s1_o4acsf_001_.tif',...
 '20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s2_o1ala_001_.tif',...
@@ -17,43 +16,122 @@ expInfo.rawFileList = {'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2
 '20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s3_o1ser_001_.tif',...
 '20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s3_o2trp_001_.tif',...
 '20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s3_o3ala_001_.tif',...
-'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s3_o4acsf_001_.tif'};
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s3_o4acsf_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s4_o1tdca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s4_o2tca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s4_o3gca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s5_o1tca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s5_o2tdca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s5_o3gca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s5_o3gca_002_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s6_o1tdca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s6_o2gca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s6_o3tca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s7_o1ala_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s7_o2gca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s8_o1ala_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s8_o2tdca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s8_o3tca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s8_o4gca_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s9_o1spont_001_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s9_o1spont_002_.tif',...
+'20181221_BH18_29dpf_fish3_postTel_zm_z156um_moreVentral2_s9_o1spont_003_.tif',...
+};
 
+% expInfo.rawFileList = expInfo.rawFileList(1:2);
 % Frame rate of acquisition TODO in the future read from file
 expInfo.frameRate = 30;
-expInfo.rawFileList = expInfo.rawFileList(1);
+% expInfo.rawFileList = expInfo.rawFileList(1);
 %% Define file path
 dataRootDir = '/media/hubo/Bo_FMI/Ca_imaging/';
 resultRootDir = '/home/hubo/Projects/Ca_imaging/results';
 
-rawDataDir = fullfile(dataRootDir,'raw_data',expInfo.name);
-procDataDir = fullfile(dataRootDir,'processed_data',expInfo.name);
+expInfo.rawDataDir = fullfile(dataRootDir,'raw_data',expInfo.name);
+% procDataDir =
+% fullfile(dataRootDir,'processed_data',expInfo.name);
+
+expInfo.binnedDir = fullfile(resultRootDir,expInfo.name,'binned_movie');
+if ~exist(binnedDir)
+    mkdir(binnedDir)
+end
 
 anatomyDir = fullfile(resultRootDir,expInfo.name,'anatomy_map');
-%% Binning raw moive
-% TODO deal with file not exist in TrialModel
-if ~exist(procDataDir)
-    mkdir(procDataDir)
-end
-shrinkZ = 5;
-shrinkFactors = [1, 1, shrinkZ];
-noSignalWindow = [0 12];
-batch.binMovieFromFile(rawDataDir,expInfo.rawFileList, ...
-                       shrinkFactors,procDataDir,...
-                       'process',true,'noSignalWindow',noSignalWindow);
-%% Calculate anatomy maps (average over frames)
 if ~exist(anatomyDir)
     mkdir(anatomyDir)
 end
-binnedNameList = cellfun(@(x) iopath.getBinnedFileName(x,shrinkFactors),...
-                         expInfo.rawFileList,'Uniformoutput',false)
-anatomyArray = batch.calcAnatomyFromFile(procDataDir, binnedNameList, anatomyDir);
+
+alignDir = fullfile(resultRootDir,expInfo.name,'alignment');
+if ~exist(alignDir)
+    mkdir(alignDir)
+end
+
+roiDir = fullfile(resultRootDir,expInfo.name,'roi');
+if ~exist(roiDir)
+    mkdir(roiDir)
+end
 
 
+
+% Parameters for binning
+shrinkZ = 5;
+expInfo.binning.shrinkFactors = [1, 1, shrinkZ];
+% Parameters for preprocessing of raw data
+process = true;
+noSignalWindow = [1 12];
+% Binned file names
+binnedFileList = cellfun(@(x)iopath.getBinnedFileName(x,...
+                                    expInfo.binning.shrinkFactors),...
+                         expInfo.rawFileList,'Uniformoutput',false);
+% Anatomy file names
+anatomyFileList = cellfun(@(x)iopath.getAnatomyFileName(x),...
+                         binnedFileList,'Uniformoutput',false);
+
+%% Binning raw moive
+% TODO deal with file not exist in TrialModel
+batch.binMovieFromFile(rawDataDir, ...
+                       expInfo.rawFileList, ...
+                       expInfo.binning.shrinkFactors,...
+                       binnedDir,...
+                       'process',true, ...
+                       'noSignalWindow',noSignalWindow);
+%% Calculate anatomy maps (average over frames)
+batch.calcAnatomyFromFile(binnedDir, ...
+                          binnedFileList, ...
+                          anatomyDir);
 %% Align trials
+templateInd = 9;
+alignFileName = sprintf('regResult_template%d.mat',templateInd)
+alignFilePath = fullfile(alignDir,alignFileName);
+plotFig = true;
+climit = [0 0.4];
+regResult = batch.alignTrials(anatomyDir,anatomyFileList, ...
+                              templateInd,alignFilePath,plotFig,climit);
+regResult.offsetYxMat
+
+expInfo.alignFilePath = alignFilePath;
+%% Open NeuRoi GUI
+mymodel = NrModel(expInfo);
+mycon = NrController(mymodel);
 
 %% Draw ROIs on representative trials
-% todo automate combine ROI map?
+% TODO automate combine ROI map?
+% Parameters for loading movie
+zrange = 'all';
+nFramePerStep = 1;
+% Parameters for preprocessing
+process = true;
+noSignalWindow = [1 12];
+% Parameters for calculating dF/F trace
+intensityOffset = -10;
+
+fileIdx = 3;
+mycon.openTrial(fileIdx,'binned',...
+                'intensityOffset',intensityOffset,...
+                'resultDir',roiDir);
+
+
+
+
 %% Extract time trace with template ROI in all trials
 % Apply template ROI map and correct ROI in each trial
 %% Average time trace for each odor

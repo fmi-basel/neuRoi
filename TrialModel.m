@@ -96,6 +96,8 @@ classdef TrialModel < handle
                 self.loadMovie(self.filePath,self.loadMovieOption);
                 
                 if self.preprocessOption.process
+                    disp('Processing image: no signal widow:')
+                    disp(self.preprocessOption.noSignalWindow)
                     self.preprocessMovie(self.preprocessOption.noSignalWindow);
                 end
                 

@@ -16,11 +16,7 @@ nFile = length(fileNameArray)
 for k=1:nFile
     fileName = fileNameArray{k}
     filePath = fullfile(inDir,fileName);
-    if exist('trialOpt','var')
-        trial = TrialModel(filePath,varargin{:});
-    else
-        trial = TrialModel(filePath);
-    end
+    trial = TrialModel(filePath,varargin{:});
     binned = movieFunc.binMovie(trial.rawMovie,shrinkFactors, ...
                                 'mean');
     outFileName = iopath.getBinnedFileName(fileName,shrinkFactors);

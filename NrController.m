@@ -98,19 +98,13 @@ classdef NrController < handle
             if strcmp(fig.SelectionType,'open')
                 ind = src.Value;
                 if self.isTrialOpened(ind)
-                    self.raiseTrialView(ind);
+                    %self.raiseTrialView(ind);
+                    % TODO raise view by tag
                 else
                     self.openTrial(ind);
                 end
             end
         end
-        
-        function openTrial_Callback(self,src,evnt)
-            [fileName,fileDir] = uigetfile({'*.tif','TIFF files (*.tif)'});
-            filePath = fullfile(fileDir,fileName);
-            self.openTrial(filePath)
-        end
-        
         
         function res = isTrialOpened(self,ind)
             trialController = self.trialControllerArray{ind};
@@ -124,8 +118,8 @@ classdef NrController < handle
             end
         end
         
-        function openTrial(self,filePath,varargin)
-            trial = self.model.loadTrial(filePath,varargin{:});
+        function openTrial(self,fileIdx,fileType,varargin)
+            trial = self.model.loadTrial(fileIdx,fileType,varargin{:});
             addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
             trialContrl = TrialController(trial);
             trialContrl.setSyncTimeTrace(true);
