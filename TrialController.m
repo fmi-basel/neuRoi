@@ -48,7 +48,17 @@ classdef TrialController < handle
             if mapArrayLen >= self.nMapMax
                 error('Cannot add more than %d maps',nMapButton);
             end
-            self.model.calculateAndAddNewMap(type,varargin{:});
+            try
+                self.model.calculateAndAddNewMap(type,varargin{:});
+            catch ME
+                if strcmp(ME.identifier,['TrialModel:' ...
+                                        'windowValueError'])
+                    self.view.displayError(ME);
+                    return
+                else
+                    rethrow(ME)
+                end
+            end
             self.model.selectMap(mapArrayLen+1);
         end
                 

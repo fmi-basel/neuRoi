@@ -23,7 +23,6 @@ classdef NrController < handle
         
         function addFilePath_Callback(self,filePath)
             self.model.addFilePath(filePath);
-            self.trialControllerArray{end+1} = [];
         end
         
         function loadRangeGroup_Callback(self,src,evnt)
@@ -42,30 +41,9 @@ classdef NrController < handle
         function loadRangeText_Callback(self,src,evnt)
             startText = self.view.guiHandles.loadRangeStartText;
             endText = self.view.guiHandles.loadRangeEndText;
-            startStr = startText.String;
-            endStr = endText.String;
-            startFrameNum = round(str2num(startStr));
-            endFrameNum = round(str2num(endStr));
-            
-            switch src.Tag
-              case 'loadrange_start_text'
-                if startFrameNum < 1
-                    startFramenNum = 1;
-                end
-                if startFrameNum > endFrameNum
-                    startFrameNum = endFrameNum;
-                end
-                self.model.loadMovieOption.zrange = ...
-                    [startFrameNum,endFrameNum];
-                set(src,'String',num2str(startFrameNum));
-              case 'loadrange_end_text'
-                if endFrameNum < startFrameNum
-                    endFrameNum = startFrameNum;
-                end
-                self.model.loadMovieOption.zrange = ...
-                    [startFrameNum,endFrameNum];
-                set(src,'String',num2str(endFrameNum));
-            end
+            wdw = NrController.setCorrectWindow(startText,endText,src);
+            self.model.loadMovieOption.zrange = wdw;
+        
         end
         
         function loadStepText_Callback(self,src,evnt)
@@ -73,6 +51,29 @@ classdef NrController < handle
             nFramePerStep = str2num(stepStr);
             self.model.loadMovieOption.nFramePerStep = nFramePerStep;
         end
+        
+        function resIntensityOffset_Callback(self,src,evnt)
+            intensityOffsetStr = src.String;
+            intensityOffset = str2num(intensityOffsetStr);
+            self.model.responseOption.intensityOffset= intensityOffset;
+        end
+
+        function resFZero_Callback(self,src,evnt)
+            startText = self.view.guiHandles.resFZeroStartText;
+            endText = self.view.guiHandles.resFZeroEndText;
+            wdw = NrController.setWindow(startText,endText,src);
+            self.model.responseOption.fZeroWindow = wdw;
+        end
+        
+        function responseWindow_Callback(self,src,evnt)
+            startText = self.view.guiHandles.responseStartText;
+            endText = self.view.guiHandles.responseEndText;
+            wdw = NrController.setWindow(startText,endText,src);
+            self.model.responseOption.responseWindow = wdw;
+        end
+        
+        % function responseSlidingWindowSize_Callback(self,src,evnt)
+        % end
 
         function selectTrial_Callback(self,src,evnt)
             fig = evnt.AffectedObject.(src.Name);
@@ -135,12 +136,15 @@ classdef NrController < handle
         
         % Map related callbacks
         function addResponseMap_Callback(self,src,evnt)
-            responseOption = struct('offset',-10,...
-                                    'fZeroWindow',[10 20],...
-                                    'responseWindow',[40 50]);
-            self.model.addMapWrap('current','response',responseOption);
+            responseOption = self.model.responseOption;
+            trialContrl = self.trialContrlArray(self.model.currentTrialIdx);
+            trialContrl.addMap('response',responseOption);
         end
-        
+
+        function addResponseMaxMap_Callback(self,src,evnt)
+        %aaa
+        end
+
         
         
         function mainFigClosed_Callback(self,src,evnt)
@@ -158,4 +162,48 @@ classdef NrController < handle
             end
         end
     end
+    
+    methods (Static)
+        function wdw = setCorrectWindow(startText,endText,src)
+            % TODO when window is not integer 
+            startStr = startText.String;
+            endStr = endText.String;
+            startFrameNum = round(str2num(startStr));
+            endFrameNum = round(str2num(endStr));
+            
+            switch src.Tag
+              case startText.Tag
+                if startFrameNum < 1
+                    startFramenNum = 1;
+                end
+                if startFrameNum > endFrameNum
+                    startFrameNum = endFrameNum;
+                end
+                set(src,'String',num2str(startFrameNum));
+              case endText.Tag
+                if endFrameNum < startFrameNum
+                    endFrameNum = startFrameNum;
+                end
+                set(src,'String',num2str(endFrameNum));
+            end
+            wdw = [startFrameNum endFrameNum];
+        end
+        
+        function wdw = setWindow(startText,endText,src)
+            % TODO when window is not integer
+            startStr = startText.String;
+            endStr = endText.String;
+            startFrameNum = round(str2num(startStr));
+            endFrameNum = round(str2num(endStr));
+            switch src.Tag
+              case startText.Tag
+                set(src,'String',num2str(startFrameNum));
+              case endText.Tag
+                set(src,'String',num2str(endFrameNum));
+            end
+            wdw = [startFrameNum endFrameNum];
+        end
+
+    end
+    
 end

@@ -1,20 +1,25 @@
 classdef NrModel < handle
     properties (SetObservable)
-        expInfo
+        expConfig
         regResult
+        responseOption
+        responseMaxOption
         trialArray
         currentTrialIdx
     end
     
     methods
-        function self = NrModel(expInfo)
-            self.expInfo = expInfo;
+        function self = NrModel(expConfig)
+        % TODO unpack expConfig
+            self.expConfig = expConfig;
             self.trialArray = TrialModel.empty;
             
-            if expInfo.alignFilePath
-                foo = load(expInfo.alignFilePath);
+            if isfield(expConfig,'alignFilePath')
+                foo = load(expConfig.alignFilePath);
                 self.regResult = foo.regResult;
             end
+            self.responseOption = expConfig.responseOption;
+            self.responseMaxOption = expConfig.responseMaxOption;
         end
 
         function tagArray = getTagArray(self)
@@ -28,16 +33,16 @@ classdef NrModel < handle
         end
         
         function trial = loadTrial(self,fileIdx,fileType,varargin)
-            fileName = self.expInfo.rawFileList{fileIdx};
+            fileName = self.expConfig.rawFileList{fileIdx};
             switch fileType
               case 'raw'
                 fileName = rawFileName
-                filePath = fullfile(self.expInfo.rawDataDir,fileName);
+                filePath = fullfile(self.expConfig.rawDataDir,fileName);
               case 'binned'
-                shrinkFactors = self.expInfo.binning.shrinkFactors;
+                shrinkFactors = self.expConfig.binning.shrinkFactors;
                 fileName = iopath.getBinnedFileName(fileName, ...
                                                     shrinkFactors);
-                filePath = fullfile(self.expInfo.binnedDir,fileName);
+                filePath = fullfile(self.expConfig.binnedDir,fileName);
             end
             
 
@@ -89,13 +94,6 @@ classdef NrModel < handle
             trial = self.trialArray(self.currentTrialIdx);
         end
            
-        function addMapWrap(self,tagArray,varargin)
-            if strcmp(tagArray,'current')
-                trial = self.trialArray(self.currentTrialIdx);
-                trial.calculateAndAddNewMap(varargin{:});
-            end
-        end
-        
         function updateMapWrap(self,tagArray,varargin)
             if strcmp(tagArray,'current')
                 trial = self.trialArray(self.currentTrialIdx);

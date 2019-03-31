@@ -15,6 +15,7 @@ classdef NrView < handle
             % self.displayLoadMovieOption();
             
             self.listenToModel();
+            self.displayResponseOption();
             self.assignCallbacks();
         end
         
@@ -31,6 +32,19 @@ classdef NrView < handle
                 @(s,e)self.controller.loadRangeText_Callback(s,e));
             set(self.guiHandles.loadStepText,'Callback',...
                 @(s,e)self.controller.loadStepText_Callback(s,e));
+
+            set(self.guiHandles.resIntensityOffsetText,'Callback',...
+              @(s,e)self.controller.resIntensityOffset_Callback(s,e));
+
+            set(self.guiHandles.resFZeroStartText,'Callback',...
+                @(s,e)self.controller.resFZero_Callback(s,e));
+            set(self.guiHandles.resFZeroEndText,'Callback',...
+                @(s,e)self.controller.resFZero_Callback(s,e));
+
+            set(self.guiHandles.responseStartText,'Callback',...
+               @(s,e)self.controller.responseWindow_Callback(s,e));
+            set(self.guiHandles.responseEndText,'Callback',...
+               @(s,e)self.controller.responseWindow_Callback(s,e));
             
             set(self.guiHandles.addResponseMapButton,'Callback',...
                 @(s,e)self.controller.addResponseMap_Callback(s,e));
@@ -39,6 +53,8 @@ classdef NrView < handle
         
         function listenToModel(self)
         % addlistener(self.model,'filePathArray','PostSet',@self.updateFileListBox);
+            addlistener(self.model,'responseOption','PostSet',...
+                        @(s,e)self.displayResponseOption())
         end
         
         function updateFileListBox(self)
@@ -66,6 +82,19 @@ classdef NrView < handle
             else
                 error('Cannot display load movie range!')
             end
+        end
+        
+        function displayResponseOption(self)
+            self.guiHandles.resIntensityOffsetText.String = ...
+                num2str(self.model.responseOption.offset);
+            self.guiHandles.resFZeroStartText.String = ...
+                num2str(self.model.responseOption.fZeroWindow(1));
+            self.guiHandles.resFZeroEndText.String = ...
+                num2str(self.model.responseOption.fZeroWindow(2));
+            self.guiHandles.responseStartText.String = ...
+                num2str(self.model.responseOption.responseWindow(1));
+            self.guiHandles.responseEndText.String = ...
+                num2str(self.model.responseOption.responseWindow(2));
         end
         
         function toggleLoadRangeText(self,state)

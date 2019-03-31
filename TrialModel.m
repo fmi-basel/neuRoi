@@ -77,7 +77,7 @@ classdef TrialModel < handle
             self.preprocessOption = struct('process',pr.process,...
                                            'noSignalWindow',pr.noSignalWindow);
             if ~exist(self.filePath,'file')
-                error('The movie file does not exist!')
+                error(sprintf('The movie file %s does not exist!',self.filePath))
                 % [~,self.fileBaseName,~] = fileparts(filePath);
                 % self.name = self.fileBaseName;
                 % self.meta = struct('width',12,...
@@ -298,19 +298,31 @@ classdef TrialModel < handle
         % offset,fZeroWindow,responseWindow in its field
             if nargin == 2
                 mapOption = varargin{1};
+                offset = mapOption.offset;
+                fZeroWindow = mapOption.fZeroWindow;
+                responseWindow = mapOption.responseWindow;
             elseif nargin == 4
-                mapOption = struct('offset',varargin{1}, ...
-                                       'fZeroWindow',varargin{2}, ...
-                                       'responseWindow', ...
-                                       varargin{3});
+                offset = varargin{1};
+                fZeroWindow = varargin{2};
+                responseWindow = varargin{3};
             else
                 error('Wrong usage!')
                 help TrialModel.calcResponse
             end
             
-            mapData = movieFunc.dFoverF(self.rawMovie,mapOption.offset, ...
-                              mapOption.fZeroWindow, ...
-                              mapOption.responseWindow);
+            nf = self.getNFrameRawMovie();
+            wdMinMax = [1,nf];
+            fres=TrialModel.isNotValidWindowValue(fZeroWindow,...
+                                                  wdMinMax,...
+                                                  'fZeroWindow');
+            rres=TrialModel.isNotValidWindowValue(responseWindow,...
+                                                  wdMinMax,...
+                                                  'responseWindow');
+            if ~fres & ~rres
+                mapData = movieFunc.dFoverF(self.rawMovie,offset, ...
+                                            fZeroWindow, ...
+                                            responseWindow);
+            end
         end
         
         function [mapData,mapOption] = calcResponseMax(self, ...
@@ -604,5 +616,30 @@ classdef TrialModel < handle
         end
                 
 
+        function result = isNotValidWindowValue(wdw,wdMinMax,wdName)
+            result = 0;
+            if wdw(1) > wdw(2)
+                result = 1;
+                msg = 'Start value should be smaller than end value!';
+            end
+            
+            if wdw(1) < wdMinMax(1)
+                result = 2;
+                msg='Start value should be larger or equal to min value!';
+            end
+
+            if wdw(2) > wdMinMax(2)
+                result = 3;
+                msg='End value should be less or equal to max value!';
+            end
+            
+            if result
+                msgId = 'TrialModel:windowValueError';
+                msg = sprintf('%s: %s',wdName,msg);
+                errorStruct.message = msg;
+                errorStruct.identifier = msgId;
+                error(errorStruct)
+            end
+        end
     end
 end

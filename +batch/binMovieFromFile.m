@@ -14,13 +14,15 @@ function outFileNameArray = binMovieFromFile(inDir,fileNameArray,shrinkFactors,o
 nFile = length(fileNameArray)
 
 for k=1:nFile
-    fileName = fileNameArray{k}
+    disp(sprintf('Binning %d th file',k))
+    fileName = fileNameArray{k};
+    disp(fileName)
     filePath = fullfile(inDir,fileName);
     trial = TrialModel(filePath,varargin{:});
     binned = movieFunc.binMovie(trial.rawMovie,shrinkFactors, ...
                                 'mean');
     outFileName = iopath.getBinnedFileName(fileName,shrinkFactors);
-    outFilePath = fullfile(outDir,outFileName)
+    outFilePath = fullfile(outDir,outFileName);
     movieFunc.saveTiff(movieFunc.convertToUint(binned,8), ...
                        outFilePath)
 end

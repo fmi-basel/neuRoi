@@ -362,6 +362,10 @@ classdef TrialView < handle
         %     set(traceFig,'Tag',[prefix '_' traceFigTag])
         % end
 
+        function displayError(self,errorStruct)
+            self.guiHandles.errorDlg = errordlg(errorStruct.message);
+        end
+        
         function raiseFigures(self)
             mainFig = self.guiHandles.mainFig;
             % traceFig = self.guiHandles.traceFig;
