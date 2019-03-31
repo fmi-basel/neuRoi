@@ -148,6 +148,10 @@ classdef NrController < handle
         
         
         function mainFigClosed_Callback(self,src,evnt)
+            for i=1:length(self.trialContrlArray)
+                trialContrl = self.trialContrlArray(i);
+                trialContrl.mainFigClosed_Callback(1,1);
+            end
             self.view.deleteFigures();
             delete(self.view);
             delete(self.model)
