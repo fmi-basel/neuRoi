@@ -363,7 +363,7 @@ classdef TrialView < handle
         % end
 
         function displayError(self,errorStruct)
-            self.guiHandles.errorDlg = errordlg(errorStruct.message);
+            self.guiHandles.errorDlg = errordlg(errorStruct.message,'TrialController');
         end
         
         function raiseFigures(self)

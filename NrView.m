@@ -16,6 +16,7 @@ classdef NrView < handle
             
             self.listenToModel();
             self.displayResponseOption();
+            self.displayResponseMaxOption();
             self.assignCallbacks();
         end
         
@@ -32,7 +33,8 @@ classdef NrView < handle
                 @(s,e)self.controller.loadRangeText_Callback(s,e));
             set(self.guiHandles.loadStepText,'Callback',...
                 @(s,e)self.controller.loadStepText_Callback(s,e));
-
+            
+            % Callbacks for dF/F map
             set(self.guiHandles.resIntensityOffsetText,'Callback',...
               @(s,e)self.controller.resIntensityOffset_Callback(s,e));
 
@@ -47,14 +49,38 @@ classdef NrView < handle
                @(s,e)self.controller.responseWindow_Callback(s,e));
             
             set(self.guiHandles.addResponseMapButton,'Callback',...
-                @(s,e)self.controller.addResponseMap_Callback(s,e));
+            @(s,e) self.controller.addMapButton_Callback(s,e));
+
+            set(self.guiHandles.updateResponseMapButton,'Callback',...
+            @(s,e) self.controller.updateMapButton_Callback(s,e));
+
+
+            % Callbacks for max dF/F
+            set(self.guiHandles.rmaxIntensityOffsetText,'Callback',...
+              @(s,e)self.controller.rmaxIntensityOffset_Callback(s,e));
+
+            set(self.guiHandles.rmaxFZeroStartText,'Callback',...
+                @(s,e)self.controller.rmaxFZero_Callback(s,e));
+            set(self.guiHandles.rmaxFZeroEndText,'Callback',...
+                @(s,e)self.controller.rmaxFZero_Callback(s,e));
+            
+            set(self.guiHandles.rmaxSlidingWindowText,'Callback',...
+                @(s,e)self.controller.rmaxSlidingWindow_Callback(s,e));
+
+            set(self.guiHandles.addResponseMaxMapButton,'Callback',...
+            @(s,e) self.controller.addMapButton_Callback(s,e));
+
+            set(self.guiHandles.updateResponseMaxMapButton,'Callback',...
+            @(s,e) self.controller.updateMapButton_Callback(s,e));
 
         end
         
         function listenToModel(self)
         % addlistener(self.model,'filePathArray','PostSet',@self.updateFileListBox);
             addlistener(self.model,'responseOption','PostSet',...
-                        @(s,e)self.displayResponseOption())
+                        @(s,e)self.displayResponseOption());
+            addlistener(self.model,'responseMaxOption','PostSet',...
+                        @(s,e)self.displayResponseMaxOption());
         end
         
         function updateFileListBox(self)
@@ -97,6 +123,18 @@ classdef NrView < handle
                 num2str(self.model.responseOption.responseWindow(2));
         end
         
+        function displayResponseMaxOption(self)
+            self.guiHandles.rmaxIntensityOffsetText.String = ...
+                num2str(self.model.responseMaxOption.offset);
+            self.guiHandles.rmaxFZeroStartText.String = ...
+                num2str(self.model.responseMaxOption.fZeroWindow(1));
+            self.guiHandles.rmaxFZeroEndText.String = ...
+                num2str(self.model.responseMaxOption.fZeroWindow(2));
+            self.guiHandles.rmaxSlidingWindowText.String = ...
+            num2str(self.model.responseMaxOption.slidingWindowSize);
+        end
+
+        
         function toggleLoadRangeText(self,state)
             if strcmp(state,'on') || strcmp(state,'off')
                 set(self.guiHandles.loadRangeStartText,'Enable',state);
@@ -126,6 +164,10 @@ classdef NrView < handle
         function raiseMainWindow(self)
             mainFig = self.guiHandles.mainFig;
             figure(mainFig)
+        end
+
+        function displayError(self,errorStruct)
+            self.guiHandles.errorDlg = errordlg(errorStruct.message,'NrController');
         end
 
     end

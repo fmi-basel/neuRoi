@@ -52,10 +52,11 @@ classdef NrController < handle
             self.model.loadMovieOption.nFramePerStep = nFramePerStep;
         end
         
+        % Callbacks for dF/F map parameters
         function resIntensityOffset_Callback(self,src,evnt)
             intensityOffsetStr = src.String;
             intensityOffset = str2num(intensityOffsetStr);
-            self.model.responseOption.intensityOffset= intensityOffset;
+            self.model.responseOption.offset= intensityOffset;
         end
 
         function resFZero_Callback(self,src,evnt)
@@ -72,9 +73,56 @@ classdef NrController < handle
             self.model.responseOption.responseWindow = wdw;
         end
         
-        % function responseSlidingWindowSize_Callback(self,src,evnt)
-        % end
+        function mapType = getMapTypeFromButton(self,hbutton,buttonType)
+            matched = regexp(hbutton.Tag,[buttonType '_(\w+)'], ...
+                             'tokens'); %XXXX
+            if length(matched)
+                mapType = matched{1}{1};
+            else
+                mapType = '';
+            end
+        end
+        
+        function addMapButton_Callback(self,src,evnt)
+            mapType = self.getMapTypeFromButton(src, ...
+                                                'addMapButton');
+            self.model.addMapCurrTrial(mapType)
+        end
+        
+        function updateMapButton_Callback(self,src,evnt)
+            mapType = self.getMapTypeFromButton(src, ...
+                                                'updateMapButton');
+            self.model.updateMapCurrTrial(mapType)
+        end
+        
+        % Callbacks for max dF/F map parameters
+        function rmaxIntensityOffset_Callback(self,src,evnt)
+            intensityOffsetStr = src.String;
+            intensityOffset = str2num(intensityOffsetStr);
+            self.model.responseMaxOption.offset= intensityOffset;
+        end
 
+        function rmaxFZero_Callback(self,src,evnt)
+            startText = self.view.guiHandles.rmaxFZeroStartText;
+            endText = self.view.guiHandles.rmaxFZeroEndText;
+            wdw = NrController.setWindow(startText,endText,src);
+            self.model.responseMaxOption.fZeroWindow = wdw;
+        end
+        
+        function rmaxSlidingWindow_Callback(self,src,evnt)
+            sstr = src.String;
+            slidingWindowSize = str2num(sstr);
+            if slidingWindowSize <=0
+                errorStruct.message(['Sliding window size should be ' ...
+                                    'a positive integer']);
+                self.view.displayError(errorStruct);
+                return
+            end
+            slidingWindowSize = round(slidingWindowSize);
+            self.model.responseMaxOption.slidingWindowSize = slidingWindowSize;
+            src.String = num2str(slidingWindowSize);
+        end
+        
         function selectTrial_Callback(self,src,evnt)
             fig = evnt.AffectedObject.(src.Name);
             if ~isempty(fig)
@@ -131,21 +179,7 @@ classdef NrController < handle
         function raiseTrialView(self,ind)
             trialController = self.trialControllerArray{ind};
             trialController.raiseView();
-        end
-        
-        
-        % Map related callbacks
-        function addResponseMap_Callback(self,src,evnt)
-            responseOption = self.model.responseOption;
-            trialContrl = self.trialContrlArray(self.model.currentTrialIdx);
-            trialContrl.addMap('response',responseOption);
-        end
-
-        function addResponseMaxMap_Callback(self,src,evnt)
-        %aaa
-        end
-
-        
+        end           
         
         function mainFigClosed_Callback(self,src,evnt)
             for i=1:length(self.trialContrlArray)
@@ -157,7 +191,6 @@ classdef NrController < handle
             delete(self.model)
             delete(self)
         end
-        
         
         function delete(self)
             if isvalid(self.view)

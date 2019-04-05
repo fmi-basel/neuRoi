@@ -43,29 +43,40 @@ classdef TrialController < handle
             end
         end
         
-        function addMap(self,type,varargin)
-            mapArrayLen = self.model.getMapArrayLength();
-            if mapArrayLen >= self.nMapMax
-                error('Cannot add more than %d maps',nMapButton);
-            end
-            try
-                self.model.calculateAndAddNewMap(type,varargin{:});
-            catch ME
-                if strcmp(ME.identifier,['TrialModel:' ...
-                                        'windowValueError'])
-                    self.view.displayError(ME);
-                    return
-                else
-                    rethrow(ME)
-                end
-            end
-            self.model.selectMap(mapArrayLen+1);
-        end
+        % function addMap(self,type,varargin)
+        %     mapArrayLen = self.model.getMapArrayLength();
+        %     if mapArrayLen >= self.nMapMax
+        %         error('Cannot add more than %d maps',nMapButton);
+        %     end
+        %     try
+        %         self.model.calculateAndAddNewMap(type,varargin{:});
+        %     catch ME
+        %         if strcmp(ME.identifier,['TrialModel:' ...
+        %                                 'windowValueError'])
+        %             self.view.displayError(ME);
+        %             return
+        %         else
+        %             rethrow(ME)
+        %         end
+        %     end
+        %     self.model.selectMap(mapArrayLen+1);
+        % end
                 
         function selectMap(self,ind)
             self.model.selectMap(ind);
         end
         
+        % function findAndUpdateMap(self,mapType,mapOption)
+        %     try
+        %         self.model.findAndUpdateMap(mapType,mapOption);
+        %     catch ME
+        %         if strcmp(ME.identifier,'TrialModel:mapTypeError')
+        %             self.view.displayError(ME)
+        %             return
+        %         end
+        %         rethrow(ME)
+        %     end
+        % end
         
         function mapButtonSelected_Callback(self,src,evnt)
             tag = evnt.NewValue.Tag;

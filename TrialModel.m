@@ -3,7 +3,7 @@ classdef TrialModel < handle
         filePath
         loadMovieOption
         preprocessOption
-
+        
         yxShift
         intensityOffset
 
@@ -63,6 +63,7 @@ classdef TrialModel < handle
             addParameter(pa,'nFramePerStep',1)
             addParameter(pa,'process',false);
             addParameter(pa,'noSignalWindow',[1 12]);
+            addParameter(pa,'frameRate',1);
             validYxShift = @(x) isequal(size(x),[1 2]);
             addParameter(pa,'yxShift',[0 0],validYxShift);
             addParameter(pa,'intensityOffset',0);
@@ -75,7 +76,9 @@ classdef TrialModel < handle
                                           'nFramePerStep', ...
                                           pr.nFramePerStep);
             self.preprocessOption = struct('process',pr.process,...
-                                           'noSignalWindow',pr.noSignalWindow);
+                                           'noSignalWindow', ...
+                                           pr.noSignalWindow);
+            
             if ~exist(self.filePath,'file')
                 error(sprintf('The movie file %s does not exist!',self.filePath))
                 % [~,self.fileBaseName,~] = fileparts(filePath);
@@ -105,6 +108,9 @@ classdef TrialModel < handle
                     self.resultDir = pr.resultDir;
                 end
             end
+            
+            % User specified frame rate
+            self.meta.frameRate = pr.frameRate;
             
             % Intensity offset for calculating dF/F
             self.intensityOffset = pr.intensityOffset;
@@ -199,9 +205,24 @@ classdef TrialModel < handle
         end
         
         function findAndUpdateMap(self,mapType,mapOption)
-            mapInd = find(cellfun(@(x) strcmp(x.type,mapType),self.mapArray));
-            mapInd = mapInd(1);
+            currentMap = self.mapArray{self.currentMapInd};
+            if strcmp(currentMap.type,mapType)
+                mapInd = self.currentMapInd;
+            else
+                mapInd = find(cellfun(@(x) strcmp(x.type,mapType), ...
+                                      self.mapArray));
+                if ~length(mapInd)
+                    msg = sprintf(['No map of type %s found! You can ' ...
+                                   'create a new map of this type ' ...
+                                   'by adding map.'],mapType);
+                    error('TrialModel:mapTypeError',msg)
+                end
+                mapInd = mapInd(1);
+            end
             self.updateMap(mapInd,mapOption);
+            if mapInd ~= self.currentMapInd
+                self.selectMap(mapInd);
+            end
         end
             
         function selectMap(self,ind)
@@ -310,6 +331,7 @@ classdef TrialModel < handle
                 help TrialModel.calcResponse
             end
             
+            % Validate window parameters
             nf = self.getNFrameRawMovie();
             wdMinMax = [1,nf];
             fres=TrialModel.isNotValidWindowValue(fZeroWindow,...
@@ -329,17 +351,29 @@ classdef TrialModel < handle
                                                        varargin)
             if nargin == 2
                 mapOption = varargin{1};
+                offset = mapOption.offset;
+                fZeroWindow = mapOption.fZeroWindow;
+                slidingWindowSize = mapOption.slidingWindowSize;
             elseif nargin == 4
-                mapOption = struct('offset',varargin{1}, ...
-                                   'fZeroWindow',varargin{2}, ...
-                                   'slidingWindowSize', ...
-                                       varargin{3});
+		offset = varargin{1};
+                fZeroWindow = varargin{2};
+		slidingWindowSize = varargin{3};
             else
                 error('Wrong Usage!')
             end
-            mapData = movieFunc.dFoverFMax(self.rawMovie,mapOption.offset,...
-                                 mapOption.fZeroWindow,...
-                                 mapOption.slidingWindowSize);
+            
+            % Validate window parameter
+            nf = self.getNFrameRawMovie();
+            wdMinMax = [1,nf];
+            fres=TrialModel.isNotValidWindowValue(fZeroWindow,...
+                                                  wdMinMax,...
+                                                  'fZeroWindow');
+
+            if ~fres
+                mapData = movieFunc.dFoverFMax(self.rawMovie,offset,...
+                                               fZeroWindow,...
+                                               slidingWindowSize);
+            end
         end
         
         function [mapData,mapOption] = calcLocalCorrelation(self, ...
