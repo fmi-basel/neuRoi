@@ -1,5 +1,5 @@
 function hdl = neuRoiGui()
-hdl.mainFig= figure('Position',[500,300,500,600],'Resize','off');
+hdl.mainFig= figure('Position',[80,300,500,600],'Resize','off');
 set(hdl.mainFig,'MenuBar','none');
 set(hdl.mainFig,'ToolBar','none');
 set(hdl.mainFig,'Name','neuRoi','NumberTitle','off');

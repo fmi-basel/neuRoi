@@ -43,7 +43,8 @@ function rawMovie = readMovie(filePath,meta,varargin)
     TifLink = Tiff(filePath, 'r');
     frameNumArray = frameRange(1):nFramePerStep:frameRange(2);
     nFrame = length(frameNumArray);
-    rawMovie = zeros(meta.height,meta.width,nFrame,'uint16');
+    uintType = sprintf('uint%d',meta.bitsPerSample);
+    rawMovie = zeros(meta.height,meta.width,nFrame,uintType);
 
     for k = 1:nFrame
         if mod(k,50) == 0

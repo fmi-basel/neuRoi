@@ -322,8 +322,8 @@ classdef TrialView < handle
                 switch evnt.EventName
                   case 'roiSelected'
                     tag = evnt.tag;
-                    timeTrace = self.model.getTimeTraceByTag(tag,true);
-                    self.plotTimeTrace(timeTrace,tag);
+                    [timeTrace,timeVec] = self.model.getTimeTraceByTag(tag,true);
+                    self.plotTimeTrace(timeVec,timeTrace,tag);
                   case 'roiUnSelected'
                     tag = evnt.tag;
                     lineTag = sprintf('trace_%04d',tag);
@@ -337,10 +337,11 @@ classdef TrialView < handle
             figure(self.guiHandles.mainFig)
         end
         
-        function hline = plotTimeTrace(self,timeTrace,tag)
+        function hline = plotTimeTrace(self,timeVec,timeTrace,tag)
             lineTag = sprintf('trace_%04d',tag);
             figure(self.guiHandles.traceFig)
-            hline = plot(self.guiHandles.traceAxes,timeTrace,...
+            hline = plot(self.guiHandles.traceAxes,timeVec,...
+                         timeTrace,...
                          'Tag',lineTag);
         end
         

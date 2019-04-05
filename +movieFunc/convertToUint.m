@@ -17,9 +17,9 @@ if ~exist('zlim','var')
     zlim = [min(A(:)), max(A(:))];
 end
 
+Anorm = mat2gray(A,zlim);
 if depth == 16
-    AUnit = uint16((2^16 -1)* mat2gray(A,zlim));
+    AUnit = uint16((2^16 -1)* Anorm);
 else
-    AUnit = uint8(255*mat2gray(A,zlim));
+    AUnit = uint8(255*Anorm);
 end
-

@@ -10,6 +10,7 @@ classdef TrialModel < handle
         fileBaseName
         tag
         name
+        sourceFileIdx
         
         
         meta
@@ -310,6 +311,11 @@ classdef TrialModel < handle
             mapOption.nFrameLimit = nFrameLimit;
         end
         
+        function vecFrame = convertFromSecToFrame(self,vecSec)
+            frameRate = self.meta.frameRate;
+            vecFrame = round(vecSec * frameRate);
+        end
+        
         function [mapData,mapOption] = calcResponse(self,varargin)
         % Method to calculate response map (dF/F)
         % Usage: 
@@ -317,6 +323,7 @@ classdef TrialModel < handle
         % mymodel.calcResponse(mapOption)
         % mapOption is a structure that contains
         % offset,fZeroWindow,responseWindow in its field
+        % Unit of fZeroWindow and responseWindow are in second
             if nargin == 2
                 mapOption = varargin{1};
                 offset = mapOption.offset;
@@ -331,24 +338,28 @@ classdef TrialModel < handle
                 help TrialModel.calcResponse
             end
             
+            % Convert unit of windows from second to frame number
+            fZeroWindowFrame = self.convertFromSecToFrame(fZeroWindow);
+            responseWindowFrame = ...
+                self.convertFromSecToFrame(responseWindow);
+            
             % Validate window parameters
             nf = self.getNFrameRawMovie();
             wdMinMax = [1,nf];
-            fres=TrialModel.isNotValidWindowValue(fZeroWindow,...
+            fres=TrialModel.isNotValidWindowValue(fZeroWindowFrame,...
                                                   wdMinMax,...
                                                   'fZeroWindow');
-            rres=TrialModel.isNotValidWindowValue(responseWindow,...
+            rres=TrialModel.isNotValidWindowValue(responseWindowFrame,...
                                                   wdMinMax,...
                                                   'responseWindow');
             if ~fres & ~rres
                 mapData = movieFunc.dFoverF(self.rawMovie,offset, ...
-                                            fZeroWindow, ...
-                                            responseWindow);
+                                            fZeroWindowFrame, ...
+                                            responseWindowFrame);
             end
         end
         
-        function [mapData,mapOption] = calcResponseMax(self, ...
-                                                       varargin)
+        function [mapData,mapOption]=calcResponseMax(self,varargin)
             if nargin == 2
                 mapOption = varargin{1};
                 offset = mapOption.offset;
@@ -362,16 +373,19 @@ classdef TrialModel < handle
                 error('Wrong Usage!')
             end
             
+            % Convert unit of window from second to frame number
+            fZeroWindowFrame = self.convertFromSecToFrame(fZeroWindow);
+            
             % Validate window parameter
             nf = self.getNFrameRawMovie();
             wdMinMax = [1,nf];
-            fres=TrialModel.isNotValidWindowValue(fZeroWindow,...
+            fres=TrialModel.isNotValidWindowValue(fZeroWindowFrame,...
                                                   wdMinMax,...
                                                   'fZeroWindow');
 
             if ~fres
                 mapData = movieFunc.dFoverFMax(self.rawMovie,offset,...
-                                               fZeroWindow,...
+                                               fZeroWindowFrame,...
                                                slidingWindowSize);
             end
         end
@@ -562,7 +576,11 @@ classdef TrialModel < handle
         end
         
         % Methods for time trace
-        function timeTrace = getTimeTraceByTag(self,tag,varargin)
+        function vecSec = convertFromFrameToSec(self,vecFrame)
+            frameRate = self.meta.frameRate;
+            vecSec = vecFrame/frameRate;
+        end
+        function [timeTrace,timeVec] = getTimeTraceByTag(self,tag,varargin)
             if nargin == 2
                 sm = false;
             elseif nargin == 3
@@ -573,6 +591,7 @@ classdef TrialModel < handle
             roi = self.roiArray(ind);
             timeTrace = TrialModel.getTimeTrace(self.rawMovie,roi,...
                                                 self.intensityOffset,sm);
+            timeVec = self.convertFromFrameToSec(1:length(timeTrace));
         end
         
         function [timeTraceMat,roiTagArray] = ...
@@ -645,8 +664,16 @@ classdef TrialModel < handle
         
         function dfName = getDefaultTrialName(fileBaseName,zrange, ...
                                                            nFramePerStep)
-            dfName = sprintf('%s_frame%dto%dby%d',fileBaseName, ...
+            if isnumeric(zrange)
+                dfName = sprintf('%s_frame%dto%dby%d',fileBaseName, ...
                              zrange(1),zrange(2),nFramePerStep);
+            elseif strcmp(zrange,'all')
+                dfName = sprintf('%s_frame_all_by%d',fileBaseName, ...
+                                 nFramePerStep);
+            else
+                dfName = fileBaseName;
+            end
+            
         end
                 
 

@@ -61,8 +61,10 @@ function handles = trialGui(varargin)
     
     
     handles.traceFig = figure('Name','Time Trace','Tag','traceFig',...
-                              'Position',[50,500,500,400],'Visible','off');
+                              'Position',[1350,500,500,400],'Visible','off');
     handles.traceAxes = axes();
+    xlabel(handles.traceAxes,'Time (s)')
+    ylabel(handles.traceAxes,'dF/F')
     figure(handles.mainFig)
     
 

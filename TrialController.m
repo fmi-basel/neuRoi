@@ -296,17 +296,20 @@ classdef TrialController < handle
             if fileName
                 % Ask user whether to merge with existing ROIs or
                 % replace the ROIs
-                answer = questdlg('How would you like to load new ROIs?', ...
-                                  'Load ROIs', ...
-                                  'Cancel','Merge','Replace', ...
-                                  'Replace');
-                if strcmp(answer,'Cancel')
-                    return
-                else
-                    filePath = fullfile(fileDir,fileName)
+                if length(self.model.roiArray)
+                    answer = questdlg('How would you like to load new ROIs?', ...
+                                      'Load ROIs', ...
+                                      'Cancel','Merge','Replace', ...
+                                      'Replace');
+                    if strcmp(answer,'Cancel')
+                        return
+                    end
                     option = lower(answer);
-                    self.model.loadRoiArray(filePath,option);
+                else
+                    option = 'replace';
                 end
+                filePath = fullfile(fileDir,fileName)
+                self.model.loadRoiArray(filePath,option);
             end
         end
         

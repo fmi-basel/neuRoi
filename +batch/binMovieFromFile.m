@@ -1,4 +1,4 @@
-function outFileNameArray = binMovieFromFile(inDir,fileNameArray,shrinkFactors,outDir,varargin)
+function outFileNameArray = binMovieFromFile(inDir,fileNameArray,shrinkFactors,outDir,depth,varargin)
 % BINMOVIEFROMFILE bin movies from files in a directory
 %     Args:
 %         inDir (char): input directory
@@ -10,6 +10,9 @@ function outFileNameArray = binMovieFromFile(inDir,fileNameArray,shrinkFactors,o
 %         addtional variables: options for loading movie, see TrialModel
 %     Returns:
 %         no return value
+if ~exist('depth','var')
+    depth = 8;
+end
 
 nFile = length(fileNameArray)
 
@@ -23,7 +26,7 @@ for k=1:nFile
                                 'mean');
     outFileName = iopath.getBinnedFileName(fileName,shrinkFactors);
     outFilePath = fullfile(outDir,outFileName);
-    movieFunc.saveTiff(movieFunc.convertToUint(binned,8), ...
+    movieFunc.saveTiff(movieFunc.convertToUint(binned,depth), ...
                        outFilePath)
 end
 

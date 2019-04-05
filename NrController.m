@@ -145,35 +145,41 @@ classdef NrController < handle
         function fileListBox_Callback(self,src,evnt)
             fig = src.Parent;
             if strcmp(fig.SelectionType,'open')
-                ind = src.Value;
-                if self.isTrialOpened(ind)
-                    %self.raiseTrialView(ind);
-                    % TODO raise view by tag
-                else
-                    self.openTrial(ind);
-                end
+                idx = src.Value;
+                % TODO specify load fileType in GUI
+                self.openTrialFromList(idx,'binned');
             end
         end
         
-        function res = isTrialOpened(self,ind)
-            trialController = self.trialControllerArray{ind};
-            trial = self.model.getTrialByInd(ind);
-            res = false;
-            if ~isempty(trialController) && ~isempty(trial)
-                if isvalid(trialController) && ...
-                        isvalid(trialController)
-                    res = true;
-                end
-            end
+        function openTrialFromList(self,fileIdx,fileType)
+            trial = self.model.loadTrialFromList(fileIdx,fileType);
+            self.openTrialContrl(trial);
         end
         
-        function openTrial(self,fileIdx,fileType,varargin)
-            trial = self.model.loadTrial(fileIdx,fileType,varargin{:});
+        function openAdditionalTrial(self,filePath,varargin)
+            trial = self.model.loadAdditionalTrial(filePath,varargin{:});
+            self.openTrialContrl(trial);
+        end
+        
+        function openTrialContrl(self,trial)
             addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
             trialContrl = TrialController(trial);
             trialContrl.setSyncTimeTrace(true);
             self.trialContrlArray(end+1) = trialContrl;
             trialContrl.raiseView();
+            
+            mapsAfterLoading = self.model.mapsAfterLoading;
+            if length(mapsAfterLoading)
+                for k = 1:length(mapsAfterLoading)
+                    mapType = mapsAfterLoading{k};
+                    self.model.addMapCurrTrial(mapType);
+                end
+            end
+            
+            if self.model.doLoadTemplateRoi
+                roiFilePath = self.model.templateRoiFilePath;
+                trial.loadRoiArray(roiFilePath,'replace')
+            end
         end
         
         function raiseTrialView(self,ind)

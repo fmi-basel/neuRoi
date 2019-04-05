@@ -11,7 +11,7 @@ classdef NrView < handle
             self.controller = mycontroller;
             self.guiHandles = neuRoiGui();
             
-            % self.updateFileListBox();
+            self.updateFileListBox();
             % self.displayLoadMovieOption();
             
             self.listenToModel();
@@ -76,7 +76,7 @@ classdef NrView < handle
         end
         
         function listenToModel(self)
-        % addlistener(self.model,'filePathArray','PostSet',@self.updateFileListBox);
+            addlistener(self.model,'rawFileList','PostSet',@self.updateFileListBox);
             addlistener(self.model,'responseOption','PostSet',...
                         @(s,e)self.displayResponseOption());
             addlistener(self.model,'responseMaxOption','PostSet',...
@@ -84,10 +84,10 @@ classdef NrView < handle
         end
         
         function updateFileListBox(self)
-            filePathArray = self.model.filePathArray;
+            rawFileList = self.model.rawFileList;
             fileNameArray = {};
-            for k = 1:length(filePathArray)
-                filePath = filePathArray{k};
+            for k = 1:length(rawFileList)
+                filePath = rawFileList{k};
                 [~,fileNameArray{k},~] = fileparts(filePath);
             end
             set(self.guiHandles.fileListBox,'String',fileNameArray);

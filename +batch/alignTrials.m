@@ -1,4 +1,4 @@
-function regResult = alignTrials(anatomyDir,anatomyNameArray,templateInd,outFilePath,plotFig,climit)
+function regResult = alignTrials(anatomyDir,anatomyNameArray,templateInd,outFilePath,plotFig,climit,debug)
 % ALIGNTRIALS align each trial with respect to the template anatomy
 % image
 %     Args:
@@ -7,9 +7,13 @@ if nargin < 4
     outDir = '';
     plotFig = false;
     climit = [];
+    debug = false;
 elseif nargin < 5
     plotFig = false;
     climit = [];
+    debug = false;
+elseif nargin < 7
+    debug = false;
 end
 
 nFile = length(anatomyNameArray);
@@ -18,7 +22,7 @@ templateAna = anatomyArray(:,:,templateInd);
 offsetYxMat = zeros(nFile,2);
 
 for k=1:nFile
-    offsetYx = movieFunc.alignImage(anatomyArray(:,:,k),templateAna);
+    offsetYx = movieFunc.alignImage(anatomyArray(:,:,k),templateAna,debug);
                           
     offsetYxMat(k,:) = offsetYx;
     if plotFig

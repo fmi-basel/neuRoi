@@ -1,19 +1,26 @@
 classdef NrModel < handle
     properties (SetObservable)
         expConfig
+        rawFileList
         regResult
         binParam
         responseOption
         responseMaxOption
+        
         trialArray
         currentTrialIdx
+        
+        mapsAfterLoading
+        templateRoiFilePath
+        doLoadTemplateRoi
     end
     
     methods
         function self = NrModel(expConfig)
         % TODO unpack expConfig
-            self.expConfig = expConfig;
             self.trialArray = TrialModel.empty;
+            self.expConfig = expConfig;
+            self.rawFileList = expConfig.rawFileList;
             
             if isfield(expConfig,'alignFilePath')
                 foo = load(expConfig.alignFilePath);
@@ -22,6 +29,7 @@ classdef NrModel < handle
             self.binParam = expConfig.binParam;
             self.responseOption = expConfig.responseOption;
             self.responseMaxOption = expConfig.responseMaxOption;
+            self.mapsAfterLoading = {};
         end
 
         function tagArray = getTagArray(self)
@@ -34,8 +42,13 @@ classdef NrModel < handle
             idx = find(strcmp(tagArray,tag));
         end
         
-        function trial = loadTrial(self,fileIdx,fileType,varargin)
-            rawFileName = self.expConfig.rawFileList{fileIdx};
+        function trial = getTrialByTag(self,tag)
+            idx = self.getTrialIdx(tag);
+            trial = self.trialArray(idx);
+        end
+
+        function trial = loadTrialFromList(self,fileIdx,fileType,varargin)
+            rawFileName = self.rawFileList{fileIdx};
             switch fileType
               case 'raw'
                 fileName = rawFileName;
@@ -58,6 +71,19 @@ classdef NrModel < handle
                 offstYx = [0,0];
             end
             
+            % TODO make other trial options explicit
+            trial = self.loadTrial(filePath,'yxShift',offsetYx,...
+                               'resultDir',self.expConfig.roiDir,...
+                               'frameRate',frameRate,varargin{:});
+            trial.sourceFileIdx = fileIdx;
+        end
+        
+        function trial = loadAdditionalTrial(self,filePath,varargin)
+        % TODO save trial path into a property
+            trial = self.loadTrial(filePath,varargin{:});
+        end
+        
+        function trial = loadTrial(self,filePath,varargin)
             tagArray = self.getTagArray();
             tag = helper.generateRandomTag(6);
             nstep = 1;
@@ -66,13 +92,9 @@ classdef NrModel < handle
                 nstep = nstep+1;
             end
             
-            % TODO make other trial options explicit
-            trial = TrialModel(filePath,varargin{:},'yxShift',offsetYx,...
-                               'frameRate',frameRate);
+            trial = TrialModel(filePath,varargin{:});
             trial.tag = tag;
             self.trialArray(end+1) = trial;
-            
-            % self.filetagList(fileIdx)
         end
         
         function selectTrial(self,tag)
