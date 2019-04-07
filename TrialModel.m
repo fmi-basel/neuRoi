@@ -483,7 +483,14 @@ classdef TrialModel < handle
         end
         
         function selectAllRoi(self)
-        % TODO
+            tagArray = arrayfun(@(x) x.tag, self.roiArray);
+            self.unselectAllRoi();
+            self.selectedRoiTagArray = tagArray;
+            for k=1:length(tagArray)
+                tag = tagArray(k);
+                notify(self,'roiSelected',NrEvent.RoiEvent(tag));
+            end
+            disp('All Rois selected')
         end
         
         function unselectAllRoi(self)

@@ -89,7 +89,7 @@ process = true;
 noSignalWindow = [1 12];
 depth = 8;
 batch.binMovieFromFile(expConfig.rawDataDir, ...
-                       expConfig.rawFileList(2), ...
+                       expConfig.rawFileList, ...
                        expConfig.binParam.shrinkFactors,...
                        expConfig.binnedDir,...
                        depth,...
@@ -106,7 +106,7 @@ expConfig.alignFilePath = fullfile(expConfig.alignDir,alignFileName);
 
 plotFig = false;
 climit = [0 0.4];
-debug = false;
+debug = true;
 regResult = batch.alignTrials(expConfig.anatomyDir,...
                               expConfig.anatomyFileList, ...
                               templateInd,expConfig.alignFilePath,...
@@ -115,7 +115,8 @@ regResult.offsetYxMat
 %% Open NeuRoi GUI
 mymodel = NrModel(expConfig);
 mycon = NrController(mymodel);
-mymodel.mapsAfterLoading = {'response','responseMax'};
+%mymodel.mapsAfterLoading = {'response','responseMax'};
+mymodel.mapsAfterLoading = {};
 %% Draw ROIs on representative trials
 % TODO automate combine ROI map?
 % Parameters for loading movie
@@ -145,7 +146,7 @@ mymodel.addMapCurrTrial('responseMax');
 % mycon.updateResponseMap_Callback(1,2);
 
 %% Load template ROI when open trial
-templateRoiFileName = 'roi_template_active_cells';
+templateRoiFileName = 'roi_template_active_cells.mat';
 mymodel.templateRoiFilePath = fullfile(mymodel.expConfig.roiDir, ...
                                templateRoiFileName);
 mymodel.doLoadTemplateRoi = true;

@@ -38,7 +38,8 @@ classdef TrialController < handle
                 end
             elseif strcmp(evnt.Modifier,'control')
                 switch evnt.Key
-                % TODO select all ROI
+                  case 'a'
+                    self.selectAllRoi_Callback();
                 end
             end
         end
@@ -182,6 +183,10 @@ classdef TrialController < handle
                     self.model.unselectAllRoi();
                 end
             end
+        end
+        
+        function selectAllRoi_Callback(self,src,evnt)
+            self.model.selectAllRoi();
         end
         
         function roiClicked_Callback(self,roiPatch)
