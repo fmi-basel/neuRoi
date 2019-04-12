@@ -11,8 +11,13 @@ classdef NrModel < handle
         currentTrialIdx
         
         mapsAfterLoading
-        templateRoiFilePath
+        roiTemplateFilePath
         doLoadTemplateRoi
+        processOption
+        % TODO big TODO change intensityOffset specification
+        intensityOffset
+        
+        loadFileType
     end
     
     methods
@@ -30,6 +35,12 @@ classdef NrModel < handle
             self.responseOption = expConfig.responseOption;
             self.responseMaxOption = expConfig.responseMaxOption;
             self.mapsAfterLoading = {};
+            self.loadFileType = 'raw';
+            
+            % TODO big TODO optimize processOption specification
+            self.processOption.process = true;
+            self.processOption.noSignalWindow = [1 12];
+
         end
 
         function tagArray = getTagArray(self)
@@ -72,9 +83,14 @@ classdef NrModel < handle
             end
             
             % TODO make other trial options explicit
-            trial = self.loadTrial(filePath,'yxShift',offsetYx,...
-                               'resultDir',self.expConfig.roiDir,...
-                               'frameRate',frameRate,varargin{:});
+            trial = self.loadTrial(filePath,'process', ...
+                                 self.processOption.process,...
+                                 'noSignalWindow',...
+                                 self.processOption.noSignalWindow,...
+                             'intensityOffset',self.intensityOffset,...
+                                 'yxShift',offsetYx,...
+                                 'resultDir',self.expConfig.roiDir,...
+                                 'frameRate',frameRate);
             trial.sourceFileIdx = fileIdx;
         end
         

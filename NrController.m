@@ -147,11 +147,12 @@ classdef NrController < handle
             if strcmp(fig.SelectionType,'open')
                 idx = src.Value;
                 % TODO specify load fileType in GUI
-                self.openTrialFromList(idx,'binned');
+                self.openTrialFromList(idx);
             end
         end
         
         function openTrialFromList(self,fileIdx,fileType)
+            fileType = self.model.loadFileType;
             trial = self.model.loadTrialFromList(fileIdx,fileType);
             self.openTrialContrl(trial);
         end
@@ -177,7 +178,7 @@ classdef NrController < handle
             end
             
             if self.model.doLoadTemplateRoi
-                roiFilePath = self.model.templateRoiFilePath;
+                roiFilePath = self.model.roiTemplateFilePath;
                 trial.loadRoiArray(roiFilePath,'replace')
             end
         end

@@ -589,7 +589,7 @@ classdef TrialModel < handle
         end
         function [timeTrace,timeVec] = getTimeTraceByTag(self,tag,varargin)
             if nargin == 2
-                sm = false;
+                sm = 0;
             elseif nargin == 3
                 sm = varargin{1};
             end
@@ -601,23 +601,26 @@ classdef TrialModel < handle
             timeVec = self.convertFromFrameToSec(1:length(timeTrace));
         end
         
-        function [timeTraceMat,roiTagArray] = ...
+        function [timeTraceMat,roiArray] = ...
                 extractTimeTraceMat(self,varargin)
             if nargin == 1
                 % intensityOffset does not change
-            elseif nargin ==2
-                self.intensityOffset = varargin{2};
+            elseif nargin == 2
+                self.intensityOffset = varargin{1};
+                sm = 0;
+            elseif nargin == 3
+                self.intensityOffset = varargin{1};
+                sm = varargin{2};
             end
             nRoi = length(self.roiArray);
             timeTraceMat = zeros(nRoi,size(self.rawMovie,3));
-            roiTagArray = zeros(1,nRoi);
             for k=1:nRoi
                 roi = self.roiArray(k);
                 timeTrace = TrialModel.getTimeTrace(self.rawMovie,roi,...
                                        self.intensityOffset);
                 timeTraceMat(k,:) = timeTrace;
-                roiTagArray(k) = roi.tag;
             end
+            roiArray = self.roiArray(k); 
         end
         
         
@@ -633,19 +636,19 @@ classdef TrialModel < handle
         function timeTraceDf = getTimeTrace(rawMovie,roi,varargin)
         % GETTIMETRACE get time trace of dF/F within a ROI
         % from the input raw movie
-        % Usage: getTimeTrace(rawMovie,roi,[intensityOffset])
+        % Usage: getTimeTrace(rawMovie,roi,[intensityOffset,sm])
             
             if nargin == 2
                 intensityOffset = 0;
-                sm = false;
+                sm = 0;
             elseif nargin == 3
                 intensityOffset = varargin{1};
-                sm = false;
+                sm = 0;
             elseif nargin == 4
                 intensityOffset = varargin{1};
                 sm = varargin{2};
             else
-                error('Usage: getTimeTrace(rawMovie,roi,[intensityOffset])')
+                error('Usage: getTimeTrace(rawMovie,roi,[intensityOffset,sm])')
             end
             
             mask = roi.createMask;
@@ -656,16 +659,17 @@ classdef TrialModel < handle
 
             timeTraceFg = timeTraceRaw - intensityOffset;
             if sm
-                timeTraceSm = smooth(timeTraceFg,10);
+                % TODO change the smooth function to gaussian filter!!
+                timeTraceSm = smooth(timeTraceFg,sm);
                 fZero = quantile(timeTraceSm(10:end-10),0.1);
                 
-                % Time trace of dF/F, unit in percent
+                % Time trace of dF/F
                 timeTraceDf = (timeTraceSm - fZero) / fZero;
             else
-                fZero = quantile(timeTraceRaw(10:end-10),0.15);
+                fZero = quantile(timeTraceFg(10:end-10),0.15);
                 
-                % Time trace of dF/F, unit in percent
-                timeTraceDf = (timeTraceRaw - fZero) / fZero;
+                % Time trace of dF/F
+                timeTraceDf = (timeTraceFg - fZero) / fZero;
             end
         end
         

@@ -36,6 +36,8 @@ expConfig.responseMaxOption = struct('offset',intensityOffset,...
 dataRootDir = '/media/hubo/Bo_FMI/Ca_imaging/';
 resultRootDir = '/home/hubo/Projects/Ca_imaging/results';
 
+expConfig.resultDir = fullfile(resultRootDir,expConfig.name);
+
 expConfig.rawDataDir = fullfile(dataRootDir,'raw_data',expConfig.name);
 % procDataDir =
 % fullfile(dataRootDir,'processed_data',expConfig.name);
@@ -115,53 +117,111 @@ regResult.offsetYxMat
 %% Open NeuRoi GUI
 mymodel = NrModel(expConfig);
 mycon = NrController(mymodel);
-%mymodel.mapsAfterLoading = {'response','responseMax'};
-mymodel.mapsAfterLoading = {};
-%% Draw ROIs on representative trials
-% TODO automate combine ROI map?
-% Parameters for loading movie
-zrange = 'all';
-nFramePerStep = 1;
-% Parameters for preprocessing
-process = true;
-noSignalWindow = [1 12];
-% Parameters for calculating dF/F trace
-intensityOffset = -100;
+mymodel.mapsAfterLoading = {'response','responseMax'};
+mymodel.loadFileType = 'binned';
+mymodel.processOption.process = false;
+mymodel.processOption.noSignalWindow = [];
+mymodel.intensityOffset = -100;
 
-fileIdx = 5;
-mycon.openTrial(fileIdx,'binned',...
-                'intensityOffset',intensityOffset,...
-                'resultDir',expConfig.roiDir);
-% mycon.openTrial(fileIdx,'raw',...
-%                 'intensityOffset',intensityOffset,...
-%                 'resultDir',expConfig.roiDir);
+% mymodel.loadFileType = 'raw';
+% mymodel.processOption.process = true;
+% mymodel.processOption.noSignalWindow = [1 12];
+% mymodel.intensityOffset = -20;
 
-% Add dF/F map
-% mymodel.responseOption.fZeroWindow = [20 35];
-% mymodel.responseOption.responseWindow = [60 70];
-mymodel.responseMaxOption.slidingWindowSize = 2;
-mymodel.addMapCurrTrial('response');
-mymodel.addMapCurrTrial('responseMax');
+% Load template ROI when open trial
+% roiTemplateFileName = 'modified_template_binned_x1y1z5_20190315_BH18_29dfp_Dp_z80um_s2_o4acsf_001__RoiArray.mat';
+%roiTemplateFileName = 'new_roi_template_active_cells.mat';
+% mymodel.roiTemplateFilePath = fullfile(mymodel.expConfig.roiDir, ...
+%                                roiTemplateFileName);
+% mymodel.doLoadTemplateRoi = true;
+%% get dF/F from Gui
+contrastLim=[0.15 0.8];
+trialIdx = mymodel.currentTrialIdx;
+trialContrl = mycon.trialContrlArray(trialIdx);
+trialContrl.view.setContrastLim(contrastLim);
+trialContrl.view.changeMapContrast(contrastLim);
+trialContrl.model.saveContrastLimToCurrentMap(contrastLim);
+colorbar
+%% save dF/F from gui
+trialIdx = mymodel.currentTrialIdx;
+trialContrl = mycon.trialContrlArray(trialIdx);
+frame = get(get(trialContrl.view.guiHandles.mapAxes,'children'), ...
+            'cdata');
+imageName = ['responseMap_' trialContrl.model.name '.svg'];
+imagePath = fullfile(expConfig.resultDir,imageName);
+% imwrite(frame,imagePath);
+saveas(gcf,imagePath)
+%% Remove single point ROIs
+trial = mymodel.getCurrentTrial();
+roiArray = trial.roiArray;
+deleteTagArray = {};
+for k = 1:length(roiArray)
+    roi = roiArray(k);
+    if size(roi.position,1)<2
+        deleteTagArray{end+1} = roi.tag;
+    end
+end
+% Delete point ROIs
+for k=1:length(deleteTagArray)
+    tag = deleteTagArray{k};
+    trial.deleteRoi(tag);
+end
 
-% mycon.updateResponseMap_Callback(1,2);
 
-%% Load template ROI when open trial
-templateRoiFileName = 'roi_template_active_cells.mat';
-mymodel.templateRoiFilePath = fullfile(mymodel.expConfig.roiDir, ...
-                               templateRoiFileName);
-mymodel.doLoadTemplateRoi = true;
-%% Open additional file outside fileList
-newFile = ['/media/hubo/Bo_FMI/Ca_imaging/processed_data/2019-03-' ...
-           '15-OBDp/binned_movie/unit8_binned_x1y1z5_20190315_BH18_29dfp_Dp_z80um_s1_o2trp_001_.tif']
-mycon.openAdditionalTrial(newFile,'frameRate',6)
-%% Open additional file outside fileList
-newFile = fullfile(expConfig.rawDataDir,'20190315_BH18_29dfp_Dp_z80um_s1_o2trp_001_.tif');
-mycon.openAdditionalTrial(newFile,'frameRate',6,'process',true, ...
-                          'noSignalWindow',[1 12]);
+%% Change load file type
+mymodel.loadFileType = 'raw';
+mymodel.processOption.process = true;
+mymodel.processOption.noSignalWindow = [1 12];
+mymodel.intensityOffset = -10;
 
 %% Extract time trace with template ROI in all trials
 % Apply template ROI map and correct ROIs in each trial
+expConfig.traceDir = fullfile(expConfig.resultDir,'timeTrace');
 
+if ~exist(expConfig.traceDir,'dir')
+    mkdir(expConfig.traceDir)
+end
+
+alignFilePath = fullfile(expConfig.alignDir, ...
+                         'regResult_amino_acid_template6.mat');
+foo = load(alignFilePath);
+offsetYxMat = foo.regResult.offsetYxMat;
+
+trialOption = {'intensityOffset',-50,'process',true,'noSignalWindow',[1 12]};
+
+idxRange = 1:7;
+roiTemplateFileName = 'new_roi_template_active_cells.mat';
+roiTemplateFilePath = fullfile(expConfig.roiDir, ...
+                               roiTemplateFileName);
+plotTrace = true;
+sm = 10;
+batch.extractTimeTraceMatFromFile(expConfig.rawDataDir,...
+                                  expConfig.rawFileList(idxRange),...
+                                  roiTemplateFilePath,...
+                                  expConfig.traceDir,...
+                                  trialOption,...
+                                  offsetYxMat(idxRange,:), ...
+                                  sm,...
+                                  plotTrace);
+
+%% Extract time trace with another template ROI map
+idxRange = 8:12;
+roiTemplateFileName = 'new_roi_template_active_cells_after_s2_o4acsf.mat';
+roiTemplateFilePath = fullfile(expConfig.roiDir, ...
+                               roiTemplateFileName);
+plotTrace = true;
+sm = 10;
+batch.extractTimeTraceMatFromFile(expConfig.rawDataDir,...
+                                  expConfig.rawFileList(idxRange),...
+                                  roiTemplateFilePath,...
+                                  expConfig.traceDir,...
+                                  trialOption,...
+                                  offsetYxMat(idxRange,:), ...
+                                  sm,...
+                                  plotTrace);
+
+
+% Next step: extract traces and analyse 2019 04 08
 %% Average time trace for each odor
 %% Thresholding and determine response window
 %% Calculate response maps
