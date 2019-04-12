@@ -1,8 +1,8 @@
-%% Add path
+%% step 1 Add path
 addpath('../')
-%% Clear variables
+%% step 2 Clear variables
 clear all
-%% Create experiment database
+%% step 3 Create experiment database
 expConfig.odorList = {'ala','trp','ser','acsf','tca','tdca','gca''spont'};
 expConfig.nTrial = 3;
 expConfig.name = '2019-03-15-OBDp';
@@ -22,8 +22,10 @@ expConfig.rawFileList = {'20190315_BH18_29dfp_Dp_z80um_s1_o1ala_001_.tif',...
 % expConfig.rawFileList = expConfig.rawFileList(1:2);
 % TODO Frame rate of acquisition read from file
 expConfig.frameRate = 30;
-% TODO change window from frame numbers to time in second
+
 intensityOffset = -100;
+% IMPORTANT the parameters of response time dF/F map are in unit
+% second now!! not frame number
 expConfig.responseOption = struct('offset',intensityOffset,...
                                   'fZeroWindow',[1 5],...
                                   'responseWindow',[15 20]);
@@ -32,19 +34,20 @@ expConfig.responseMaxOption = struct('offset',intensityOffset,...
                                      'fZeroWindow',[1 5],...
                                      'slidingWindowSize',3);
 % expConfig.rawFileList = expConfig.rawFileList(1);
-%% Define file path
+%% step 4 Define file path
+%% please set expConfig.resultDir, expConfig.rawDataDir,
+%% expConfig.binnedDir according to your folder names
+
 dataRootDir = '/media/hubo/Bo_FMI/Ca_imaging/';
 resultRootDir = '/home/hubo/Projects/Ca_imaging/results';
 
 expConfig.resultDir = fullfile(resultRootDir,expConfig.name);
 
 expConfig.rawDataDir = fullfile(dataRootDir,'raw_data',expConfig.name);
-% procDataDir =
-% fullfile(dataRootDir,'processed_data',expConfig.name);
 
 expConfig.binnedDir = fullfile(dataRootDir,'processed_data', ...
                                expConfig.name,'binned_movie');
-%fullfile(resultRootDir,expConfig.name,'binned_movie');
+% expConfig.binnedDir = fullfile(resultRootDir,expConfig.name,'binned_movie');
 if ~exist(expConfig.binnedDir)
     mkdir(expConfig.binnedDir)
 end
@@ -85,7 +88,7 @@ templateInd = 6;
 alignFileName = sprintf('regResult_amino_acid_template%d.mat',templateInd);
 expConfig.alignFilePath = fullfile(expConfig.alignDir,alignFileName);
 
-%% Binning raw moive
+%% step 5 Binning raw moive
 % TODO deal with file not exist in TrialModel
 process = true;
 noSignalWindow = [1 12];
@@ -97,11 +100,11 @@ batch.binMovieFromFile(expConfig.rawDataDir, ...
                        depth,...
                        'process',true, ...
                        'noSignalWindow',noSignalWindow);
-%% Calculate anatomy maps (average over frames)
+%% step 6 Calculate anatomy maps (average over frames)
 batch.calcAnatomyFromFile(expConfig.binnedDir, ...
                           expConfig.binnedFileList, ...
                           expConfig.anatomyDir);
-%% Align trials
+%% step 7 Align trials
 templateInd = 6;
 alignFileName = sprintf('regResult_amino_acid_template%d.mat',templateInd);
 expConfig.alignFilePath = fullfile(expConfig.alignDir,alignFileName);
@@ -114,7 +117,8 @@ regResult = batch.alignTrials(expConfig.anatomyDir,...
                               templateInd,expConfig.alignFilePath,...
                               plotFig,climit,debug);
 regResult.offsetYxMat
-%% Open NeuRoi GUI
+%% step 8 Open NeuRoi GUI (you can skip step 5-7 has been run previously
+%% and jump to step 8)
 mymodel = NrModel(expConfig);
 mycon = NrController(mymodel);
 mymodel.mapsAfterLoading = {'response','responseMax'};
@@ -168,11 +172,11 @@ for k=1:length(deleteTagArray)
 end
 
 
-%% Change load file type
-mymodel.loadFileType = 'raw';
-mymodel.processOption.process = true;
-mymodel.processOption.noSignalWindow = [1 12];
-mymodel.intensityOffset = -10;
+% %% Change load file type
+% mymodel.loadFileType = 'raw';
+% mymodel.processOption.process = true;
+% mymodel.processOption.noSignalWindow = [1 12];
+% mymodel.intensityOffset = -10;
 
 %% Extract time trace with template ROI in all trials
 % Apply template ROI map and correct ROIs in each trial
