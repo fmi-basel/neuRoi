@@ -1,6 +1,6 @@
 function anatomyArray = calcAnatomyFromFile(inDir,fileNameArray, ...
                                             outDir,varargin)
-% CALCANATOMY Calculate anatomy map from files in a directory
+% CALCANATOMYFROMFILE Calculate anatomy map from files in a directory
 % Args:
 %     inDir (char): input directory.
 %     fileNameArray (cell array): array containing input file names.

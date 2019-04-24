@@ -282,16 +282,19 @@ classdef TrialModel < handle
         % nFrameLimit: 1x2 array of two integers that specify the
         % beginning and end number of frames used to calculate the
         % anatomy.
-            pp = inputParser;
+            if nargin == 1
+                defaultNFrameLimit = [1 size(self.rawMovie,3)];
+                nFrameLimit = defaultNFrameLimit;
+                sigma = 0;
+            elseif nargin == 2
+                mopt = varargin{1};
+                nFrameLimit = mopt.nFrameLimit;
+                sigma = mopt.sigma;
+            else
+                error('Wrong usage!')
+                help TrialModel.calcAnatomy
+            end
             
-            defaultNFrameLimit = [1 size(self.rawMovie,3)];
-            addOptional(pp,'nFrameLimit',defaultNFrameLimit);
-            addParameter(pp,'sigma',0);
-            
-            parse(pp,varargin{:});
-            pr = pp.Results;
-            
-            nFrameLimit = pr.nFrameLimit;
             if ~(length(nFrameLimit) && nFrameLimit(2)>= ...
                  nFrameLimit(1))
                 error(['nFrameLimit should be an 1x2 integer array with ' ...
@@ -304,9 +307,9 @@ classdef TrialModel < handle
             
             mapData = mean(self.rawMovie(:,:,nFrameLimit(1): ...
                                             nFrameLimit(2)),3);
-            if pr.sigma
-                mapData = conv2(mapData,fspecial('gaussian',[3 3], pr.sigma),'same');
-                mapOption.sigma = pr.sigma;
+            if sigma
+                mapData = conv2(mapData,fspecial('gaussian',[3 3], sigma),'same');
+                mapOption.sigma = sigma;
             end
             mapOption.nFrameLimit = nFrameLimit;
         end
@@ -323,7 +326,7 @@ classdef TrialModel < handle
         % mymodel.calcResponse(mapOption)
         % mapOption is a structure that contains
         % offset,fZeroWindow,responseWindow in its field
-        % Unit of fZeroWindow and responseWindow are in second
+        % Units of fZeroWindow and responseWindow are in second
             if nargin == 2
                 mapOption = varargin{1};
                 offset = mapOption.offset;

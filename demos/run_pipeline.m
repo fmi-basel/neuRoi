@@ -228,6 +228,44 @@ batch.extractTimeTraceMatFromFile(expConfig.rawDataDir,...
 % Next step: extract traces and analyse 2019 04 08
 %% Average time trace for each odor
 %% Thresholding and determine response window
-%% Calculate response maps
 
 %% dF/F maps for all trials
+responseDir = fullfile(expConfig.resultDir,'response_map');
+if ~exist(responseDir,'dir')
+    mkdir(responseDir)
+end
+
+inDir = expConfig.binnedDir;
+inFileList = expConfig.binnedFileList;
+frameRate = expConfig.frameRate/expConfig.binParam.shrinkFactors(3);
+trialOption = {'frameRate',frameRate};
+
+mapType = 'response';
+mapOption = struct('offset',-30,...
+                   'fZeroWindow',[1 5],...
+                   'responseWindow',[11 16]);
+
+odorList = {'ala','trp','ser', 'acsf'};
+startPointList = [398 372 345 369]/30;
+odorDelayList = startPointList - min(startPointList)
+
+
+sortedFileTable = batch.sortFileNameByOdor(inFileList,odorList);
+trialTable = batch.getWindowDelayTable(sortedFileTable,odorList,odorDelayList)
+
+% outDir = responseDir;
+% outFileType = 'mat';
+outDir = [];
+outFileType = 'mat';
+
+responseArray = batch.calcMapFromFile(inDir,trialTable.FileName,...
+                                      'response',...
+                                      'mapOption',mapOption,...
+                                      'windowDelayList',trialTable.Delay,...
+                                      'trialOption',trialOption,...
+                                      'outDir',outDir,...
+                                      'outFileType',outFileType);
+%% Plot dF/F maps
+nTrialPerOdor = 3;
+climit = [0 0.2];
+batch.plotMaps(responseArray,trialTable,nTrialPerOdor,climit)
