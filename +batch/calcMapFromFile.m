@@ -1,4 +1,4 @@
-function mapArray = calcMapFromFile(inDir,fileNameArray,mapType,varargin)
+function mapArray = calcMapFromFile(inDir,fileNameList,mapType,varargin)
 
 % Optional input arguments
 % outDir
@@ -7,7 +7,7 @@ function mapArray = calcMapFromFile(inDir,fileNameArray,mapType,varargin)
 
 pa = inputParser;
 addRequired(pa,'inDir',@ischar)
-addRequired(pa,'fileNameArray',@iscell)
+addRequired(pa,'fileNameList',@iscell)
 addRequired(pa,'mapType')
 addParameter(pa,'mapOption',[])
 addParameter(pa,'windowDelayList',[])
@@ -15,13 +15,13 @@ addParameter(pa,'outDir',[])
 addParameter(pa,'trialOption',{})
 addParameter(pa,'outFileType','mat')
 
-parse(pa,inDir,fileNameArray,mapType,varargin{:})
+parse(pa,inDir,fileNameList,mapType,varargin{:})
 pr = pa.Results;
 
-nFile = length(pr.fileNameArray)
+nFile = length(pr.fileNameList)
 
 for k=1:nFile
-    fileName = pr.fileNameArray{k}
+    fileName = pr.fileNameList{k}
     filePath = fullfile(pr.inDir,fileName);
     disp(sprintf('Loading %dth file:',k))
     disp(filePath)
@@ -61,8 +61,3 @@ end
 mapMeta = pr;
 metaFilePath = fullfile(pr.outDir,'mapMeta.json');
 helper.saveStructAsJson(mapMeta,metaFilePath);
-
-
-
-
-
