@@ -1,7 +1,9 @@
 classdef NrModel < handle
     properties (SetObservable)
-        expConfig
+        rawDataDir
         rawFileList
+        resultDir
+        
         regResult
         binParam
         responseOption
@@ -20,20 +22,31 @@ classdef NrModel < handle
         loadFileType
     end
     
+    properties (SetAccess = private, SetObservable = true)
+        binConfig
+        anatomyConfig
+        alignConfig
+    end
+    
     methods
-        function self = NrModel(expConfig)
-        % TODO unpack expConfig
+        function self = NrModel(rawDataDir,rawFileList,resultDir, ...
+                                expInfo,varargin)
             self.trialArray = TrialModel.empty;
-            self.expConfig = expConfig;
-            self.rawFileList = expConfig.rawFileList;
             
-            if isfield(expConfig,'alignFilePath')
-                foo = load(expConfig.alignFilePath);
-                self.regResult = foo.regResult;
-            end
-            self.binParam = expConfig.binParam;
-            self.responseOption = expConfig.responseOption;
-            self.responseMaxOption = expConfig.responseMaxOption;
+            self.rawDataDir = rawDataDir;
+            self.rawFileList = rawFileList;
+            self.resultDir = resultDir;
+            
+            % self.binConfig.outDir = fullfile(resultDir,'binned_movie');
+            self.anatomyConfig.outDir = fullfile(resultDir,'anatomy');
+            self.alignConfig.outDir = fullfile(resultDir,'alignment');
+            
+            % if isfield(expParam,'alignFilePath')
+            %     foo = load(expParam.alignFilePath);
+            %     self.regResult = foo.regResult;
+            % end
+            % self.responseOption = expConfig.responseOption;
+            % self.responseMaxOption = expConfig.responseMaxOption;
             self.mapsAfterLoading = {};
             self.loadFileType = 'raw';
             
@@ -63,7 +76,7 @@ classdef NrModel < handle
             switch fileType
               case 'raw'
                 fileName = rawFileName;
-                filePath = fullfile(self.expConfig.rawDataDir, ...
+                filePath = fullfile(self.rawDataDir, ...
                                     fileName);
                 frameRate = self.expConfig.frameRate;
               case 'binned'
@@ -182,12 +195,83 @@ classdef NrModel < handle
             end
                 
         end
+
+        function binMovieBatch(self,param,outDir,fileIdx)
+            if ~exist('outDir','var')
+                if length(self.binConfig.outDir)
+                    outDir = self.binConfig.outDir;
+                else
+                    error('Please specify output directory!')
+                end
+            end
+            if ~exist(outDir,'dir')
+                mkdir(outDir)
+            end
+            
+            if exist('fileIdx','var')
+                rawFileList = self.rawFileList(fileIdx);
+            else
+                rawFileList = self.rawFileList(fileIdx);
+            end
+            % TODO change trialOption for multiplane analysis
+            binConfig = batch.binMovieFromFile(self.rawDataDir, ...
+                                                rawFileList, ...
+                                                outDir,...
+                                                param.shrinkFactors,...
+                                                param.depth,...
+                                                param.trialOption);
+            self.binConfig = binConfig;
+        end
         
-        % function updateMapWrap(self,tagArray,varargin)
-        %     if strcmp(tagArray,'current')
-        %         trial = self.trialArray(self.currentTrialIdx);
-        %         trial.findAndUpdateMap(varargin{:});
-        %     end
-        % end
+        function readBinConfig(self,metaFilePath)
+            self.binConfig = jsondecode(fileread(metaFilePath));
+        end
+        
+        function calcAnatomyBatch(self,param,fileIdx)
+            outDir = self.anatomyConfig.outDir;
+            if ~exist(outDir,'dir')
+                mkdir(outDir)
+            end
+
+            if ~isfield(param,'trialOption')
+                param.trialOption = {};
+            end
+            
+            if exist('fileIdx','var')
+                rawFileList = self.rawFileList(fileIdx);
+            else
+                rawFileList = self.rawFileList(fileIdx);
+            end
+            
+            if strcmp(param.inFileType,'raw')
+                filePrefix = batch.calcAnatomyFromFile(self.rawDataDir, ...
+                                                       rawFileList,...
+                                                       outDir, ...
+                                                       param.trialOption);
+            elseif strcmp(param.inFileType,'binned')
+                binDir = self.binConfig.outDir;
+                if self.binConfig.filePrefix
+                    binPrefix = self.binConfig.filePrefix;
+                    binnedFileList = ...
+                        iopath.modifyFileName(rawFileList,binPrefix,'','tif');
+                end
+                try
+                    [~,filePrefix] = batch.calcAnatomyFromFile(binDir, ...
+                                 binnedFileList,outDir,param.trialOption);
+                catch ME
+                    if strcmp(ME.identifier, ...
+                              'batchCalcAnatomyFromFile:fileNotFound')
+                        addMsg = ['Binned data does not exist! Please do ' ...
+                               'binning first before calculating anatomy.'];
+                        disp(addMsg)
+                    end
+                    rethrow(ME)
+                end
+                filePrefix = [filePrefix,binPrefix];
+            end
+            self.anatomyConfig.outDir = outDir;
+            self.anatomyConfig.param = param;
+            self.anatomyConfig.filePrefix = filePrefix;
+        end
     end
 end

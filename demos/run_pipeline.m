@@ -3,7 +3,6 @@ addpath('../')
 %% step 2 Clear variables
 clear all
 %% step 3 Create experiment database
-tic
 expConfig.odorList = {'ala','trp','ser','acsf','tca','tdca','gca''spont'};
 expConfig.nTrial = 3;
 expConfig.name = '2019-03-15-OBDp';
@@ -34,7 +33,6 @@ expConfig.responseOption = struct('offset',intensityOffset,...
 expConfig.responseMaxOption = struct('offset',intensityOffset,...
                                      'fZeroWindow',[1 5],...
                                      'slidingWindowSize',3);
-toc
 % expConfig.rawFileList = expConfig.rawFileList(1);
 %% step 4 Define file path
 %% please set expConfig.resultDir, expConfig.rawDataDir,
