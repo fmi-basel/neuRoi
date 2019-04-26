@@ -38,12 +38,6 @@ binDir = fullfile(dataRootDir,'binned_movie',expSubDir);
 anatomyParam.inFileType = 'binned'; % can be 'raw' or 'binned'
 
 % Trial-by-trial alignment parameters
-% alignParam.outDir = fullfile(resultDir,'alignment');
-templateRawName = '20190315_BH18_29dfp_Dp_z80um_s2_o2ser_002_';
-templateNameTail = templateRawName(end-13+1:end);
-alignParam.templateRawName = templateRawName;
-alignParam.outFileName = sprintf('alignResult_amino_acid_template%d.mat',...
-                                  templateNameTail);
 %% Step02 Initialize NrModel with experiment confiuration
 myexp = NrModel(rawDataDir,rawFileList,resultDir,...
                 expInfo);
@@ -53,17 +47,28 @@ binParam.shrinkFactors = [1, 1, 5];
 binParam.trialOption = {'process',true,'noSignalWindow',[1 12]};
 binParam.depth = 8;
 myexp.binMovieBatch(binParam,binDir,1:2);
-%% Step03b (optional) If binning has been done, add binning
-%% parameters to experiment
-%read from the binMeta file to get the binning parameters
-binMetaFileName = 'binMeta-2019-04-25-19h-14m-58s.json';
-binMetaFilePath = fullfile(binDir,binMetaFileName);
-myexp.readBinConfig(binMetaFilePath);
-%% Step04 Calculate anatomy maps
+%% Step03b (optional) If binning has been done, load binning
+%% parameters to NrModel
+%read from the binConfig file to get the binning parameters
+binConfigFileName = 'binConfig-2019-04-26-14h-12m-20s.json';
+binConfigFilePath = fullfile(binDir,binConfigFileName);
+myexp.readBinConfig(binConfigFilePath);
+%% Step04a Calculate anatomy maps
 % anatomyParam.inFileType = 'raw';
 % anatomyParam.trialOption = {'process',true,'noSignalWindow',[1 12]};
 anatomyParam.inFileType = 'binned';
 anatomyParam.trialOption = {};
-myexp.calcAnatomyBatch(anatomyParam,1:3);
-
-
+myexp.calcAnatomyBatch(anatomyParam,1:2);
+%% Step04b If anatomy map has been calculated, load anatomy
+%% parameters to NrModel
+anatomyDir = myexp.getDefaultDir('anatomy');
+anatomyConfigFileName = 'anatomyConfig.json';
+anatomyConfigFilePath = fullfile(anatomyDir,anatomyConfigFileName);
+myexp.readAnatomyConfig(anatomyConfigFilePath);
+%% Step05 Align trial to template
+templateRawName = '20190315_BH18_29dfp_Dp_z80um_s1_o1ala_001_.tif';
+templateNameTail = templateRawName(end-13+1:end);
+alignParam.templateRawName = templateRawName;
+alignParam.outFileName = sprintf('alignResult_amino_acid_template%s.mat',...
+                                  templateNameTail);
+myexp.alignTrialBatch(alignParam.templateRawName,alignParam.outFileName,1:2);

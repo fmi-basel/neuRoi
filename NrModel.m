@@ -220,7 +220,12 @@ classdef NrModel < handle
                                                 param.shrinkFactors,...
                                                 param.depth,...
                                                 param.trialOption);
+            
             self.binConfig = binConfig;
+            timeStamp = helper.getTimeStamp();
+            configFileName = ['binConfig-' timeStamp '.json'];
+            configFilePath = fullfile(outDir,configFileName);
+            helper.saveStructAsJson(binConfig,configFilePath);
         end
         
         function readBinConfig(self,metaFilePath)
@@ -240,11 +245,11 @@ classdef NrModel < handle
             if exist('fileIdx','var')
                 rawFileList = self.rawFileList(fileIdx);
             else
-                rawFileList = self.rawFileList(fileIdx);
+                rawFileList = self.rawFileList;
             end
             
             if strcmp(param.inFileType,'raw')
-                filePrefix = batch.calcAnatomyFromFile(self.rawDataDir, ...
+                [~,filePrefix] = batch.calcAnatomyFromFile(self.rawDataDir, ...
                                                        rawFileList,...
                                                        outDir, ...
                                                        param.trialOption);
@@ -269,9 +274,62 @@ classdef NrModel < handle
                 end
                 filePrefix = [filePrefix,binPrefix];
             end
-            self.anatomyConfig.outDir = outDir;
-            self.anatomyConfig.param = param;
-            self.anatomyConfig.filePrefix = filePrefix;
+            
+            anatomyConfig.outDir = outDir;
+            anatomyConfig.param = param;
+            anatomyConfig.filePrefix = filePrefix;
+            
+            self.anatomyConfig = anatomyConfig;
+
+            configFileName = ['anatomyConfig.json'];
+            configFilePath = fullfile(outDir,configFileName);
+            helper.saveStructAsJson(anatomyConfig,configFilePath);
+        end
+        
+        function readAnatomyConfig(self,filePath)
+            self.anatomyConfig = jsondecode(fileread(filePath));
+        end
+
+        function alignTrialBatch(self,templateRawName,outFileName, ...
+                                 fileIdx,varargin)
+            outDir = self.alignConfig.outDir;
+            anatomyPrefix = self.anatomyConfig.filePrefix;
+            templateName = iopath.modifyFileName(templateRawName, ...
+                                           anatomyPrefix,'','tif');
+            
+            if exist('fileIdx','var')
+                rawFileList = self.rawFileList(fileIdx);
+            else
+                rawFileList = self.rawFileList;
+            end
+
+            % TODO deal with error that no anatomy files found
+            % TODO deal with no anatomyConfig loaded
+            
+            anatomyFileList = iopath.modifyFileName(rawFileList, ...
+                                                    anatomyPrefix,'','tif');
+            outFilePath = fullfile(outDir,outFileName);
+            alignResult = batch.alignTrials(self.anatomyConfig.outDir,...
+                                            anatomyFileList, ...
+                                            templateName,'',varargin{:});
+            alignResult.anatomyPrefix = anatomyPrefix;
+            save(outFilePath,'alignResult')
+            
+            self.alignConfig.outDir = outDir;
+            self.alignConfig.outFileName = outFileName;
+            self.alignConfig.templateRawName = templateRawName;
+            
+            configFileName = ['alignConfig.json'];
+            configFilePath = fullfile(outDir,configFileName);
+            helper.saveStructAsJson(self.alignConfig,configFilePath);
+        end
+
+        function dd = getDefaultDir(self,dirName)
+            switch dirName
+              case 'anatomy'
+                dd = fullfile(self.resultDir,'anatomy');
+            end
         end
     end
+    
 end

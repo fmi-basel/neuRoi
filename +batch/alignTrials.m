@@ -1,10 +1,10 @@
-function regResult = alignTrials(anatomyDir,anatomyNameArray,templateInd,outFilePath,plotFig,climit,debug)
+function alignResult = alignTrials(inDir,inFileList,templateName,outFilePath,plotFig,climit,debug)
 % ALIGNTRIALS align each trial with respect to the template anatomy
 % image
 %     Args:
 %     Returns:
 if nargin < 4
-    outDir = '';
+    outFilePath = '';
     plotFig = false;
     climit = [];
     debug = false;
@@ -16,9 +16,17 @@ elseif nargin < 7
     debug = false;
 end
 
-nFile = length(anatomyNameArray);
-anatomyArray = batch.loadStack(anatomyDir, anatomyNameArray);
-templateAna = anatomyArray(:,:,templateInd);
+nFile = length(inFileList);
+anatomyArray = batch.loadStack(inDir,inFileList);
+
+templateDir = fileparts(templateName);
+if isempty(templateDir)
+    templatePath = fullfile(inDir,templateName);
+else
+    templatePath = templateName;
+end
+templateAna = movieFunc.readTiff(templatePath);
+
 offsetYxMat = zeros(nFile,2);
 
 for k=1:nFile
@@ -27,7 +35,7 @@ for k=1:nFile
     offsetYxMat(k,:) = offsetYx;
     if plotFig
         fig = figure;
-        fig.Name = [num2str(k) ': ' anatomyNameArray{k}];
+        fig.Name = [num2str(k) ': ' inFileList{k}];
         newAna = movieFunc.shiftImage(anatomyArray(:,:,k),offsetYx);
         tshow = imadjust(mat2gray(templateAna),climit);
         nshow = imadjust(mat2gray(newAna),climit);
@@ -35,15 +43,12 @@ for k=1:nFile
     end
 end
 
-% Save registration result
+alignResult.inDir = inDir;
+alignResult.inFileList = inFileList;
+alignResult.templateName = templateName;
+alignResult.offsetYxMat = offsetYxMat;
+
+% Save alignment result
 if length(outFilePath)
-    regResult.dataDir = anatomyDir;
-    regResult.anatomyNameArray = anatomyNameArray;
-    regResult.templateInd = templateInd;
-    regResult.offsetYxMat = offsetYxMat;
-    save(outFilePath,'regResult')
+    save(outFilePath,'alignResult')
 end
-
-
-
-

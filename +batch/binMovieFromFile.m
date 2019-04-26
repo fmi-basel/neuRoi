@@ -41,9 +41,3 @@ param.shrinkFactors = shrinkFactors;
 param.depth = depth;
 param.trialOption = trialOption;
 binConfig.param = param;
-
-timeStamp = helper.getTimeStamp
-configFileName = ['binMeta-' timeStamp '.json'];
-configFilePath = fullfile(outDir,configFileName);
-helper.saveStructAsJson(binConfig,configFilePath);
-
