@@ -177,7 +177,7 @@ classdef NrController < handle
                 end
             end
             
-            if self.model.doLoadTemplateRoi
+            if self.model.loadTemplateRoi
                 roiFilePath = self.model.roiTemplateFilePath;
                 trial.loadRoiArray(roiFilePath,'replace')
             end

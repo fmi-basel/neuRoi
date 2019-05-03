@@ -1,128 +1,31 @@
-%% Add path
-addpath('../../neuRoi');
-%% Clear variabless
+%% Add neuRoi rood directory to path
+addpath('../')
+%% Clear variables
 clear all
-%% Close figure
-close all
-%% File Paths
-dataDir = '/media/hubo/Bo_FMI/Data/two_photon_imaging/';
-resultDir = '/home/hubo/Projects/Ca_imaging/results/';
-subDir = '2018-09-04-EM';
-fileNameArray={'BH18_41dpf_f1_z75_s1_o1ala_002_.tif',...
-               'BH18_41dpf_f1_z75_s1_o2trp_001_.tif',...
-               'BH18_41dpf_f1_z75_s1_o3ser_001_.tif',...
-               'BH18_41dpf_f1_z75_s1_o4acsf_001_.tif',...
-               'BH18_41dpf_f1_z75_s1_o5food_001_.tif',...
-               'BH18_41dpf_f1_z75_s1_o6spont_001_.tif',...
-               'BH18_41dpf_f1_z75_s2_o1trp_001_.tif',...
-               'BH18_41dpf_f1_z75_s2_o2acsf_001_.tif',...
-               'BH18_41dpf_f1_z75_s2_o3ala_001_.tif',...
-               'BH18_41dpf_f1_z75_s2_o4ser_001_.tif',...
-               'BH18_41dpf_f1_z75_s2_o5food_001_.tif',...
-               'BH18_41dpf_f1_z75_s2_o6spont_001_.tif',...
-               'BH18_41dpf_f1_z75_s3_o1acsf_001_.tif',...
-               'BH18_41dpf_f1_z75_s3_o2ser_001_.tif',...
-               'BH18_41dpf_f1_z75_s3_o3ala_001_.tif',...
-               'BH18_41dpf_f1_z75_s3_o4trp_001_.tif',...
-               'BH18_41dpf_f1_z75_s3_o5food_001_.tif',...
-               'BH18_41dpf_f1_z75_s3_o6spont_001_.tif'};
-filePathArray = cellfun(@(x) fullfile(dataDir,subDir,x), ...
-                        fileNameArray,'UniformOutput',false);
-roiResultDir = fullfile(resultDir,subDir,'roiArray');
-%% Alignment Directory
-alignResultDir = fullfile(resultDir,subDir,'alignment');
-%% Load offsetYxMat
-filePath = fullfile(alignResultDir,'regResult.mat');
-foo = load(filePath);
-regResult = foo.regResult;
-offsetYxMat = regResult.offsetYxMat;
+%% Step01a Configure experiment and image processing parameters
+%% Step01b Load experiment configuration from file
+expFilePath = '/home/hubo/Projects/Ca_imaging/results/2019-03-15-OBDp/experimentConfig_2019-03-15-OBDp.mat';
+foo = load(expFilePath);
+myexp = foo.myexp;
+%% Step02 (optional) Sepcify options for opening a trial
+myexp.roiDir = myexp.getDefaultDir('roi');
+myexp.loadFileType = 'binned';
+myexp.trialOptionRaw = struct('process',true,...
+                              'noSignalWindow',[1 12],...
+                              'intensityOffset',-30);
+myexp.trialOptionBinned = struct('process',false,...
+                                 'noSignalWindow',[],...
+                                 'intensityOffset',100);
 
-%% Open neuRoi GUI
-mymodel = NrModel(filePathArray);
-mymodel.loadMovieOption = struct('zrange','all',...
-                                 'nFramePerStep',1);
-mymodel.offsetYxMat = offsetYxMat;
-mymodel.preprocessOption = struct('process',true,...
-                                  'noSignalWindow',[1 12]);
-mymodel.intensityOffset = -10;
-mymodel.resultDir = roiResultDir;
+myexp.responseOption = struct('offset',100,...
+                        'fZeroWindow',[1 5],...
+                        'responseWindow',[15 20]);
+myexp.responseMaxOption = struct('offset',100,...
+                           'fZeroWindow',[1 5],...
+                           'slidingWindowSize',3);
+myexp.mapsAfterLoading = {'response','responseMax'};
 
-mycontroller = NrController(mymodel);
-
-%% Get current trial
-currentTrialInd = mymodel.currentTrialInd;
-trial = mymodel.getTrialByInd(currentTrialInd);
-% trcon = mycontroller.trialControllerArray(currentTrialInd);
-%% responseMap
-currentTrialInd = mymodel.currentTrialInd;
-trial = mymodel.getTrialByInd(currentTrialInd);
-responseOption = struct('offset',mymodel.intensityOffset,...
-                        'fZeroWindow',[100 200],...
-                        'responseWindow',[400 600]);
-trial.calculateAndAddNewMap('response',responseOption);
-%trial.updateMap(2,responseOption)
-%% responseMax map
-currentTrialInd = mymodel.currentTrialInd;
-trial = mymodel.getTrialByInd(currentTrialInd);
-responseMaxOption = struct('offset',mymodel.intensityOffset,...
-                        'fZeroWindow',[100 200],...
-                        'slidingWindowSize',100);
-trial.calculateAndAddNewMap('responseMax',responseMaxOption);
-%% Import anatomy map from external file
-currentTrialInd = mymodel.currentTrialInd;
-trial = mymodel.getTrialByInd(currentTrialInd);
-
-% The external map should be a TIFF file with one plane
-% and same width and height as the movie file
-rfpMapFile = '/home/hubo/Desktop/C2-AVG_NT0012_f1_57dpf_lOB_Ala_003_.tif';
-trial.importMap(rfpMapFile);
-
-%% localCorrelation map
-currentTrialInd = mymodel.currentTrialInd;
-trial = mymodel.getTrialByInd(currentTrialInd);
-localCorrelationOption.tileSize = 16;
-trial.calculateAndAddNewMap('localCorrelation', ...
-                            localCorrelationOption);
-
-%% More response map
-responseOption = struct('offset',mymodel.intensityOffset,...
-                        'fZeroWindow',[100 200],...
-                        'responseWindow',[300 450]);
-%trial.calculateAndAddNewMap('response',responseOption);
-trial.updateMap(5,responseOption)
-
-
-%% TODO
-% TODO time trace starting point
-
-%% Delete ROIs with only one point
-% Get current trial
-currentTrialInd = mymodel.currentTrialInd;
-trial = mymodel.getTrialByInd(currentTrialInd);
-roiArray = trial.roiArray;
-deleteTagArray = {};
-for k = 1:length(roiArray)
-    roi = roiArray(k);
-    if size(roi.position,1)<2
-        deleteTagArray{end+1} = roi.tag;
-    end
-end
-%% Delete point ROIs
-for k=1:length(deleteTagArray)
-    tag = deleteTagArray{k};
-    trial.deleteRoi(tag);
-end
-%% Time trace directory
-traceResultDir = fullfile(resultDir,subDir,'timeTrace');
-%% Extract time traces from current trial
-currentTrialInd = mymodel.currentTrialInd;
-trial = mymodel.getTrialByInd(currentTrialInd);
-[timeTraceMat,roiTagArray] = trial.extractTimeTraceMat();
-
-dataFileBaseName = trial.fileBaseName;
-resFileName = [dataFileBaseName '_traceResult.mat'];
-resFilePath = fullfile(traceResultDir,resFileName);
-save(resFilePath,'timeTraceMat','roiTagArray')
-%% Plot time traces
-figure('Name',dataFileBaseName)
-imagesc(timeTraceMat)
+myexp.alignToTemplate = true;
+% trial = myexp.loadTrialFromList(1,'binned')
+%% Step03 Open neuRoi GUI
+mycon = NrController(myexp);

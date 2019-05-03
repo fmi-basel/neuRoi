@@ -1,59 +1,126 @@
 classdef NrModel < handle
     properties (SetObservable)
+        expInfo
+        
         rawDataDir
         rawFileList
         resultDir
-        
-        regResult
-        binParam
-        responseOption
-        responseMaxOption
-        
+
         trialArray
         currentTrialIdx
         
-        mapsAfterLoading
-        roiTemplateFilePath
-        doLoadTemplateRoi
-        processOption
-        % TODO big TODO change intensityOffset specification
-        intensityOffset
+        alignFilePath
+        alignResult
+
+        responseOption
+        responseMaxOption
+        
+        roiDir
         
         loadFileType
-    end
+        trialOptionRaw
+        trialOptionBinned
+        alignToTemplate
+        mapsAfterLoading
+        loadTemplateRoi
+        roiTemplateFilePath        
+    end 
     
     properties (SetAccess = private, SetObservable = true)
         binConfig
         anatomyConfig
-        alignConfig
     end
     
     methods
         function self = NrModel(rawDataDir,rawFileList,resultDir, ...
                                 expInfo,varargin)
+            pa = inputParser;
+            addRequired(pa,'rawDataDir');
+            addRequired(pa,'rawFileList');
+            addRequired(pa,'resultDir');
+            addRequired(pa,'expInfo');
+            addParameter(pa,'binDir','',@ischar);
+            addParameter(pa,'alignFilePath','',@ischar)
+            addParameter(pa,'roiDir','',@ischar);
+            addParameter(pa,'loadFileType','raw',@ischar);
+            defaultTrialOptionRaw = struct('process',true,...
+                                'noSignalWindow',[1 12], ...
+                                'intensityOffset',-30);
+            defaultTrialOptionBinned = struct('process',false,...
+                                'noSignalWindow',[], ...
+                                'intensityOffset',100);
+            addParameter(pa,'trialOptionRaw',defaultTrialOptionRaw, ...
+                         @isstruct);
+            addParameter(pa,'trialOptionBinned', ...
+                         defaultTrialOptionBinned,@isstruct);
+            
+            
+            defaultResponseOption = struct('offset',0,...
+                                           'fZeroWindow',[1 5],...
+                                           'responseWindow',[10 15]);
+            defaultResponseMaxOption = struct('offset',0,...
+                                              'fZeroWindow',[1 5],...
+                                              'slidingWindowSize',3);
+
+            addParameter(pa,'responseOption',defaultResponseOption, ...
+                         @isstruct);
+            addParameter(pa,'responseMaxOption', ...
+                         defaultResponseMaxOption,@isstruct);
+            
+
+            parse(pa,rawDataDir,rawFileList,resultDir,expInfo, ...
+                  varargin{:})
+            pr = pa.Results;
+
             self.trialArray = TrialModel.empty;
             
+            self.expInfo = expInfo;
             self.rawDataDir = rawDataDir;
             self.rawFileList = rawFileList;
             self.resultDir = resultDir;
             
-            % self.binConfig.outDir = fullfile(resultDir,'binned_movie');
-            self.anatomyConfig.outDir = fullfile(resultDir,'anatomy');
-            self.alignConfig.outDir = fullfile(resultDir,'alignment');
+            if ~isempty(pr.binDir)
+                self.binConfig.outDir = pr.binDir;
+            else
+                self.binConfig.outDir = ...
+                    self.getDefaultDir('binned');
+            end
             
-            % if isfield(expParam,'alignFilePath')
-            %     foo = load(expParam.alignFilePath);
-            %     self.regResult = foo.regResult;
-            % end
-            % self.responseOption = expConfig.responseOption;
-            % self.responseMaxOption = expConfig.responseMaxOption;
+            self.anatomyConfig.outDir = self.getDefaultDir('anatomy');
+            
+            if ~isempty(pr.alignFilePath)
+                self.loadAlignResult(pr.alignFilePath);
+                self.alignToTemplate = true;
+            else
+                self.alignToTemplate = false;
+            end
+            
+            if ~isempty(pr.roiDir)
+                self.roiDir = pr.roiDir;
+            else
+                self.roiDir = self.getDefaultDir('roi');
+            end
+            
+            self.loadFileType = pr.loadFileType;
+            self.trialOptionRaw = pr.trialOptionRaw;
+            self.trialOptionBinned = pr.trialOptionBinned;
+            self.responseOption = pr.responseOption;
+            self.responseMaxOption = pr.responseMaxOption;
             self.mapsAfterLoading = {};
-            self.loadFileType = 'raw';
-            
-            % TODO big TODO optimize processOption specification
-            self.processOption.process = true;
-            self.processOption.noSignalWindow = [1 12];
-
+            self.loadTemplateRoi = false;
+            self.roiTemplateFilePath = '';
+        end
+        
+        function loadAlignResult(self,filePath)
+            try
+                foo = load(filePath);
+            catch ME
+                disp('Could not load alignment result!')
+                disp(['File path:' filePath])
+                rethrow ME
+            end
+            self.alignResult = foo.alignResult;
+            self.alignFilePath = filePath;
         end
 
         function tagArray = getTagArray(self)
@@ -71,7 +138,7 @@ classdef NrModel < handle
             trial = self.trialArray(idx);
         end
 
-        function trial = loadTrialFromList(self,fileIdx,fileType,varargin)
+        function trial = loadTrialFromList(self,fileIdx,fileType)
             rawFileName = self.rawFileList{fileIdx};
             switch fileType
               case 'raw'
@@ -79,31 +146,47 @@ classdef NrModel < handle
                 filePath = fullfile(self.rawDataDir, ...
                                     fileName);
                 frameRate = self.expConfig.frameRate;
+                trialOption = self.trialOptionRaw;
               case 'binned'
-                shrinkFactors = self.binParam.shrinkFactors;
+                shrinkFactors = self.binConfig.param.shrinkFactors;
                 fileName = iopath.getBinnedFileName(rawFileName, ...
                                                     shrinkFactors);
-                filePath = fullfile(self.expConfig.binnedDir, ...
+                filePath = fullfile(self.binConfig.outDir, ...
                                     fileName);
-                frameRate = self.expConfig.frameRate / shrinkFactors(3);
+                frameRate = self.expInfo.frameRate / ...
+                    shrinkFactors(3);
+                trialOption = self.trialOptionBinned;
             end
             
 
-            if isstruct(self.regResult)
-                offsetYx = self.regResult.offsetYxMat(fileIdx,:);
+            % TODO change align option to loadTrialOption
+            if self.alignToTemplate
+                if isempty(self.alignResult)
+                    error('No alignment result loaded!')
+                end
+                inFileList = self.alignResult.inFileList;
+                anatomyPrefix = self.alignResult.anatomyPrefix;
+                anatomyFileName = ...
+                    iopath.modifyFileName(rawFileName, ...
+                                          anatomyPrefix,'','tif');
+                idx = find(strcmp(inFileList,anatomyFileName));
+                if isempty(idx)
+                    msg = ['Cannot find offset value in the aligment ' ...
+                           'result for file: ' anatomyFileName];
+                    error(msg);
+                else
+                    offsetYx = self.alignResult.offsetYxMat(idx,:);
+                end
             else
+                warning('The trials might not be aligned in X and Y!')
                 offstYx = [0,0];
             end
             
-            % TODO make other trial options explicit
-            trial = self.loadTrial(filePath,'process', ...
-                                 self.processOption.process,...
-                                 'noSignalWindow',...
-                                 self.processOption.noSignalWindow,...
-                             'intensityOffset',self.intensityOffset,...
-                                 'yxShift',offsetYx,...
-                                 'resultDir',self.expConfig.roiDir,...
-                                 'frameRate',frameRate);
+            trialOption.yxShift = offsetYx;
+            trialOption.resultDir = self.roiDir;
+            trialOption.frameRate = frameRate;
+            trialOptionCell = helper.structToNameValPair(trialOption);
+            trial = self.loadTrial(filePath,trialOptionCell);
             trial.sourceFileIdx = fileIdx;
         end
         
@@ -112,7 +195,7 @@ classdef NrModel < handle
             trial = self.loadTrial(filePath,varargin{:});
         end
         
-        function trial = loadTrial(self,filePath,varargin)
+        function trial = loadTrial(self,filePath,trialOption)
             tagArray = self.getTagArray();
             tag = helper.generateRandomTag(6);
             nstep = 1;
@@ -121,7 +204,7 @@ classdef NrModel < handle
                 nstep = nstep+1;
             end
             
-            trial = TrialModel(filePath,varargin{:});
+            trial = TrialModel(filePath,trialOption{:});
             trial.tag = tag;
             self.trialArray(end+1) = trial;
         end
@@ -211,7 +294,7 @@ classdef NrModel < handle
             if exist('fileIdx','var')
                 rawFileList = self.rawFileList(fileIdx);
             else
-                rawFileList = self.rawFileList(fileIdx);
+                rawFileList = self.rawFileList;
             end
             % TODO change trialOption for multiplane analysis
             binConfig = batch.binMovieFromFile(self.rawDataDir, ...
@@ -290,9 +373,8 @@ classdef NrModel < handle
             self.anatomyConfig = jsondecode(fileread(filePath));
         end
 
-        function alignTrialBatch(self,templateRawName,outFileName, ...
-                                 fileIdx,varargin)
-            outDir = self.alignConfig.outDir;
+        function alignTrialBatch(self,templateRawName,outFilePath, ...
+                                 varargin)
             anatomyPrefix = self.anatomyConfig.filePrefix;
             templateName = iopath.modifyFileName(templateRawName, ...
                                            anatomyPrefix,'','tif');
@@ -308,28 +390,73 @@ classdef NrModel < handle
             
             anatomyFileList = iopath.modifyFileName(rawFileList, ...
                                                     anatomyPrefix,'','tif');
-            outFilePath = fullfile(outDir,outFileName);
             alignResult = batch.alignTrials(self.anatomyConfig.outDir,...
                                             anatomyFileList, ...
                                             templateName,'',varargin{:});
             alignResult.anatomyPrefix = anatomyPrefix;
+            alignResult.templateRawName = templateRawName;
+
+            self.alignResult = alignResult;
+            self.alignFilePath = outFilePath;
             save(outFilePath,'alignResult')
-            
-            self.alignConfig.outDir = outDir;
-            self.alignConfig.outFileName = outFileName;
-            self.alignConfig.templateRawName = templateRawName;
-            
-            configFileName = ['alignConfig.json'];
-            configFilePath = fullfile(outDir,configFileName);
-            helper.saveStructAsJson(self.alignConfig,configFilePath);
         end
 
         function dd = getDefaultDir(self,dirName)
             switch dirName
+              case 'binned'
+                dd = fullfile(self.resultDir,'binned');
               case 'anatomy'
                 dd = fullfile(self.resultDir,'anatomy');
+              case 'alignment'
+                dd = fullfile(self.resultDir,'alignment');
+              case 'response_map'
+                dd = fullfile(self.resultDir,'response_map');
+              case 'roi'
+                dd = fullfile(self.resultDir,'roi');
+            end
+        end
+        
+        function fileList = getFileList(self,resultType,fileIdx)
+            if exist('fileIdx','var')
+                rawFileList = self.rawFileList(fileIdx);
+            else
+                rawFileList = self.rawFileList;
+            end
+            
+            switch resultType
+              case 'binned'
+                    binPrefix = self.binConfig.filePrefix;
+                    fileList = iopath.modifyFileName(rawFileList, ...
+                                                     binPrefix,'','tif');
+            end
+        end
+        
+        function s = saveobj(self)
+            for fn = fieldnames(self)'
+                s.(fn{1}) = self.(fn{1});
             end
         end
     end
-    
+
+    methods (Static)
+        function obj = loadobj(s)
+            if isstruct(s)
+                obj = NrModel(s.rawDataDir,s.rawFileList, ...
+                              s.resultDir,s.expInfo);
+                
+                for fn = fieldnames(s)'
+                    if ~ismember(fn,{'rawDataDir','rawFileList', ...
+                                     'resultDir','expInfo'})
+                        obj.(fn{1}) = s.(fn{1});
+                    end
+                end
+                
+                if isstruct(obj.alignResult)
+                    obj.alignToTemplate = true;
+                end
+            else
+                obj = s;
+            end
+        end
+    end
 end

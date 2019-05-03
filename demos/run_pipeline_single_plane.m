@@ -13,17 +13,17 @@ expSubDir = expInfo.name;
 % Raw data
 dataRootDir = '/media/hubo/Bo_FMI/Ca_imaging/';
 rawDataDir = fullfile(dataRootDir,'raw_data',expSubDir);
-rawFileList = {'20190315_BH18_29dfp_Dp_z80um_s1_o1ala_001_.tif',...
-               '20190315_BH18_29dfp_Dp_z80um_s1_o2trp_001_.tif',...
-               '20190315_BH18_29dfp_Dp_z80um_s1_o3ser_001_.tif',...
-               '20190315_BH18_29dfp_Dp_z80um_s1_o4acsf_001_.tif',...
-               '20190315_BH18_29dfp_Dp_z80um_s2_o1trp_001_.tif',...
-               '20190315_BH18_29dfp_Dp_z80um_s2_o2ser_002_.tif',...
-               '20190315_BH18_29dfp_Dp_z80um_s2_o3ala_001_.tif',...
-               '20190315_BH18_29dfp_Dp_z80um_s2_o4acsf_001_.tif',...
-               '20190315_BH18_29dfp_Dp_z80um_s3_o1ser_001_.tif',...
-               '20190315_BH18_29dfp_Dp_z80um_s3_o2trp_001_.tif',...
-               '20190315_BH18_29dfp_Dp_z80um_s3_o3ala_002_.tif',...
+rawFileList = {'20190315_BH18_29dfp_Dp_z80um_s1_o1ala_001_.tif';...
+               '20190315_BH18_29dfp_Dp_z80um_s1_o2trp_001_.tif';...
+               '20190315_BH18_29dfp_Dp_z80um_s1_o3ser_001_.tif';...
+               '20190315_BH18_29dfp_Dp_z80um_s1_o4acsf_001_.tif';...
+               '20190315_BH18_29dfp_Dp_z80um_s2_o1trp_001_.tif';...
+               '20190315_BH18_29dfp_Dp_z80um_s2_o2ser_002_.tif';...
+               '20190315_BH18_29dfp_Dp_z80um_s2_o3ala_001_.tif';...
+               '20190315_BH18_29dfp_Dp_z80um_s2_o4acsf_001_.tif';...
+               '20190315_BH18_29dfp_Dp_z80um_s3_o1ser_001_.tif';...
+               '20190315_BH18_29dfp_Dp_z80um_s3_o2trp_001_.tif';...
+               '20190315_BH18_29dfp_Dp_z80um_s3_o3ala_002_.tif';...
                '20190315_BH18_29dfp_Dp_z80um_s3_o4acsf_001_.tif'};
 
 % Data processing configuration
@@ -33,24 +33,19 @@ resultDir = fullfile(resultRootDir,expSubDir);
 % Directory for saving binned movies
 binDir = fullfile(dataRootDir,'binned_movie',expSubDir);
 
-% Anatomy map parameters
-%anatomyDir = fullfile(resultDir,'anatomy_map');
-anatomyParam.inFileType = 'binned'; % can be 'raw' or 'binned'
-
-% Trial-by-trial alignment parameters
 %% Step02 Initialize NrModel with experiment confiuration
 myexp = NrModel(rawDataDir,rawFileList,resultDir,...
-                expInfo);
+                expInfo,'binDir',binDir);
 %% Step03a (optional) Bin movies
 % Bin movie parameters
 binParam.shrinkFactors = [1, 1, 5];
 binParam.trialOption = {'process',true,'noSignalWindow',[1 12]};
 binParam.depth = 8;
-myexp.binMovieBatch(binParam,binDir,1:2);
+myexp.binMovieBatch(binParam,binDir);
 %% Step03b (optional) If binning has been done, load binning
-%% parameters to NrModel
+%% parameters to experiment
 %read from the binConfig file to get the binning parameters
-binConfigFileName = 'binConfig-2019-04-26-14h-12m-20s.json';
+binConfigFileName = 'binConfig-2019-05-02-16h-12m-53s.json';
 binConfigFilePath = fullfile(binDir,binConfigFileName);
 myexp.readBinConfig(binConfigFilePath);
 %% Step04a Calculate anatomy maps
@@ -58,17 +53,34 @@ myexp.readBinConfig(binConfigFilePath);
 % anatomyParam.trialOption = {'process',true,'noSignalWindow',[1 12]};
 anatomyParam.inFileType = 'binned';
 anatomyParam.trialOption = {};
-myexp.calcAnatomyBatch(anatomyParam,1:2);
+myexp.calcAnatomyBatch(anatomyParam);
 %% Step04b If anatomy map has been calculated, load anatomy
-%% parameters to NrModel
+%% parameters to experiment
 anatomyDir = myexp.getDefaultDir('anatomy');
 anatomyConfigFileName = 'anatomyConfig.json';
 anatomyConfigFilePath = fullfile(anatomyDir,anatomyConfigFileName);
 myexp.readAnatomyConfig(anatomyConfigFilePath);
-%% Step05 Align trial to template
+%% Step05a Align trial to template
+alignDir = myexp.getDefaultDir('alignment');
 templateRawName = '20190315_BH18_29dfp_Dp_z80um_s1_o1ala_001_.tif';
 templateNameTail = templateRawName(end-13+1:end);
-alignParam.templateRawName = templateRawName;
-alignParam.outFileName = sprintf('alignResult_amino_acid_template%s.mat',...
+templateRawName = templateRawName;
+alignFileName = sprintf('alignResult_amino_acid_template%s.mat',...
                                   templateNameTail);
-myexp.alignTrialBatch(alignParam.templateRawName,alignParam.outFileName,1:2);
+alignFilePath = fullfile(alignDir,alignFileName);
+plotFig = false;
+climit = [0 0.5];
+myexp.alignTrialBatch(templateRawName,alignFilePath,plotFig,climit);
+%% Step05b Load alignment result
+alignDir = myexp.getDefaultDir('alignment');
+templateRawName = '20190315_BH18_29dfp_Dp_z80um_s1_o1ala_001_.tif';
+templateNameTail = templateRawName(end-13+1:end);
+templateRawName = templateRawName;
+alignFileName = sprintf('alignResult_amino_acid_template%s.mat',...
+                        templateNameTail);
+alignFilePath = fullfile(alignDir,alignFileName);
+myexp.loadAlignResult(alignFilePath);
+%% Save experiment configuration
+expFileName = strcat('experimentConfig_',expInfo.name,'.mat');
+expFilePath = fullfile(resultDir,expFileName);
+save(expFilePath,'myexp')

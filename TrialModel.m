@@ -33,7 +33,7 @@ classdef TrialModel < handle
     end
     
     properties (Constant)
-        MAX_N_ROI = 200
+        MAX_N_ROI = 400
     end
     
     events
@@ -54,10 +54,6 @@ classdef TrialModel < handle
     
     methods
         function self = TrialModel(filePath,varargin)
-            defaultLoadMovieOption = struct('zrange','all',...
-                                            'nFramePerStep',1);
-            defaultPreprocessOption = struct('process',false);
-
             pa = inputParser;
             addRequired(pa,'filePath',@ischar);
             addParameter(pa,'zrange','all', @(s) ischar(s)|ismatrix(s));
