@@ -24,7 +24,8 @@ for k=1:nFile
     fileName = inFileList{k};
     disp(fileName)
     filePath = fullfile(inDir,fileName);
-    trial = TrialModel(filePath,trialOption{:});
+    trialOptionCell = helper.structToNameValPair(trialOption);
+    trial = TrialModel(filePath,trialOptionCell{:});
     binned = movieFunc.binMovie(trial.rawMovie,shrinkFactors, ...
                                 'mean');
     

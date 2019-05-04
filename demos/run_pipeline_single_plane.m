@@ -35,7 +35,7 @@ binDir = fullfile(dataRootDir,'binned_movie',expSubDir);
 
 %% Step02 Initialize NrModel with experiment confiuration
 myexp = NrModel(rawDataDir,rawFileList,resultDir,...
-                expInfo,'binDir',binDir);
+                expInfo);
 %% Step03a (optional) Bin movies
 % Bin movie parameters
 binParam.shrinkFactors = [1, 1, 5];
@@ -61,16 +61,14 @@ anatomyConfigFileName = 'anatomyConfig.json';
 anatomyConfigFilePath = fullfile(anatomyDir,anatomyConfigFileName);
 myexp.readAnatomyConfig(anatomyConfigFilePath);
 %% Step05a Align trial to template
-alignDir = myexp.getDefaultDir('alignment');
 templateRawName = '20190315_BH18_29dfp_Dp_z80um_s1_o1ala_001_.tif';
 templateNameTail = templateRawName(end-13+1:end);
 templateRawName = templateRawName;
-alignFileName = sprintf('alignResult_amino_acid_template%s.mat',...
+alignFileName = sprintf('alignResult_template%s.mat',...
                                   templateNameTail);
-alignFilePath = fullfile(alignDir,alignFileName);
-plotFig = false;
-climit = [0 0.5];
-myexp.alignTrialBatch(templateRawName,alignFilePath,plotFig,climit);
+% plotFig = false;
+% climit = [0 0.5];
+myexp.alignTrialBatch(templateRawName,alignFileName,'plotFig',false);
 %% Step05b Load alignment result
 alignDir = myexp.getDefaultDir('alignment');
 templateRawName = '20190315_BH18_29dfp_Dp_z80um_s1_o1ala_001_.tif';

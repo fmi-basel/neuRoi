@@ -56,7 +56,7 @@ classdef TrialModel < handle
         function self = TrialModel(filePath,varargin)
             pa = inputParser;
             addRequired(pa,'filePath',@ischar);
-            addParameter(pa,'zrange','all', @(s) ischar(s)|ismatrix(s));
+            addParameter(pa,'zrange',[1 inf], @ismatrix);
             addParameter(pa,'nFramePerStep',1)
             addParameter(pa,'process',false);
             addParameter(pa,'noSignalWindow',[1 12]);
@@ -96,7 +96,7 @@ classdef TrialModel < handle
                 self.loadMovie(self.filePath,self.loadMovieOption);
                 
                 if self.preprocessOption.process
-                    disp('Processing image: no signal widow:')
+                    disp('Processing image: no signal window:')
                     disp(self.preprocessOption.noSignalWindow)
                     self.preprocessMovie(self.preprocessOption.noSignalWindow);
                 end
@@ -132,11 +132,15 @@ classdef TrialModel < handle
         end
         
         function loadMovie(self,filePath,loadMovieOption)
-            if ~isnumeric(self.loadMovieOption.zrange)
-                if strcmp(self.loadMovieOption.zrange,'all')
-                    self.loadMovieOption.zrange = ...
-                        [1,self.meta.totalNFrame];
-                end
+            % if ~isnumeric(self.loadMovieOption.zrange)
+            %     if strcmp(self.loadMovieOption.zrange,'all')
+            %         self.loadMovieOption.zrange = ...
+            %             [1,self.meta.totalNFrame];
+            %     end
+            % end
+                
+            if self.loadMovieOption.zrange(2) == inf
+                self.loadMovieOption.zrange(2) = self.meta.totalNFrame;
             end
             
             disp(loadMovieOption)

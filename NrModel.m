@@ -29,6 +29,7 @@ classdef NrModel < handle
     properties (SetAccess = private, SetObservable = true)
         binConfig
         anatomyConfig
+        alignConfig
     end
     
     methods
@@ -39,7 +40,6 @@ classdef NrModel < handle
             addRequired(pa,'rawFileList');
             addRequired(pa,'resultDir');
             addRequired(pa,'expInfo');
-            addParameter(pa,'binDir','',@ischar);
             addParameter(pa,'alignFilePath','',@ischar)
             addParameter(pa,'roiDir','',@ischar);
             addParameter(pa,'loadFileType','raw',@ischar);
@@ -79,19 +79,14 @@ classdef NrModel < handle
             self.rawFileList = rawFileList;
             self.resultDir = resultDir;
             
-            if ~isempty(pr.binDir)
-                self.binConfig.outDir = pr.binDir;
-            else
-                self.binConfig.outDir = ...
-                    self.getDefaultDir('binned');
-            end
-            
             self.anatomyConfig.outDir = self.getDefaultDir('anatomy');
             
             if ~isempty(pr.alignFilePath)
                 self.loadAlignResult(pr.alignFilePath);
                 self.alignToTemplate = true;
             else
+                self.alignConfig.outDir = ...
+                    self.getDefaultDir('alignment');
                 self.alignToTemplate = false;
             end
             
@@ -111,18 +106,6 @@ classdef NrModel < handle
             self.roiTemplateFilePath = '';
         end
         
-        function loadAlignResult(self,filePath)
-            try
-                foo = load(filePath);
-            catch ME
-                disp('Could not load alignment result!')
-                disp(['File path:' filePath])
-                rethrow ME
-            end
-            self.alignResult = foo.alignResult;
-            self.alignFilePath = filePath;
-        end
-
         function tagArray = getTagArray(self)
             tagArray = arrayfun(@(x) x.tag,self.trialArray, ...
                                 'Uniformoutput',false);
@@ -279,7 +262,7 @@ classdef NrModel < handle
                 
         end
 
-        function binMovieBatch(self,param,outDir,fileIdx)
+        function binMovieBatch(self,param,outDir,planeNum,fileIdx)
             if ~exist('outDir','var')
                 if length(self.binConfig.outDir)
                     outDir = self.binConfig.outDir;
@@ -291,6 +274,23 @@ classdef NrModel < handle
                 mkdir(outDir)
             end
             
+            trialOption = param.trialOption;
+            if self.expInfo.nPlane > 1
+                if exist('planeNum','var')
+                    planeSubDir = NrModel.getPlaneSubDir(planeNum);
+                    outDir = fullfile(outDir,planeSubDir);
+                    if ~exist(outDir,'dir')
+                        mkdir(outDir)
+                    end
+                    trialOption.nFramePerStep = self.expInfo.nPlane;
+                    trialOption.zrange = [planeNum,inf];
+                else
+                    error(['Please specify plane number for' ...
+                           ' multiplane data!']);
+                end
+            end
+
+            
             if exist('fileIdx','var')
                 rawFileList = self.rawFileList(fileIdx);
             else
@@ -298,11 +298,11 @@ classdef NrModel < handle
             end
             % TODO change trialOption for multiplane analysis
             binConfig = batch.binMovieFromFile(self.rawDataDir, ...
-                                                rawFileList, ...
-                                                outDir,...
-                                                param.shrinkFactors,...
-                                                param.depth,...
-                                                param.trialOption);
+                                               rawFileList, ...
+                                               outDir,...
+                                               param.shrinkFactors,...
+                                               param.depth,...
+                                               trialOption);
             
             self.binConfig = binConfig;
             timeStamp = helper.getTimeStamp();
@@ -373,8 +373,13 @@ classdef NrModel < handle
             self.anatomyConfig = jsondecode(fileread(filePath));
         end
 
-        function alignTrialBatch(self,templateRawName,outFilePath, ...
+        function alignTrialBatch(self,templateRawName,outFileName, ...
                                  varargin)
+            outDir = self.alignConfig.outDir;
+            if ~exist(outDir,'dir')
+                mkdir(outDir)
+            end
+
             anatomyPrefix = self.anatomyConfig.filePrefix;
             templateName = iopath.modifyFileName(templateRawName, ...
                                            anatomyPrefix,'','tif');
@@ -389,16 +394,41 @@ classdef NrModel < handle
             % TODO deal with no anatomyConfig loaded
             
             anatomyFileList = iopath.modifyFileName(rawFileList, ...
-                                                    anatomyPrefix,'','tif');
+                                                    anatomyPrefix, ...
+                                                    '','tif');
+            stackFileName = iopath.modifyFileName(outFileName, ...
+                                                  'stack_','','tif');
+            stackFilePath = fullfile(outDir,stackFileName);
             alignResult = batch.alignTrials(self.anatomyConfig.outDir,...
                                             anatomyFileList, ...
-                                            templateName,'',varargin{:});
+                                            templateName,...
+                                            'stackFilePath',...
+                                            stackFilePath,...
+                                            varargin{:});
+            
             alignResult.anatomyPrefix = anatomyPrefix;
             alignResult.templateRawName = templateRawName;
 
             self.alignResult = alignResult;
-            self.alignFilePath = outFilePath;
+            self.alignConfig.outFileName = outFileName;
+            outFilePath = fullfile(outDir,outFileName);
             save(outFilePath,'alignResult')
+            
+            % TODOTODO save aligned image stack
+        end
+
+        function loadAlignResult(self,filePath)
+            try
+                foo = load(filePath);
+            catch ME
+                disp('Could not load alignment result!')
+                disp(['File path:' filePath])
+                rethrow ME
+            end
+            self.alignResult = foo.alignResult;
+            [outDir,outFileName,~] = fileparts(filePath);
+            self.alignConfig.outDir = outDir;
+            self.alignConfig.outFileName = outFileName;
         end
 
         function dd = getDefaultDir(self,dirName)
@@ -458,5 +488,10 @@ classdef NrModel < handle
                 obj = s;
             end
         end
+    
+        function planeSubDir = getPlaneSubDir(planeNum)
+            planeSubDir = sprintf('plane%02d',planeNum)
+        end
     end
+    
 end

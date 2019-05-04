@@ -1,54 +1,73 @@
-function alignResult = alignTrials(inDir,inFileList,templateName,outFilePath,plotFig,climit,debug)
+function [alignResult,varargout] = alignTrials(inDir,inFileList,templateName,varargin)
 % ALIGNTRIALS align each trial with respect to the template anatomy
 % image
 %     Args:
 %     Returns:
-if nargin < 4
-    outFilePath = '';
-    plotFig = false;
-    climit = [];
-    debug = false;
-elseif nargin < 5
-    plotFig = false;
-    climit = [];
-    debug = false;
-elseif nargin < 7
-    debug = false;
-end
 
-nFile = length(inFileList);
-anatomyArray = batch.loadStack(inDir,inFileList);
+pa = inputParser;
+addRequired(pa,'inDir',@ischar);
+addRequired(pa,'inFileList',@iscell);
+addRequired(pa,'templateName',@ischar);
+addParameter(pa,'outFilePath','',@ischar);
+addParameter(pa,'stackFilePath','',@ischar);
+addParameter(pa,'plotFig',false);
+addParameter(pa,'climit',[0 1]);
+addParameter(pa,'debug',false);
+parse(pa,inDir,inFileList,templateName,varargin{:})
+pr = pa.Results;
 
-templateDir = fileparts(templateName);
+
+nFile = length(pr.inFileList);
+anatomyArray = batch.loadStack(pr.inDir,pr.inFileList);
+
+templateDir = fileparts(pr.templateName);
 if isempty(templateDir)
-    templatePath = fullfile(inDir,templateName);
+    templatePath = fullfile(pr.inDir,pr.templateName);
 else
-    templatePath = templateName;
+    templatePath = pr.templateName;
 end
 templateAna = movieFunc.readTiff(templatePath);
 
 offsetYxMat = zeros(nFile,2);
 
 for k=1:nFile
-    offsetYx = movieFunc.alignImage(anatomyArray(:,:,k),templateAna,debug);
+    offsetYx = movieFunc.alignImage(anatomyArray(:,:,k),templateAna,pr.debug);
                           
     offsetYxMat(k,:) = offsetYx;
-    if plotFig
+    if pr.plotFig
         fig = figure;
-        fig.Name = [num2str(k) ': ' inFileList{k}];
+        fig.Name = [num2str(k) ': ' pr.inFileList{k}];
         newAna = movieFunc.shiftImage(anatomyArray(:,:,k),offsetYx);
-        tshow = imadjust(mat2gray(templateAna),climit);
-        nshow = imadjust(mat2gray(newAna),climit);
+        tshow = imadjust(mat2gray(templateAna),pr.climit);
+        nshow = imadjust(mat2gray(newAna),pr.climit);
         imshowpair(tshow,nshow,'Scaling','joint');
     end
 end
 
-alignResult.inDir = inDir;
-alignResult.inFileList = inFileList;
-alignResult.templateName = templateName;
+alignResult.inDir = pr.inDir;
+alignResult.inFileList = pr.inFileList;
+alignResult.templateName = pr.templateName;
 alignResult.offsetYxMat = offsetYxMat;
 
 % Save alignment result
-if length(outFilePath)
-    save(outFilePath,'alignResult')
+if length(pr.outFilePath)
+    save(pr.outFilePath,'alignResult')
+end
+
+if nargout == 2 | length(pr.stackFilePath)
+    alignedStack = shiftStack(anatomyArray,offsetYxMat);
+    if length(pr.stackFilePath)
+        movieFunc.saveTiff(alignedStack, ...
+                           pr.stackFilePath);
+    end
+    if nargout == 2
+        varargout{1} = alignedStack;
+    end
+end
+
+function alignedStack = shiftStack(stack,offsetYxMat)
+alignedStack = stack;
+for k=1:size(stack,3)
+    yxShift = offsetYxMat(k,:);
+    alignedStack(:,:,k) = circshift(alignedStack(:,:,k),yxShift);
 end
