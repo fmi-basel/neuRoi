@@ -1,6 +1,7 @@
 function plotMaps(mapArray,trialTable,nTrialPerOdor,climit)
 % assume mapArray and trialTable are sorted according to odor
-odorList = categories(trialTable.Odor);
+% odorList = categories(trialTable.Odor);
+odorList = unique(trialTable.Odor);
 
 nCol = length(odorList)+1;
 nRow = nTrialPerOdor;
@@ -13,9 +14,9 @@ fig = figure('InnerPosition',[200 500 figWidth figHeight]);
 for k=1:nSubplot
     subplot(nRow,nCol,indMat(k))
     imagesc(mapArray(:,:,k))
+    ax = gca;
     ax.Visible = 'off';
     if mod(k,nRow) == 1
-        ax = gca;
         odor = cellstr(trialTable.Odor(k));
         odor = odor{:};
         title(odor);

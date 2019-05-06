@@ -168,8 +168,7 @@ classdef NrModel < handle
             trialOption.yxShift = offsetYx;
             trialOption.resultDir = self.roiDir;
             trialOption.frameRate = frameRate;
-            trialOptionCell = helper.structToNameValPair(trialOption);
-            trial = self.loadTrial(filePath,trialOptionCell);
+            trial = self.loadTrial(filePath,trialOption);
             trial.sourceFileIdx = fileIdx;
         end
         
@@ -187,7 +186,8 @@ classdef NrModel < handle
                 nstep = nstep+1;
             end
             
-            trial = TrialModel(filePath,trialOption{:});
+            trialOptionCell = helper.structToNameValPair(trialOption);
+            trial = TrialModel(filePath,trialOptionCell{:});
             trial.tag = tag;
             self.trialArray(end+1) = trial;
         end
@@ -277,10 +277,10 @@ classdef NrModel < handle
             trialOption = param.trialOption;
             if self.expInfo.nPlane > 1
                 if exist('planeNum','var')
-                    planeSubDir = NrModel.getPlaneSubDir(planeNum);
-                    outDir = fullfile(outDir,planeSubDir);
-                    if ~exist(outDir,'dir')
-                        mkdir(outDir)
+                    planeString = NrModel.getPlaneString(planeNum);
+                    outSubDir = fullfile(outDir,planeString);
+                    if ~exist(outSubDir,'dir')
+                        mkdir(outSubDir)
                     end
                     trialOption.nFramePerStep = self.expInfo.nPlane;
                     trialOption.zrange = [planeNum,inf];
@@ -288,6 +288,8 @@ classdef NrModel < handle
                     error(['Please specify plane number for' ...
                            ' multiplane data!']);
                 end
+            else
+                outSubDir = outDir;
             end
 
             
@@ -296,17 +298,19 @@ classdef NrModel < handle
             else
                 rawFileList = self.rawFileList;
             end
-            % TODO change trialOption for multiplane analysis
+            
             binConfig = batch.binMovieFromFile(self.rawDataDir, ...
                                                rawFileList, ...
-                                               outDir,...
+                                               outSubDir,...
                                                param.shrinkFactors,...
                                                param.depth,...
                                                trialOption);
-            
+            binConfig.outDir = outDir;
+            binConfig.trialOption = param.trialOption;
             self.binConfig = binConfig;
-            timeStamp = helper.getTimeStamp();
-            configFileName = ['binConfig-' timeStamp '.json'];
+            % timeStamp = helper.getTimeStamp();
+            % configFileName = ['binConfig-' timeStamp '.json'];
+            configFileName = 'binConfig.json';
             configFilePath = fullfile(outDir,configFileName);
             helper.saveStructAsJson(binConfig,configFilePath);
         end
@@ -315,7 +319,7 @@ classdef NrModel < handle
             self.binConfig = jsondecode(fileread(metaFilePath));
         end
         
-        function calcAnatomyBatch(self,param,fileIdx)
+        function calcAnatomyBatch(self,param,planeNum,fileIdx)
             outDir = self.anatomyConfig.outDir;
             if ~exist(outDir,'dir')
                 mkdir(outDir)
@@ -330,14 +334,39 @@ classdef NrModel < handle
             else
                 rawFileList = self.rawFileList;
             end
+
+            if self.expInfo.nPlane > 1
+                if exist('planeNum','var')
+                    planeString = NrModel.getPlaneString(planeNum);
+                    outSubDir = fullfile(outDir,planeString);
+                    if ~exist(outSubDir,'dir')
+                        mkdir(outSubDir)
+                    end
+                else
+                    error(['Please specify plane number for' ...
+                           ' multiplane data!']);
+                end
+            else
+                outSubDir = outDir;
+            end
             
+
             if strcmp(param.inFileType,'raw')
+                trialOption = param.trialOption;
+                if self.expInfo.nPlane > 1
+                    trialOption.nFramePerStep = self.expInfo.nPlane;
+                    trialOption.zrange = [planeNum,inf];
+                end
                 [~,filePrefix] = batch.calcAnatomyFromFile(self.rawDataDir, ...
                                                        rawFileList,...
-                                                       outDir, ...
-                                                       param.trialOption);
+                                                       outSubDir, ...
+                                                       trialOption);
             elseif strcmp(param.inFileType,'binned')
                 binDir = self.binConfig.outDir;
+                if self.expInfo.nPlane > 1
+                    binDir = fullfile(binDir,planeString)
+                end
+                
                 if self.binConfig.filePrefix
                     binPrefix = self.binConfig.filePrefix;
                     binnedFileList = ...
@@ -345,7 +374,7 @@ classdef NrModel < handle
                 end
                 try
                     [~,filePrefix] = batch.calcAnatomyFromFile(binDir, ...
-                                 binnedFileList,outDir,param.trialOption);
+                                 binnedFileList,outSubDir,param.trialOption);
                 catch ME
                     if strcmp(ME.identifier, ...
                               'batchCalcAnatomyFromFile:fileNotFound')
@@ -375,6 +404,13 @@ classdef NrModel < handle
 
         function alignTrialBatch(self,templateRawName,outFileName, ...
                                  varargin)
+            pa = inputParser;
+            addParameter(pa,'planeNum',0,@isnumeric);
+            addParameter(pa,'fileIdx','all',@(x) ischar(x)|ismatrix(x));
+            addParameter(pa,'alignOption',{},@iscell);
+            parse(pa,varargin{:})
+            pr = pa.Results;
+            
             outDir = self.alignConfig.outDir;
             if ~exist(outDir,'dir')
                 mkdir(outDir)
@@ -384,37 +420,54 @@ classdef NrModel < handle
             templateName = iopath.modifyFileName(templateRawName, ...
                                            anatomyPrefix,'','tif');
             
-            if exist('fileIdx','var')
-                rawFileList = self.rawFileList(fileIdx);
-            else
+
+            if ischar(pr.fileIdx)
                 rawFileList = self.rawFileList;
+            else
+                rawFileList = self.rawFileList(pr.fileIdx);
             end
 
             % TODO deal with error that no anatomy files found
             % TODO deal with no anatomyConfig loaded
-            
+
+            if self.expInfo.nPlane > 1
+                if pr.planeNum
+                    planeString = NrModel.getPlaneString(pr.planeNum);
+                    inDir = fullfile(self.anatomyConfig.outDir, ...
+                                     planeString);
+                    
+                    outSubDir = fullfile(outDir,planeString);
+                    if ~exist(outSubDir,'dir')
+                        mkdir(outSubDir)
+                    end
+                else
+                    error(['Please specify plane number for' ...
+                           ' multiplane data!']);
+                end
+            else
+                inDir = self.anatomyConfig.outDir;
+                outSubDir = outDir;
+            end
             anatomyFileList = iopath.modifyFileName(rawFileList, ...
                                                     anatomyPrefix, ...
                                                     '','tif');
             stackFileName = iopath.modifyFileName(outFileName, ...
                                                   'stack_','','tif');
-            stackFilePath = fullfile(outDir,stackFileName);
-            alignResult = batch.alignTrials(self.anatomyConfig.outDir,...
+            stackFilePath = fullfile(outSubDir,stackFileName);
+            alignResult = batch.alignTrials(inDir,...
                                             anatomyFileList, ...
                                             templateName,...
                                             'stackFilePath',...
                                             stackFilePath,...
-                                            varargin{:});
+                                            pr.alignOption{:});
             
             alignResult.anatomyPrefix = anatomyPrefix;
             alignResult.templateRawName = templateRawName;
 
             self.alignResult = alignResult;
             self.alignConfig.outFileName = outFileName;
-            outFilePath = fullfile(outDir,outFileName);
+            outFilePath = fullfile(outSubDir,outFileName);
             save(outFilePath,'alignResult')
-            
-            % TODOTODO save aligned image stack
         end
 
         function loadAlignResult(self,filePath)
@@ -430,7 +483,129 @@ classdef NrModel < handle
             self.alignConfig.outDir = outDir;
             self.alignConfig.outFileName = outFileName;
         end
+        
+        function [mapArray,varargout] = calcMapBatch(self,...
+                            inFileType,mapType,mapOption,varargin)
+            pa = inputParser;
+            addParameter(pa,'trialOption',[]);
+            addParameter(pa,'planeNum',0,@isnumeric);
+            addParameter(pa,'sortBy','none',@ischar);
+            addParameter(pa,'odorDelayList',[],@ismatrix);
+            addParameter(pa,'saveMap',false);
+            addParameter(pa,'outFileType','mat',@ischar);
+            parse(pa,varargin{:})
+            pr = pa.Results;
+            planeNum = pr.planeNum;
+            multiPlane = self.checkMultiPlane(planeNum);
+                
+            trialOption = pr.trialOption;
+            if strcmp(inFileType,'raw')
+                inSubDir = self.rawDataDir;
+                inFileList = self.rawFileList;
+                if multiPlane
+                    trialOption.frameRate = self.expInfo.frameRate/ ...
+                                            self.expInfo.nPlane;
+                    trialOption.zrange = [planeNum inf];
+                    trialOption.nFramePerStep = self.expInfo.nPlane;
+                else
+                    trialOption.frameRate = self.expInfo.frameRate;
+                end
+            elseif strcmp(inFileType,'binned')
+                inDir = self.binConfig.outDir;
+                inFileList = self.getFileList('binned');
+                shrinkZ = self.binConfig.param.shrinkFactors(3);
+                if multiPlane
+                    inSubDir = fullfile(inDir, ...
+                                  NrModel.getPlaneString(planeNum));
+                    trialOption.frameRate = self.expInfo.frameRate/ ...
+                                         self.expInfo.nPlane/shrinkZ;
+                else
+                    inSubDir = inDir;
+                    trialOption.frameRate = self.expInfo.frameRate/ ...
+                                            shrinkZ;
+                end
 
+            else
+                error('inFileType should be either raw or binned!')
+            end
+            
+            odorList = self.expInfo.odorList;
+            % TODO accept user provided fileOdorList
+            if ~isempty(odorList)
+                trialTable = batch.getTrialTable(inFileList, ...
+                                                 odorList);
+            else
+                trialTable = table(inFileList');
+            end
+            
+            if strcmpi(pr.sortBy,'odor')
+                trialTable = sortrows(trialTable,'Odor');
+            end
+            
+            if ~isempty(pr.odorDelayList)
+                trialTable = batch.getWindowDelayTable(trialTable, ...
+                                     odorList,pr.odorDelayList);
+                delayList =  trialTable.Delay;
+            else
+                delayList = [];
+            end
+                
+            if nargout == 2
+                varargout{1} = trialTable;
+            end
+
+            if pr.saveMap
+                outDir = myexp.getDefaultDir('response_map');
+                if ~exist(outDir,'dir')
+                    mkdir(outDir)
+                end
+                if multiPlane
+                    outSubDir = fullfile(outDir, ...
+                                NrModel.getPlaneString(planeNum));
+                    if ~exist(outSubDir,'dir')
+                        mkdir(outSubDir)
+                    end
+                else
+                    outSubDir = outDir;
+                end
+            else
+                outSubDir = [];
+            end
+                
+            mapArray = batch.calcMapFromFile(inSubDir,...
+                                      trialTable.FileName,...
+                                      mapType,...
+                                      'mapOption',mapOption,...
+                                      'windowDelayList',...
+                                      delayList,...
+                                      'trialOption',trialOption,...
+                                      'outDir',outSubDir,...
+                                      'outFileType',pr.outFileType);
+        end
+        
+        function multiPlane = checkMultiPlane(self,planeNum)
+            multiPlane = false;
+            if isfield(self.expInfo,'nPlane')
+                nPlane = self.expInfo.nPlane;
+                if nPlane >1
+                    if planeNum >= 1 && planeNum <= nPlane
+                        multiPlane = true;
+                    else
+                        msg = sprintf(['Please specify the plane'...
+                                       'numberbetween 1 and %d!'], ...
+                                      nPlane);
+                        error(msg);
+                    end
+                else
+                    if planeNum > 1
+                        msg = sprintf(['No multi-plane data for'...
+                                      ' plane %d'],planeNum);
+                        error(msg);
+                    end
+                end
+            end
+        end
+        
         function dd = getDefaultDir(self,dirName)
             switch dirName
               case 'binned'
@@ -489,8 +664,8 @@ classdef NrModel < handle
             end
         end
     
-        function planeSubDir = getPlaneSubDir(planeNum)
-            planeSubDir = sprintf('plane%02d',planeNum)
+        function planeString = getPlaneString(planeNum)
+            planeString = sprintf('plane%02d',planeNum)
         end
     end
     

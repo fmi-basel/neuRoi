@@ -12,7 +12,7 @@ addRequired(pa,'mapType')
 addParameter(pa,'mapOption',[])
 addParameter(pa,'windowDelayList',[])
 addParameter(pa,'outDir',[])
-addParameter(pa,'trialOption',{})
+addParameter(pa,'trialOption',[])
 addParameter(pa,'outFileType','mat')
 
 parse(pa,inDir,fileNameList,mapType,varargin{:})
@@ -25,7 +25,8 @@ for k=1:nFile
     filePath = fullfile(pr.inDir,fileName);
     disp(sprintf('Loading %dth file:',k))
     disp(filePath)
-    trial = TrialModel(filePath,pr.trialOption{:});
+    trialOptionCell = helper.structToNameValPair(pr.trialOption);
+    trial = TrialModel(filePath,trialOptionCell{:});
         
     if ~isempty(pr.mapOption)
         mapOption = pr.mapOption;

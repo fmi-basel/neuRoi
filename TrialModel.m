@@ -114,7 +114,7 @@ classdef TrialModel < handle
             
             % shift movie in x and y axis
             self.yxShift = [0 0];
-            if pr.yxShift
+            if any(pr.yxShift)
                 self.shiftMovieYx(pr.yxShift)
             end
 

@@ -29,7 +29,8 @@ function binned = binMovie(rawMovie,shrinkFactors,binMethod)
         warning(['Shrink factors not divide the dimensions of movie ' ...
                'matrix. Residues after last block truncated.'])
         oldMovieSize = size(rawMovie);
-        rawMovie = rawMovie(oldMovieSize-mod(oldMovieSize,shrinkFactors));
+        mvsz = oldMovieSize-mod(oldMovieSize,shrinkFactors);
+        rawMovie = rawMovie(1:mvsz(1),1:mvsz(2),1:mvsz(3));
     end
 
     movieSize = size(rawMovie);
