@@ -16,7 +16,8 @@ for idx = 1:length(rawFileList)
     rawFilePath = fullfile(rawDataDir,rawFileName);
     
     offsetYx = offsetYxMat(idx,:);
-    trial = TrialModel(rawFilePath,'yxShift',offsetYx,trialOption{:});
+    trialOptionCell = helper.structToNameValPair(trialOption)
+    trial = TrialModel(rawFilePath,'yxShift',offsetYx,trialOptionCell{:});
     trial.loadRoiArray(roiTemplateFilePath,'replace');
     [timeTraceMat,roiArray] = trial.extractTimeTraceMat(trial.intensityOffset,sm);
     if plotTrace
