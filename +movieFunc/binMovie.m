@@ -59,6 +59,10 @@ function binned = binMovie(rawMovie,shrinkFactors,binMethod)
         binned = binZ(movieToBin,shrinkFactors(3));
     end
     
+    if ~(doBinningXy | doBinningZ)
+        binned = rawMovie;
+    end
+    
 function binnedVec = bin1D(vec,shrinkFactor,binMethod)
     if mod(length(vec),shrinkFactor)
         error('Shrink factor must divide the length of the vector!')

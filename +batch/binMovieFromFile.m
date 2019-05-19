@@ -31,8 +31,21 @@ for k=1:nFile
     
     outFileName = iopath.modifyFileName(fileName,outFilePrefix,'','tif');
     outFilePath = fullfile(outDir,outFileName);
-    movieFunc.saveTiff(movieFunc.convertToUint(binned,depth), ...
-                       outFilePath)
+    if strcmp(class(binned),'double')
+        binned = movieFunc.convertToUint(binned,depth);
+    elseif strcmp(class(binned),'uint8') | strcmp(class(binned),'uint16')
+        if depth == 8
+            binned = uint8(binned);
+        elseif depth == 16
+            binned = uint16(binned);
+        else
+            error('Depth should be 8 or 16 for uint8 or uint16!')
+        end
+    else
+        error(['Type error! Binned movie should be double or uint8 ' ...
+               'or uint16!'])
+    end
+    movieFunc.saveTiff(binned,outFilePath)
 end
 binConfig.inDir = inDir;
 binConfig.inFileList = inFileList;
