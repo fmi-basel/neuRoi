@@ -1,14 +1,19 @@
 function rawMovie = readMovie(filePath,meta,varargin)
 % READMOVIE read movie from TIFF file into a 3D array
-% Usage: readMovie(filePath,meta,[frameRange,[nFramePerStep]])
-% filePath: the path to TIFF file.
-% meta: a structure that contains .totalNFrame(total number of
-% frames), .height and .width (height and width of image in number
-% of pixels)
-% frameRange: 1x2 array specifying the number of the starting and
-% ending frame;
-% nFramePerStep: the step size of loading the frame (load every
-% nFramePerStep frame from data);
+% Usage: rawMovie = readMovie(filePath,meta,[frameRange,[nFramePerStep]])
+%     Inputs:  
+%     filePath: the path to TIFF file.
+%     meta: a structure that contains .totalNFrame(total number of
+%           frames), .height and .width (height and width of image
+%           in number
+%           of pixels)
+%     frameRange(optional): 1x2 array specifying the number of the
+%          starting and ending frame;
+%     nFramePerStep(optional): the step size of loading the frame (load every
+%          nFramePerStep-th frame from data);
+%     Outputs:
+%     rawMovie: y * x * z 3D array, with the 3rd axis as the number
+%     of frame.
     
     if nargin == 2
         frameRange = [1,meta.totalNFrame];;

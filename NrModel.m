@@ -9,6 +9,8 @@ classdef NrModel < handle
         trialArray
         currentTrialIdx
         
+        motionCorrConfig
+        
         alignFilePath
         alignResult
 
@@ -79,7 +81,7 @@ classdef NrModel < handle
             self.rawFileList = rawFileList;
             self.resultDir = resultDir;
             
-            self.anatomyConfig.outDir = self.getDefaultDir('anatomy');
+            self.anatomyConfig.outDir = 'anatomy';
             
             if ~isempty(pr.alignFilePath)
                 self.loadAlignResult(pr.alignFilePath);
@@ -121,8 +123,35 @@ classdef NrModel < handle
             trial = self.trialArray(idx);
         end
 
-        function trial = loadTrialFromList(self,fileIdx,fileType)
+        function trial = loadTrialFromList(self,fileIdx,fileType, ...
+                                           planeNum)
+            if ~exist('planeNum','var')
+                planeNum = 0;
+            end
+            
             rawFileName = self.rawFileList{fileIdx};
+            
+            % self.checkMultiPlane(planeNum)
+            % if self.expInfo.nPlane > 1
+            %     if planeNum > 0 && planeNum <=self.expInfo.nPlane
+            %         planeString = NrModel.getPlaneString(planeNum);
+            %         outSubDir = fullfile(outDir,planeString);
+            %         if ~exist(outSubDir,'dir')
+            %             mkdir(outSubDir)
+            %         end
+            %         trialOption.nFramePerStep = self.expInfo.nPlane;
+            %         trialOption.zrange = [planeNum,inf];
+            %     else
+            %         msg = sprintf(['Please specify plane number'...
+            %                        'for multiplane data!'...
+            %                        'Number of planes: %d'],...
+            %                       self.expInfo.nPlane);
+            %         error(msg)
+            %     end
+            % else
+            %     outSubDir = outDir;
+            % end
+
             switch fileType
               case 'raw'
                 fileName = rawFileName;
@@ -142,27 +171,11 @@ classdef NrModel < handle
             end
             
 
-            % TODO change align option to loadTrialOption
             if self.alignToTemplate
-                if isempty(self.alignResult)
-                    error('No alignment result loaded!')
-                end
-                inFileList = self.alignResult.inFileList;
-                anatomyPrefix = self.alignResult.anatomyPrefix;
-                anatomyFileName = ...
-                    iopath.modifyFileName(rawFileName, ...
-                                          anatomyPrefix,'','tif');
-                idx = find(strcmp(inFileList,anatomyFileName));
-                if isempty(idx)
-                    msg = ['Cannot find offset value in the aligment ' ...
-                           'result for file: ' anatomyFileName];
-                    error(msg);
-                else
-                    offsetYx = self.alignResult.offsetYxMat(idx,:);
-                end
+                offsetYx = getTrialOffsetYx(self,fileIdx);
             else
-                warning('The trials might not be aligned in X and Y!')
-                offstYx = [0,0];
+                warning('The trial might not be aligned in X and Y!')
+                offsetYx = [0,0];
             end
             
             trialOption.yxShift = offsetYx;
@@ -184,6 +197,10 @@ classdef NrModel < handle
             while ismember(tag,tagArray) && nstep < 100
                 tag = helper.generateRandomTag(5);
                 nstep = nstep+1;
+            end
+            
+            if ismember(tag,tagArray)
+                error('Cannot get unused trial tag!')
             end
             
             trialOptionCell = helper.structToNameValPair(trialOption);
@@ -261,6 +278,18 @@ classdef NrModel < handle
             end
                 
         end
+        
+        function motionCorrBatch(self,trialOption,outDir,fileIdx)
+        % MOTIONCORRBATCH motion correction within trial
+        %      multiplane not yet implemented
+            self.motionCorrConfig.outDir = outDir;
+            if exist('fileIdx','var')
+                rawFileList = self.rawFileList(fileIdx);
+            else
+                rawFileList = self.rawFileList;
+            end
+            batch.motionCorrFromFile(self.rawDataDir,rawFileList,trialOption,outDir)
+        end
 
         function binMovieBatch(self,param,outDir,planeNum,fileIdx)
             if ~exist('outDir','var')
@@ -320,7 +349,7 @@ classdef NrModel < handle
         end
         
         function calcAnatomyBatch(self,param,planeNum,fileIdx)
-            outDir = self.anatomyConfig.outDir;
+            outDir = fullfile(self.resultDir,self.anatomyConfig.outDir);
             if ~exist(outDir,'dir')
                 mkdir(outDir)
             end
@@ -581,6 +610,55 @@ classdef NrModel < handle
                                       'trialOption',trialOption,...
                                       'outDir',outSubDir,...
                                       'outFileType',pr.outFileType);
+        end
+        
+        function offsetYx = getTrialOffsetYx(self,fileIdx)
+        % GETTRIALOFFSETYX get trial offset in y and x axis by
+        % matching file name to the alignment result file list
+            if isempty(self.alignResult)
+                error('No alignment result loaded!')
+            end
+            rawFileName = self.rawFileList{fileIdx};
+            
+            inFileList = self.alignResult.inFileList;
+            anatomyPrefix = self.alignResult.anatomyPrefix;
+            anatomyFileName = ...
+                iopath.modifyFileName(rawFileName, ...
+                                      anatomyPrefix,'','tif');
+            
+            idx = find(strcmp(inFileList,anatomyFileName));
+            if isempty(idx)
+                msg = ['Cannot find offset value in the aligment ' ...
+                       'result for file: ' anatomyFileName];
+                error(msg);
+            else
+                offsetYx = self.alignResult.offsetYxMat(idx,:);
+            end
+        end
+        
+        
+        function extractTimeTraceMatBatch(self,trialOption,roiFilePath,fileIdx,varargin)
+            traceDir = fullfile(self.resultDir,'time_trace');
+            if ~exist(traceDir,'dir')
+                mkdir(traceDir)
+            end
+
+            if self.alignToTemplate
+                for k=fileIdx
+                    offsetYxMat(k,:) = self.getTrialOffsetYx(k);
+                end
+            else
+                warning('The trial might not be aligned in X and Y!')
+                offsetYxMat = zeros(length(fileIdx),2);
+            end
+
+            batch.extractTimeTraceMatFromFile(self.rawDataDir,...
+                                  self.rawFileList(fileIdx),...
+                                  roiFilePath,...
+                                  traceDir,...
+                                  trialOption,...
+                                  offsetYxMat, ...
+                                  varargin{:});
         end
         
         function multiPlane = checkMultiPlane(self,planeNum)

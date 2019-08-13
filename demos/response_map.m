@@ -31,5 +31,15 @@ trialOption = [];
 %% Plot dF/F maps
 nTrialPerOdor = 3;
 climit = [0 0.2];
-idx = 13:24;
-batch.plotMaps(responseArray(:,:,idx),trialTable(idx,:),nTrialPerOdor,climit)
+idx = 1:24;
+batch.plotMaps(responseArray(:,:,idx),trialTable(idx,:), ...
+               nTrialPerOdor,climit)
+%% Save dF/F map
+responseDir = fullfile(myexp.resultDir, 'responseMap')
+if ~exist(responseDir, 'dir')
+    mkdir(responseDir)
+end
+responseMapFilePath = fullfile(responseDir, ...
+                               'responseMap.svg');
+saveas(gcf,responseMapFilePath)
+

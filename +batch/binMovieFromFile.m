@@ -11,9 +11,16 @@ function binConfig = binMovieFromFile(inDir,inFileList,outDir,shrinkFactors,dept
 %     Returns:
 %         binConfig: configuration (including output directory,
 %         parameters...) used to generate binned Movie
+% Note that if the raw data type is not the same as the wanted data
+% type, the data will first be normalized and converted to the
+% wanted data type
 
 if ~exist('depth','var')
     depth = 8;
+end
+
+if (depth ~= 8) && (depth ~=16)
+    error('Depth should be 8 or 16 for uint8 or uint16!')
 end
 
 nFile = length(inFileList)
@@ -31,19 +38,12 @@ for k=1:nFile
     
     outFileName = iopath.modifyFileName(fileName,outFilePrefix,'','tif');
     outFilePath = fullfile(outDir,outFileName);
-    if strcmp(class(binned),'double')
-        binned = movieFunc.convertToUint(binned,depth);
-    elseif strcmp(class(binned),'uint8') | strcmp(class(binned),'uint16')
-        if depth == 8
-            binned = uint8(binned);
-        elseif depth == 16
-            binned = uint16(binned);
-        else
-            error('Depth should be 8 or 16 for uint8 or uint16!')
-        end
+    dataType = class(binned);
+    wantedType = sprintf('uint%d',depth);
+    if strcmp(dataType,wantedType)
+        binned = rawMovie;
     else
-        error(['Type error! Binned movie should be double or uint8 ' ...
-               'or uint16!'])
+        binned = movieFunc.convertToUint(binned,depth);
     end
     movieFunc.saveTiff(binned,outFilePath)
 end

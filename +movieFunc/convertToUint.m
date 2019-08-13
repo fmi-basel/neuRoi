@@ -1,4 +1,4 @@
-function AUnit = convertToUint(A,depth,zlim)
+function A = convertToUint(A,depth,zlim)
 % CONVERTTOUNIT convert matrix to unsigned int
 %     Args:
 %         A (array): matrix containing data to be converted.
@@ -17,9 +17,10 @@ if ~exist('zlim','var')
     zlim = [min(A(:)), max(A(:))];
 end
 
-Anorm = mat2gray(A,zlim);
+A = mat2gray(double(A),double(zlim));
+
 if depth == 16
-    AUnit = uint16((2^16 -1)* Anorm);
+    A = uint16((2^16 -1)* A);
 else
-    AUnit = uint8(255*Anorm);
+    A = uint8(255*A);
 end

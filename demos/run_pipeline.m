@@ -3,10 +3,17 @@ addpath('../')
 %% step 2 Clear variables
 clear all
 %% step 3 Create experiment database
-expConfig.odorList = {'ala','trp','ser','acsf','tca','tdca','gca''spont'};
-expConfig.nTrial = 3;
-expConfig.name = '2019-03-15-OBDp';
-expConfig.rawFileList = {'20190315_BH18_29dfp_Dp_z80um_s1_o1ala_001_.tif',...
+expInfo.name = '2019-03-15-OBD';
+expInfo.frameRate = 30;
+expInfo.odorList = {'ala','trp','ser','acsf','tca','tdca','gca''spont'};
+expInfo.nTrial = 3;
+expInfo.nPlane = 1;
+
+expSubDir = expInfo.name;
+dataRootDir = '/media/hubo/Bo_FMI/Ca_imaging/';
+rawDataDir = fullfile(dataRootDir,'raw_data',expSubDir);
+
+rawFileList = {'20190315_BH18_29dfp_Dp_z80um_s1_o1ala_001_.tif',...
                     '20190315_BH18_29dfp_Dp_z80um_s1_o2trp_001_.tif',...
                     '20190315_BH18_29dfp_Dp_z80um_s1_o3ser_001_.tif',...
                     '20190315_BH18_29dfp_Dp_z80um_s1_o4acsf_001_.tif',...
@@ -19,21 +26,13 @@ expConfig.rawFileList = {'20190315_BH18_29dfp_Dp_z80um_s1_o1ala_001_.tif',...
                     '20190315_BH18_29dfp_Dp_z80um_s3_o3ala_002_.tif',...
                     '20190315_BH18_29dfp_Dp_z80um_s3_o4acsf_001_.tif'};
 
-% expConfig.rawFileList = expConfig.rawFileList(1:2);
-% TODO Frame rate of acquisition read from file
-expConfig.frameRate = 30;
+% Data processing configuration
+% Directory for saving processing results
+resultRootDir = '/home/hubo/Projects/Ca_imaging/results';
+resultDir = fullfile(resultRootDir,expSubDir);
+% Directory for saving binned movies
+binDir = fullfile(dataRootDir,'binned_movie',expSubDir);
 
-intensityOffset = -100;
-% IMPORTANT the parameters of response time dF/F map are in unit
-% second now!! not frame number
-expConfig.responseOption = struct('offset',intensityOffset,...
-                                  'fZeroWindow',[1 5],...
-                                  'responseWindow',[15 20]);
-
-expConfig.responseMaxOption = struct('offset',intensityOffset,...
-                                     'fZeroWindow',[1 5],...
-                                     'slidingWindowSize',3);
-% expConfig.rawFileList = expConfig.rawFileList(1);
 %% step 4 Define file path
 %% please set expConfig.resultDir, expConfig.rawDataDir,
 %% expConfig.binnedDir according to your folder names

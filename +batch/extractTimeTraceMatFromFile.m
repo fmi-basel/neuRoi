@@ -2,6 +2,9 @@ function extractTimeTraceMatFromFile(rawDataDir,rawFileList, ...
                                      roiTemplateFilePath,traceDir, ...
                                      trialOption,offsetYxMat, ...
                                      sm,plotTrace)
+    if ~exist(roiTemplateFilePath,'file')
+        error('ROI file does not exists!')
+    end
 
 if plotTrace
     timeTraceFig = figure();
@@ -16,7 +19,7 @@ for idx = 1:length(rawFileList)
     rawFilePath = fullfile(rawDataDir,rawFileName);
     
     offsetYx = offsetYxMat(idx,:);
-    trialOptionCell = helper.structToNameValPair(trialOption)
+    trialOptionCell = helper.structToNameValPair(trialOption);
     trial = TrialModel(rawFilePath,'yxShift',offsetYx,trialOptionCell{:});
     trial.loadRoiArray(roiTemplateFilePath,'replace');
     [timeTraceMat,roiArray] = trial.extractTimeTraceMat(trial.intensityOffset,sm);

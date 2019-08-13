@@ -1,4 +1,4 @@
-%% Add neuRoi rood directory to path
+%% Add neuRoi root directory to path
 addpath('../../../neuRoi')
 %% Clear variables
 clear all
@@ -8,7 +8,7 @@ expInfo.name = 'Nesibe-20190501-f1';
 expInfo.frameRate = 30;
 expInfo.odorList = {'Ala','Trp','Ser','ACSF','TCA','GCA','TDCA','Spont'};
 expInfo.nTrial = 3;
-expInfo.nPlane = 4;
+expInfo.nPlane = 1;
 
 expSubDir = expInfo.name;
 % Raw data

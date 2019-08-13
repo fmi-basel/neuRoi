@@ -3,6 +3,7 @@ classdef TrialModel < handle
         filePath
         loadMovieOption
         preprocessOption
+        motionCorrOption
         
         yxShift
         intensityOffset
@@ -60,6 +61,9 @@ classdef TrialModel < handle
             addParameter(pa,'nFramePerStep',1)
             addParameter(pa,'process',false);
             addParameter(pa,'noSignalWindow',[1 12]);
+            addParameter(pa,'motionCorr',false);
+            addParameter(pa,'motionCorrDir','');
+            addParameter(pa,'mcNFramePerStep',1);
             addParameter(pa,'frameRate',1);
             validYxShift = @(x) isequal(size(x),[1 2]);
             addParameter(pa,'yxShift',[0 0],validYxShift);
@@ -75,6 +79,10 @@ classdef TrialModel < handle
             self.preprocessOption = struct('process',pr.process,...
                                            'noSignalWindow', ...
                                            pr.noSignalWindow);
+            
+            self.motionCorrOption = struct('motionCorr',pr.motionCorr,...
+                                           'motionCorrDir',pr.motionCorrDir,...
+                                           'nFramePerStep',pr.mcNFramePerStep);
             
             if ~exist(self.filePath,'file')
                 error(sprintf('The movie file %s does not exist!',self.filePath))
@@ -99,6 +107,23 @@ classdef TrialModel < handle
                     disp('Processing image: no signal window:')
                     disp(self.preprocessOption.noSignalWindow)
                     self.preprocessMovie(self.preprocessOption.noSignalWindow);
+                end
+                
+                if self.motionCorrOption.motionCorr
+                    offsetYxFileName = sprintf('%s_%s.mat','mcOffsetYx',self.fileBaseName);
+                    self.motionCorrOption.offsetYxFile = ...
+                        fullfile(self.motionCorrOption.motionCorrDir,offsetYxFileName);
+                    try
+                        foo = load(self.motionCorrOption.offsetYxFile);
+                    catch ME
+                        disp(['Error occurred when loading motion ' ...
+                              'correction offset.'])
+                        rethrow(ME)
+                    end
+                    
+                    self.motionCorrOption.offsetYx = foo.offsetYx;
+                    self.correctMotionYx(self.motionCorrOption.offsetYx,...
+                                         self.motionCorrOption.nFramePerStep);
                 end
                 
                 if pr.resultDir
@@ -132,13 +157,6 @@ classdef TrialModel < handle
         end
         
         function loadMovie(self,filePath,loadMovieOption)
-            % if ~isnumeric(self.loadMovieOption.zrange)
-            %     if strcmp(self.loadMovieOption.zrange,'all')
-            %         self.loadMovieOption.zrange = ...
-            %             [1,self.meta.totalNFrame];
-            %     end
-            % end
-                
             if self.loadMovieOption.zrange(2) == inf
                 self.loadMovieOption.zrange(2) = self.meta.totalNFrame;
             end
@@ -157,12 +175,21 @@ classdef TrialModel < handle
         end
         
         function preprocessMovie(self,noSignalWindow)
-            if ~exist('noSignalWindow','var')
-                noSignalWindow = [1, 12];
-            end
             self.rawMovie = movieFunc.subtractPreampRing(self.rawMovie,noSignalWindow);
         end
         
+        function correctMotionYx(self,offsetYx,nFramePerStep)
+        % nFramePerStep: the step to read the offset values for
+        % each frame in the raw movie
+            disp('Start motion correction...')
+            for k = 1:size(self.rawMovie,3)
+                osIdx = 1+nFramePerStep*(k-1);
+                if mod(k,100) == 0; disp(k/size(self.rawMovie,3)); end
+                self.rawMovie(:,:,k) = circshift(self.rawMovie(:,:,k),[- ...
+                                    offsetYx(1,osIdx),-offsetYx(2,osIdx)]);
+            end
+        end
+
         function shiftMovieYx(self,yxShift)
             disp('Shift movie by yxShift')
             disp(yxShift)
@@ -615,15 +642,15 @@ classdef TrialModel < handle
                 self.intensityOffset = varargin{1};
                 sm = varargin{2};
             end
-            nRoi = length(self.roiArray);
+            roiArray = self.roiArray;
+            nRoi = length(roiArray);
             timeTraceMat = zeros(nRoi,size(self.rawMovie,3));
             for k=1:nRoi
-                roi = self.roiArray(k);
+                roi = roiArray(k);
                 timeTrace = TrialModel.getTimeTrace(self.rawMovie,roi,...
                                        self.intensityOffset);
                 timeTraceMat(k,:) = timeTrace;
             end
-            roiArray = self.roiArray(k); 
         end
         
         

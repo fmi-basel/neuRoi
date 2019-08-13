@@ -1,5 +1,5 @@
 %% Add neuRoi rood directory to path
-addpath('../../../neuRoi')
+addpath('../')
 %% Clear variables
 clear all
 %% Step01a Configure experiment and image processing parameters
