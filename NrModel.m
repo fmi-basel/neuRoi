@@ -30,7 +30,9 @@ classdef NrModel < handle
     
     properties (SetAccess = private, SetObservable = true)
         binConfig
+        anatomyDir
         anatomyConfig
+        alignDir
         alignConfig
     end
     
@@ -81,14 +83,13 @@ classdef NrModel < handle
             self.rawFileList = rawFileList;
             self.resultDir = resultDir;
             
-            self.anatomyConfig.outDir = 'anatomy';
+            self.anatomyDir = 'anatomy';
             
             if ~isempty(pr.alignFilePath)
                 self.loadAlignResult(pr.alignFilePath);
                 self.alignToTemplate = true;
             else
-                self.alignConfig.outDir = ...
-                    self.getDefaultDir('alignment');
+                self.alignDir = 'alignment';
                 self.alignToTemplate = false;
             end
             
@@ -349,7 +350,7 @@ classdef NrModel < handle
         end
         
         function calcAnatomyBatch(self,param,planeNum,fileIdx)
-            outDir = fullfile(self.resultDir,self.anatomyConfig.outDir);
+            outDir = fullfile(self.resultDir,self.anatomyDir);
             if ~exist(outDir,'dir')
                 mkdir(outDir)
             end
@@ -393,7 +394,7 @@ classdef NrModel < handle
             elseif strcmp(param.inFileType,'binned')
                 binDir = self.binConfig.outDir;
                 if self.expInfo.nPlane > 1
-                    binDir = fullfile(binDir,planeString)
+                    binDir = fullfile(binDir,planeString);
                 end
                 
                 if self.binConfig.filePrefix
@@ -416,7 +417,6 @@ classdef NrModel < handle
                 filePrefix = [filePrefix,binPrefix];
             end
             
-            anatomyConfig.outDir = outDir;
             anatomyConfig.param = param;
             anatomyConfig.filePrefix = filePrefix;
             
@@ -440,7 +440,7 @@ classdef NrModel < handle
             parse(pa,varargin{:})
             pr = pa.Results;
             
-            outDir = self.alignConfig.outDir;
+            outDir = fullfile(self.resultDir,self.alignDir);
             if ~exist(outDir,'dir')
                 mkdir(outDir)
             end
@@ -462,7 +462,7 @@ classdef NrModel < handle
             if self.expInfo.nPlane > 1
                 if pr.planeNum
                     planeString = NrModel.getPlaneString(pr.planeNum);
-                    inDir = fullfile(self.anatomyConfig.outDir, ...
+                    inDir = fullfile(self.resultDir,self.anatomyDir, ...
                                      planeString);
                     
                     outSubDir = fullfile(outDir,planeString);
@@ -474,7 +474,7 @@ classdef NrModel < handle
                            ' multiplane data!']);
                 end
             else
-                inDir = self.anatomyConfig.outDir;
+                inDir = fullfile(self.resultDir,self.anatomyDir);
                 outSubDir = outDir;
             end
             anatomyFileList = iopath.modifyFileName(rawFileList, ...
@@ -509,7 +509,6 @@ classdef NrModel < handle
             end
             self.alignResult = foo.alignResult;
             [outDir,outFileName,~] = fileparts(filePath);
-            self.alignConfig.outDir = outDir;
             self.alignConfig.outFileName = outFileName;
         end
         
