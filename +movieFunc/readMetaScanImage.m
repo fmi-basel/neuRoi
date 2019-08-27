@@ -7,7 +7,7 @@
 % output meta structure only
 
 function meta = readMetaScanImage(filename)
-% READ_METADATA read meta data from TIFF file
+% READMETASCANIMAGE read meta data from TIFF file
 % Example:
 %     meta = read_metadata('examplePath/exampleFile.tif)
 
