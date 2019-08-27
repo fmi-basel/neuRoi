@@ -127,60 +127,64 @@ classdef NrModel < handle
         function trial = loadTrialFromList(self,fileIdx,fileType, ...
                                            planeNum)
             if ~exist('planeNum','var')
-                planeNum = 0;
+                planeNum = 1;
             end
             
             rawFileName = self.rawFileList{fileIdx};
             
-            % self.checkMultiPlane(planeNum)
-            % if self.expInfo.nPlane > 1
-            %     if planeNum > 0 && planeNum <=self.expInfo.nPlane
-            %         planeString = NrModel.getPlaneString(planeNum);
-            %         outSubDir = fullfile(outDir,planeString);
-            %         if ~exist(outSubDir,'dir')
-            %             mkdir(outSubDir)
-            %         end
-            %         trialOption.nFramePerStep = self.expInfo.nPlane;
-            %         trialOption.zrange = [planeNum,inf];
-            %     else
-            %         msg = sprintf(['Please specify plane number'...
-            %                        'for multiplane data!'...
-            %                        'Number of planes: %d'],...
-            %                       self.expInfo.nPlane);
-            %         error(msg)
-            %     end
-            % else
-            %     outSubDir = outDir;
-            % end
-
+            multiPlane = checkMultiPlane(self,planeNum)
+            
             switch fileType
               case 'raw'
                 fileName = rawFileName;
                 filePath = fullfile(self.rawDataDir, ...
                                     fileName);
-                frameRate = self.expConfig.frameRate;
                 trialOption = self.trialOptionRaw;
+                if multiPlane
+                    trialOption.zrange = [planeNum inf];
+                    trialOption.nFramePerStep = ...
+                        self.expInfo.nPlane;
+                    frameRate = self.expInfo.frameRate /self.expInfo.nPlane;
+                else
+                    frameRate = self.expInfo.frameRate;
+                end
               case 'binned'
                 shrinkFactors = self.binConfig.param.shrinkFactors;
                 fileName = iopath.getBinnedFileName(rawFileName, ...
                                                     shrinkFactors);
-                filePath = fullfile(self.binConfig.outDir, ...
-                                    fileName);
-                frameRate = self.expInfo.frameRate / ...
-                    shrinkFactors(3);
+                if multiPlane
+                    planeString = NrModel.getPlaneString(planeNum);
+                    filePath = fullfile(self.binConfig.outDir, ...
+                                        planeString,fileName);
+                    frameRate = self.expInfo.frameRate / ...
+                        shrinkFactors(3) / self.expInfo.nPlane;
+                else
+                    filePath = fullfile(self.binConfig.outDir, ...
+                                        fileName);
+                    frameRate = self.expInfo.frameRate / ...
+                        shrinkFactors(3);
+                end
+                
                 trialOption = self.trialOptionBinned;
             end
             
 
             if self.alignToTemplate
-                offsetYx = getTrialOffsetYx(self,fileIdx);
+                offsetYx = self.getTrialOffsetYx(fileIdx,planeNum);
             else
                 warning('The trial might not be aligned in X and Y!')
                 offsetYx = [0,0];
             end
             
+            if multiPlane
+                planeString = NrModel.getPlaneString(planeNum);
+                roiDir = fullfile(self.roiDir,planeString)
+            else
+                roiDir = self.roiDir;
+            end
+            
             trialOption.yxShift = offsetYx;
-            trialOption.resultDir = self.roiDir;
+            trialOption.resultDir = roiDir;
             trialOption.frameRate = frameRate;
             trial = self.loadTrial(filePath,trialOption);
             trial.sourceFileIdx = fileIdx;
@@ -445,6 +449,10 @@ classdef NrModel < handle
                 mkdir(outDir)
             end
 
+            templateNameTail = templateRawName(end-13+1:end-4);
+            alignFileName = sprintf('alignResult_template_%s.mat',...
+                                              templateNameTail);
+            
             anatomyPrefix = self.anatomyConfig.filePrefix;
             templateName = iopath.modifyFileName(templateRawName, ...
                                            anatomyPrefix,'','tif');

@@ -16,8 +16,8 @@ rootPaths = load('../../../paths/rootPaths.mat');
 
 expSubDir = expInfo.name;
 % Raw data
-dataRootDir = rootPaths.extHardDisk;
-rawDataDir = fullfile(dataRootDir,'raw_data','2019-08-25-fastZ2');
+dataRootDir = fullfile(rootPaths.extHardDisk,'Ca_imaging','raw_data');
+rawDataDir = fullfile(dataRootDir,'2019-08-25-fastZ2');
 % List file command ls -1|awk '{print "\x27" $1 "\x27;..."}'
 rawFileList = {'20190825_BH18_37dpf_OB_fastz_s1_o1tdca_001_.tif';...
                '20190825_BH18_37dpf_OB_fastz_s1_o2trp_003_.tif';...
@@ -75,28 +75,14 @@ anatomyDir = myexp.getDefaultDir('anatomy');
 anatomyConfigFileName = 'anatomyConfig.json';
 anatomyConfigFilePath = fullfile(anatomyDir,anatomyConfigFileName);
 myexp.readAnatomyConfig(anatomyConfigFilePath);
-%% Step05a Align trial to template
-templateRawName = '20190825_BH18_37dpf_OB_fastz_s1_o1tdca_001_.tif';
-templateNameTail = templateRawName(end-13+1:end-4);
-templateRawName = templateRawName;
-alignFileName = sprintf('alignResult_template%s.mat',...
-                                  templateNameTail);
+%% Step05 Align trial to template
 % plotFig = false;
 % climit = [0 0.5];
 for planeNum=1:myexp.expInfo.nPlane
-    myexp.alignTrialBatch(templateRawName,alignFileName,...
+    myexp.alignTrialBatch(templateRawName,...
                           'planeNum',planeNum,...
                           'alignOption',{'plotFig',false});
 end
-%% Step05b Load alignment result
-alignDir = myexp.getDefaultDir('alignment');
-templateRawName = 'BH0018_35dpf_lOB_91um_o3Ser_002_.tif';
-templateNameTail = templateRawName(end-13+1:end);
-templateRawName = templateRawName;
-alignFileName = sprintf('alignResult_template%s.mat',...
-                        templateNameTail);
-alignFilePath = fullfile(alignDir,alignFileName);
-myexp.loadAlignResult(alignFilePath);
 %% Save experiment configuration
 expFileName = strcat('experimentConfig_',expInfo.name,'.mat');
 expFilePath = fullfile(resultDir,expFileName);
