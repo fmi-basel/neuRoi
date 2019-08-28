@@ -33,7 +33,13 @@ classdef NrView < handle
                 @(s,e)self.controller.loadRangeText_Callback(s,e));
             set(self.guiHandles.loadStepText,'Callback',...
                 @(s,e)self.controller.loadStepText_Callback(s,e));
-            
+
+            set(self.guiHandles.planeNumText,'Callback',...
+                @(s,e)self.controller.planeNumText_Callback(s,e));
+
+            set(self.guiHandles.loadFileTypeGroup,'SelectionChangedFcn',...
+                @(s,e)self.controller.loadFileTypeGroup_Callback(s,e));
+
             % Callbacks for dF/F map
             set(self.guiHandles.resIntensityOffsetText,'Callback',...
               @(s,e)self.controller.resIntensityOffset_Callback(s,e));
@@ -81,6 +87,10 @@ classdef NrView < handle
                         @(s,e)self.displayResponseOption());
             addlistener(self.model,'responseMaxOption','PostSet',...
                         @(s,e)self.displayResponseMaxOption());
+            addlistener(self.model,'planeNum','PostSet',...
+                        @(s,e)self.displayPlaneNum());
+            addlistener(self.model,'loadFileType','PostSet',...
+                        @(s,e)self.displayLoadFileType());
         end
         
         function updateFileListBox(self)
@@ -109,6 +119,21 @@ classdef NrView < handle
                 error('Cannot display load movie range!')
             end
         end
+        
+        function displayLoadFileType(self)
+            if strcmp(self.model.loadFileType,'binned')
+                self.guiHandles.loadRangeRadio1.Value = 1;
+            elseif strcmp(self.model.loadFileType,'raw')
+                self.guiHandles.loadRangeRadio2.Value = 1;
+            end
+        end
+        
+        
+        function displayPlaneNum(self)
+            planeNum = num2str(self.model.planeNum);
+            self.guiHandles.planeNumText = planeNum;
+        end
+        
         
         function displayResponseOption(self)
             self.guiHandles.resIntensityOffsetText.String = ...

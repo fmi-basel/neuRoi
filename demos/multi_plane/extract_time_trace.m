@@ -47,16 +47,13 @@ myexp.mapsAfterLoading = {};
 % throw an error. In that case, just run Step01, then continue with
 % Step04
 
-trialOption = struct('intensityOffset',-30,'process',true, ...
-                     'noSignalWindow',[1 12]);
-motionCorrDir = fullfile(myexp.rawDataDir,'motion_correction');
-trialOption = struct('motionCorr',true,'motionCorrDir',motionCorrDir);
-
-fileIdx = 2;
-
-roiFileName = 'binned_x1y1z4_p1_99um_AA_001__RoiArray.mat';
-roiFilePath = fullfile(myexp.roiDir,roiFileName);
-sm = 0;
+fileIdxList = [2 9];
+planeNum = 1;
+roiFileName = 'binned_x1y1z2_20190825_BH18_37dpf_OB_fastz_s2_o2tca_redo_001__RoiArray.mat';
+planeString = NrModel.getPlaneString(planeNum);
+roiFilePath = fullfile(myexp.roiDir,planeString,roiFileName);
+roiFileList = repmat({roiFilePath},1,length(fileIdxList));
 plotTrace = true;
-myexp.extractTimeTraceMatBatch(trialOption,roiFilePath,fileIdx,sm, ...
-                               plotTrace)
+myexp.extractTimeTraceBatch(fileIdxList, ...
+                            roiFileList,planeNum, ...
+                            plotTrace);

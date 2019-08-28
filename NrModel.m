@@ -20,6 +20,8 @@ classdef NrModel < handle
         roiDir
         
         loadFileType
+        planeNum
+        
         trialOptionRaw
         trialOptionBinned
         alignToTemplate
@@ -78,20 +80,14 @@ classdef NrModel < handle
 
             self.trialArray = TrialModel.empty;
             
-            self.expInfo = expInfo;
+            self.expInfo = expInfo; % expInfo.nPlane is the total
+                                    % number of planes in the data
             self.rawDataDir = rawDataDir;
             self.rawFileList = rawFileList;
             self.resultDir = resultDir;
             
             self.anatomyDir = 'anatomy';
             
-            % if ~isempty(pr.alignFilePath)
-            %     self.loadAlignResult(pr.alignFilePath);
-            %     self.alignToTemplate = true;
-            % else
-            %     self.alignDir = 'alignment';
-            %     self.alignToTemplate = false;
-            % end
             self.alignDir = 'alignment';
             self.alignResult = cell(1,expInfo.nPlane);
             
@@ -109,6 +105,8 @@ classdef NrModel < handle
             self.mapsAfterLoading = {};
             self.loadTemplateRoi = false;
             self.roiTemplateFilePath = '';
+            
+            self.planeNum = 1; % The plane number for loading file
         end
         
         function tagArray = getTagArray(self)
@@ -443,7 +441,7 @@ classdef NrModel < handle
 
         function alignTrialBatch(self,templateRawName,varargin)
             pa = inputParser;
-            addParameter(pa,'planeNum',0,@isnumeric);
+            addParameter(pa,'planeNum',1,@isnumeric);
             addParameter(pa,'fileIdx','all',@(x) ischar(x)|ismatrix(x));
             addParameter(pa,'alignOption',{},@iscell);
             parse(pa,varargin{:})
@@ -528,7 +526,7 @@ classdef NrModel < handle
                             inFileType,mapType,mapOption,varargin)
             pa = inputParser;
             addParameter(pa,'trialOption',[]);
-            addParameter(pa,'planeNum',0,@isnumeric);
+            addParameter(pa,'planeNum',1,@isnumeric);
             addParameter(pa,'sortBy','none',@ischar);
             addParameter(pa,'odorDelayList',[],@ismatrix);
             addParameter(pa,'saveMap',false);
@@ -654,30 +652,73 @@ classdef NrModel < handle
         end
         
         
-        function extractTimeTraceMatBatch(self,trialOption,roiFilePath,fileIdx,varargin)
+        function [timeTraceMat,roiArray] = ...
+                extractTimeTrace(self,fileIdx,roiFilePath,planeNum)
+            if exist('planeNum','var')
+                planeNum = 1;
+            end
+            
+            multiPlane = self.checkMultiPlane(planeNum);
+            
             traceDir = fullfile(self.resultDir,'time_trace');
+            
+            if multiPlane
+                planeString = NrModel.getPlaneString(planeNum);
+                traceDir = fullfile(traceDir,planeString);
+            end
+            
             if ~exist(traceDir,'dir')
                 mkdir(traceDir)
             end
             
+            if ~exist(roiFilePath,'file')
+                error('ROI file does not exists!')
+            end
+            
+            disp(sprintf('Extract time trace ...'))
+            trial = self.loadTrialFromList(fileIdx,'raw');
+            
+            trial.loadRoiArray(roiFilePath,'replace');
+            [timeTraceMat,roiArray] = trial.extractTimeTraceMat();
+            % TODO extract only raw trace
+            
+            dataFileBaseName = trial.name;
+            resFileName = [dataFileBaseName '_traceResult.mat'];
+            resFilePath = fullfile(traceDir,resFileName);
+            traceResult.timeTraceMat = timeTraceMat;
+            traceResult.roiArray = roiArray;
+            traceResult.roiFilePath = roiFilePath;
+            traceResult.rawFilePath = trial.filePath;
 
-            if self.alignToTemplate
-                for k=fileIdx
-                    offsetYxMat(k,:) = self.getTrialOffsetYx(k);
-                end
-            else
-                warning('The trial might not be aligned in X and Y!')
-                offsetYxMat = zeros(length(fileIdx),2);
+            save(resFilePath,'traceResult')
+        end
+        
+        function extractTimeTraceBatch(self,fileIdxList, ...
+                                       roiFileList,planeNum, ...
+                                       plotTrace)
+            if ~exist('plotTrace','var')
+                plotTrace = false;
+            end
+            
+            if plotTrace
+                timeTraceFig = figure();
+                nrow = 4;
+                ncol = ceil(length(fileIdxList)/4);
             end
 
-            batch.extractTimeTraceMatFromFile(self.rawDataDir,...
-                                  self.rawFileList(fileIdx),...
-                                  roiFilePath,...
-                                  traceDir,...
-                                  trialOption,...
-                                  offsetYxMat, ...
-                                  varargin{:});
+            for k=1:length(fileIdxList)
+                fileIdx = fileIdxList(k);
+                roiFilePath = roiFileList{k};
+                [timeTraceMat,roiArray] = ...
+                    self.extractTimeTrace(fileIdx,roiFilePath,planeNum);
+                if plotTrace
+                    figure(timeTraceFig)
+                    subplot(nrow,ncol,k)
+                    imagesc(timeTraceMat)
+                end
+            end
         end
+
         
         function multiPlane = checkMultiPlane(self,planeNum)
             multiPlane = false;
@@ -761,7 +802,7 @@ classdef NrModel < handle
         end
     
         function planeString = getPlaneString(planeNum)
-            planeString = sprintf('plane%02d',planeNum)
+            planeString = sprintf('plane%02d',planeNum);
         end
     end
     

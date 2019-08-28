@@ -52,6 +52,24 @@ classdef NrController < handle
             self.model.loadMovieOption.nFramePerStep = nFramePerStep;
         end
         
+        function loadFileTypeGroup_Callback(self,src,evnt)
+            button = evnt.NewValue;
+            tag = button.Tag;
+            if strcmp(tag,'loadfiletype_radio_1')
+                self.model.loadFileType = 'binned';
+            else
+                self.model.loadFileType = 'raw';
+            end
+        end
+        
+        
+        function planeNumText_Callback(self,src,evnt)
+            planeNumStr = src.String;
+            planeNum = str2num(planeNumStr);
+            self.model.planeNum = planeNum;
+        end
+        
+        
         % Callbacks for dF/F map parameters
         function resIntensityOffset_Callback(self,src,evnt)
             intensityOffsetStr = src.String;
@@ -151,9 +169,10 @@ classdef NrController < handle
             end
         end
         
-        function openTrialFromList(self,fileIdx,fileType)
+        function openTrialFromList(self,fileIdx)
             fileType = self.model.loadFileType;
-            trial = self.model.loadTrialFromList(fileIdx,fileType);
+            planeNum = self.model.planeNum;
+            trial = self.model.loadTrialFromList(fileIdx,fileType,planeNum);
             self.openTrialContrl(trial);
         end
         

@@ -624,10 +624,13 @@ classdef TrialModel < handle
                 sm = varargin{1};
             end
 
+            fZeroPercent = 0.5;
             ind = self.findRoiByTag(tag);
             roi = self.roiArray(ind);
-            timeTrace = TrialModel.getTimeTrace(self.rawMovie,roi,...
-                                                self.intensityOffset,sm);
+            timeTraceRaw = TrialModel.getTimeTrace(self.rawMovie,roi);
+            timeTrace = TrialModel.getTimeTraceDf(timeTraceRaw, ...
+                                          'intensityOffset',self.intensityOffset, ...
+                                          'fZeroPercent',fZeroPercent,'sm',sm);
             timeVec = self.convertFromFrameToSec(1:length(timeTrace));
         end
         
@@ -647,9 +650,8 @@ classdef TrialModel < handle
             timeTraceMat = zeros(nRoi,size(self.rawMovie,3));
             for k=1:nRoi
                 roi = roiArray(k);
-                timeTrace = TrialModel.getTimeTrace(self.rawMovie,roi,...
-                                       self.intensityOffset);
-                timeTraceMat(k,:) = timeTrace;
+                timeTraceRaw = TrialModel.getTimeTrace(self.rawMovie,roi);
+                timeTraceMat(k,:) = timeTraceRaw;
             end
         end
         
@@ -663,45 +665,43 @@ classdef TrialModel < handle
     end
     
     methods (Static)        
-        function timeTraceDf = getTimeTrace(rawMovie,roi,varargin)
-        % GETTIMETRACE get time trace of dF/F within a ROI
+        function timeTraceRaw = getTimeTrace(rawMovie,roi,varargin)
+        % GETTIMETRACE get raw time trace within a ROI
         % from the input raw movie
-        % Usage: getTimeTrace(rawMovie,roi,[intensityOffset,sm])
-            
-            if nargin == 2
-                intensityOffset = 0;
-                sm = 0;
-            elseif nargin == 3
-                intensityOffset = varargin{1};
-                sm = 0;
-            elseif nargin == 4
-                intensityOffset = varargin{1};
-                sm = varargin{2};
-            else
-                error('Usage: getTimeTrace(rawMovie,roi,[intensityOffset,sm])')
-            end
-            
+        % Usage: timeTraceRaw = getTimeTrace(rawMovie,roi)
             mask = roi.createMask;
             [maskIndX maskIndY] = find(mask==1);
             roiMovie = rawMovie(maskIndX,maskIndY,:);
-            timeTraceRaw = mean(mean(roiMovie,1),2);
-            timeTraceRaw =timeTraceRaw(:);
+            timeTraceRaw = squeeze(mean(mean(roiMovie,1),2));
+            % timeTraceRaw = timeTraceRaw(:);
+        end
+        
 
-            timeTraceFg = timeTraceRaw - intensityOffset;
-            if sm
+        function timeTraceDf = getTimeTraceDf(timeTraceRaw,varargin)
+            pa = inputParser;
+            addParameter(pa,'intensityOffset',0)
+            addParameter(pa,'fZeroWindow',0)
+            addParameter(pa,'fZeroPercent',0.5)
+            addParameter(pa,'sm',0)
+            parse(pa,varargin{:})
+            pr = pa.Results;
+            
+            if pr.fZeroWindow == 0
+                pr.fZeroWindow = 10:(length(timeTraceRaw)-10);
+            end
+            
+            timeTraceFg = timeTraceRaw - pr.intensityOffset;
+            if pr.sm
                 % TODO change the smooth function to gaussian filter!!
-                timeTraceSm = smooth(timeTraceFg,sm);
-                fZero = quantile(timeTraceSm(10:end-10),0.1);
-                
-                % Time trace of dF/F
+                timeTraceSm = smooth(timeTraceFg,pr.sm);
+                fZero = quantile(timeTraceSm(pr.fZeroWindow),pr.fZeroPercent);
                 timeTraceDf = (timeTraceSm - fZero) / fZero;
             else
-                fZero = quantile(timeTraceFg(10:end-10),0.15);
-                
-                % Time trace of dF/F
+                fZero = quantile(timeTraceFg(pr.fZeroWindow),pr.fZeroPercent);
                 timeTraceDf = (timeTraceFg - fZero) / fZero;
             end
         end
+        
         
         function dfName = getDefaultTrialName(fileBaseName,zrange, ...
                                                            nFramePerStep)
