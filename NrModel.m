@@ -44,7 +44,7 @@ classdef NrModel < handle
             addRequired(pa,'rawFileList');
             addRequired(pa,'resultDir');
             addRequired(pa,'expInfo');
-            addParameter(pa,'alignFilePath','',@ischar)
+            % addParameter(pa,'alignFilePath','',@ischar)
             addParameter(pa,'roiDir','',@ischar);
             addParameter(pa,'loadFileType','raw',@ischar);
             defaultTrialOptionRaw = struct('process',true,...
@@ -85,13 +85,15 @@ classdef NrModel < handle
             
             self.anatomyDir = 'anatomy';
             
-            if ~isempty(pr.alignFilePath)
-                self.loadAlignResult(pr.alignFilePath);
-                self.alignToTemplate = true;
-            else
-                self.alignDir = 'alignment';
-                self.alignToTemplate = false;
-            end
+            % if ~isempty(pr.alignFilePath)
+            %     self.loadAlignResult(pr.alignFilePath);
+            %     self.alignToTemplate = true;
+            % else
+            %     self.alignDir = 'alignment';
+            %     self.alignToTemplate = false;
+            % end
+            self.alignDir = 'alignment';
+            self.alignResult = cell(1,expInfo.nPlane);
             
             if ~isempty(pr.roiDir)
                 self.roiDir = pr.roiDir;
@@ -132,7 +134,7 @@ classdef NrModel < handle
             
             rawFileName = self.rawFileList{fileIdx};
             
-            multiPlane = checkMultiPlane(self,planeNum)
+            multiPlane = checkMultiPlane(self,planeNum);
             
             switch fileType
               case 'raw'
@@ -178,9 +180,13 @@ classdef NrModel < handle
             
             if multiPlane
                 planeString = NrModel.getPlaneString(planeNum);
-                roiDir = fullfile(self.roiDir,planeString)
+                roiDir = fullfile(self.roiDir,planeString);
             else
                 roiDir = self.roiDir;
+            end
+            
+            if ~exist(roiDir)
+                mkdir(roiDir)
             end
             
             trialOption.yxShift = offsetYx;
@@ -435,8 +441,7 @@ classdef NrModel < handle
             self.anatomyConfig = jsondecode(fileread(filePath));
         end
 
-        function alignTrialBatch(self,templateRawName,outFileName, ...
-                                 varargin)
+        function alignTrialBatch(self,templateRawName,varargin)
             pa = inputParser;
             addParameter(pa,'planeNum',0,@isnumeric);
             addParameter(pa,'fileIdx','all',@(x) ischar(x)|ismatrix(x));
@@ -444,15 +449,12 @@ classdef NrModel < handle
             parse(pa,varargin{:})
             pr = pa.Results;
             
+            outFileName = 'alignResult.mat';
             outDir = fullfile(self.resultDir,self.alignDir);
             if ~exist(outDir,'dir')
                 mkdir(outDir)
             end
 
-            templateNameTail = templateRawName(end-13+1:end-4);
-            alignFileName = sprintf('alignResult_template_%s.mat',...
-                                              templateNameTail);
-            
             anatomyPrefix = self.anatomyConfig.filePrefix;
             templateName = iopath.modifyFileName(templateRawName, ...
                                            anatomyPrefix,'','tif');
@@ -477,6 +479,7 @@ classdef NrModel < handle
                     if ~exist(outSubDir,'dir')
                         mkdir(outSubDir)
                     end
+                    multiPlane = true;
                 else
                     error(['Please specify plane number for' ...
                            ' multiplane data!']);
@@ -501,23 +504,24 @@ classdef NrModel < handle
             alignResult.anatomyPrefix = anatomyPrefix;
             alignResult.templateRawName = templateRawName;
 
-            self.alignResult = alignResult;
-            self.alignConfig.outFileName = outFileName;
+            self.alignResult{pr.planeNum} = alignResult;
+            
             outFilePath = fullfile(outSubDir,outFileName);
             save(outFilePath,'alignResult')
         end
 
-        function loadAlignResult(self,filePath)
-            try
-                foo = load(filePath);
-            catch ME
-                disp('Could not load alignment result!')
-                disp(['File path:' filePath])
-                rethrow ME
+        function loadAlignResult(self,planeNum)
+            fileName = 'alignResult.mat';
+            multiPlane = self.checkMultiPlane(planeNum);
+            if multiPlane
+                planeString = NrModel.getPlaneString(planeNum);
+                filePath = fullfile(self.resultDir,self.alignDir,planeString,...
+                                    fileName);
+            else
+                filePath = fullfile(self.resultDir,self.alignDir,fileName);
             end
-            self.alignResult = foo.alignResult;
-            [outDir,outFileName,~] = fileparts(filePath);
-            self.alignConfig.outFileName = outFileName;
+            foo = load(filePath);
+            self.alignResult{planeNum} = foo.alignResult;
         end
         
         function [mapArray,varargout] = calcMapBatch(self,...
@@ -619,16 +623,22 @@ classdef NrModel < handle
                                       'outFileType',pr.outFileType);
         end
         
-        function offsetYx = getTrialOffsetYx(self,fileIdx)
+        function offsetYx = getTrialOffsetYx(self,fileIdx,planeNum)
         % GETTRIALOFFSETYX get trial offset in y and x axis by
         % matching file name to the alignment result file list
-            if isempty(self.alignResult)
-                error('No alignment result loaded!')
+            if isempty(self.alignResult{planeNum})
+                try
+                    self.loadAlignResult(planeNum);
+                catch ME
+                    display('Cannot load alignment result!')
+                    rethrow ME
+                end
             end
-            rawFileName = self.rawFileList{fileIdx};
+            alignResult = self.alignResult{planeNum};
             
-            inFileList = self.alignResult.inFileList;
-            anatomyPrefix = self.alignResult.anatomyPrefix;
+            rawFileName = self.rawFileList{fileIdx};
+            inFileList = alignResult.inFileList;
+            anatomyPrefix = alignResult.anatomyPrefix;
             anatomyFileName = ...
                 iopath.modifyFileName(rawFileName, ...
                                       anatomyPrefix,'','tif');
@@ -639,7 +649,7 @@ classdef NrModel < handle
                        'result for file: ' anatomyFileName];
                 error(msg);
             else
-                offsetYx = self.alignResult.offsetYxMat(idx,:);
+                offsetYx = alignResult.offsetYxMat(idx,:);
             end
         end
         
@@ -649,6 +659,7 @@ classdef NrModel < handle
             if ~exist(traceDir,'dir')
                 mkdir(traceDir)
             end
+            
 
             if self.alignToTemplate
                 for k=fileIdx

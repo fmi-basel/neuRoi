@@ -16,8 +16,8 @@ rootPaths = load('../../../paths/rootPaths.mat');
 
 expSubDir = expInfo.name;
 % Raw data
-dataRootDir = fullfile(rootPaths.extHardDisk,'Ca_imaging','raw_data');
-rawDataDir = fullfile(dataRootDir,'2019-08-25-fastZ2');
+dataRootDir = fullfile(rootPaths.extHardDisk,'Ca_imaging');
+rawDataDir = fullfile(dataRootDir,'raw_data','2019-08-25-fastZ2');
 % List file command ls -1|awk '{print "\x27" $1 "\x27;..."}'
 rawFileList = {'20190825_BH18_37dpf_OB_fastz_s1_o1tdca_001_.tif';...
                '20190825_BH18_37dpf_OB_fastz_s1_o2trp_003_.tif';...
@@ -42,7 +42,7 @@ rawFileList = {'20190825_BH18_37dpf_OB_fastz_s1_o1tdca_001_.tif';...
 resultRootDir = fullfile(rootPaths.projectDir,'results');
 resultDir = fullfile(resultRootDir,expSubDir);
 % Directory for saving binned movies
-binDir = fullfile(dataRootDir,'Ca_imaging','binned_movie',expSubDir);
+binDir = fullfile(dataRootDir,'binned_movie',expSubDir);
 
 %% Step02 Initialize NrModel with experiment confiuration
 myexp = NrModel(rawDataDir,rawFileList,resultDir,...
@@ -61,7 +61,7 @@ end
 binConfigFileName = 'binConfig.json';
 binConfigFilePath = fullfile(binDir,binConfigFileName);
 myexp.readBinConfig(binConfigFilePath);
-%% Step04a Calculate anatomy maps
+%% Step04 Calculate anatomy maps
 % anatomyParam.inFileType = 'raw';
 % anatomyParam.trialOption = {'process',true,'noSignalWindow',[1 12]};
 anatomyParam.inFileType = 'binned';
@@ -76,6 +76,7 @@ anatomyConfigFileName = 'anatomyConfig.json';
 anatomyConfigFilePath = fullfile(anatomyDir,anatomyConfigFileName);
 myexp.readAnatomyConfig(anatomyConfigFilePath);
 %% Step05 Align trial to template
+templateRawName = myexp.rawFileList{1};
 % plotFig = false;
 % climit = [0 0.5];
 for planeNum=1:myexp.expInfo.nPlane

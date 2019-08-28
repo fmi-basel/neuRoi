@@ -12,9 +12,7 @@ myexp = foo.myexp;
 disp(myexp.expInfo)
 %% Step02 (optional) Sepcify options for opening a trial
 myexp.roiDir = myexp.getDefaultDir('roi');
-if ~exist(myexp.roiDir)
-    mkdir(myexp.roiDir)
-end
+
 myexp.loadFileType = 'binned';
 myexp.trialOptionRaw = struct('process',true,...
                               'noSignalWindow',[1 12],...
@@ -32,12 +30,12 @@ myexp.responseMaxOption = struct('offset',-10,...
 % myexp.mapsAfterLoading = {'response','responseMax'};
 myexp.mapsAfterLoading = {};
 
-% myexp.alignToTemplate = true;
+myexp.alignToTemplate = true;
 %% Step03 Open neuRoi GUI
 mycon = NrController(myexp);
 %% Test multiplane
-fileType = 'raw';
-trial = myexp.loadTrialFromList(1,fileType,1);
+fileType = 'binned';
+trial = myexp.loadTrialFromList(9,fileType,1);
 mycon.openTrialContrl(trial);
 
 %% Change some parameters if you like
