@@ -45,6 +45,7 @@ classdef TrialModel < handle
         roiDeleted
         roiUpdated
         roiArrayReplaced
+        roiTagChanged
         
         roiSelected
         roiUnSelected
@@ -468,7 +469,8 @@ classdef TrialModel < handle
             if isempty(self.roiArray)
                 roi.tag = 1;
             else
-                roi.tag = self.roiArray(end).tag+1;
+                tagArray = self.getAllRoiTag();
+                roi.tag = max(tagArray)+1;
             end
             self.roiArray(end+1) = roi;
             
@@ -512,8 +514,12 @@ classdef TrialModel < handle
             end
         end
         
-        function selectAllRoi(self)
+        function tagArray = getAllRoiTag(self)
             tagArray = arrayfun(@(x) x.tag, self.roiArray);
+        end
+        
+        function selectAllRoi(self)
+            tagArray = self.getAllRoiTag();
             self.unselectAllRoi();
             self.selectedRoiTagArray = tagArray;
             for k=1:length(tagArray)
@@ -539,6 +545,26 @@ classdef TrialModel < handle
             notify(self,'roiUpdated', ...
                    NrEvent.RoiUpdatedEvent(self.roiArray(ind)));
             disp(sprintf('Roi #%d updated',tag))
+        end
+        
+        function changeRoiTag(self,oldTag,newTag)
+            ind = self.findRoiByTag(oldTag);
+            oldRoi = self.roiArray(ind);
+            tagArray = self.getAllRoiTag();
+            if ismember(newTag,tagArray)
+                error(['New tag cannot be assigned! The tag is ' ...
+                       'already used by another ROI.'])
+            else
+                oldRoi.tag = newTag;
+                self.roiArray(ind) = oldRoi;
+                notify(self,'roiTagChanged', ...
+                NrEvent.RoiTagChangedEvent(oldTag,newTag));
+                disp(sprintf('Roi #%d changed to #%d',oldTag,newTag))
+                if ismember(oldTag,self.selectedRoiTagArray)
+                    idx = find(self.selectedRoiTagArray,oldTag);
+                    self.selectedRoiTagArray(idx) = newTag;
+                end
+            end
         end
         
         function deleteSelectedRoi(self)

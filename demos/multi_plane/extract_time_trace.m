@@ -33,11 +33,6 @@ myexp.mapsAfterLoading = {};
 myexp.alignToTemplate = true;
 %% Step03 Open neuRoi GUI
 mycon = NrController(myexp);
-%% Test multiplane
-fileType = 'binned';
-trial = myexp.loadTrialFromList(9,fileType,1);
-mycon.openTrialContrl(trial);
-
 %% Change some parameters if you like
 myexp.mapsAfterLoading = {};
 

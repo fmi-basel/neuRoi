@@ -3,6 +3,7 @@ classdef TrialController < handle
         model
         view
         nMapMax
+        enableFreehandShortcut
     end
     methods
         function self = TrialController(mymodel)
@@ -13,6 +14,7 @@ classdef TrialController < handle
             % Initialize map display
             self.view.toggleMapButtonValidity(self.model);
             self.view.displayCurrentMap();
+            self.enableFreehandShortcut = true;
         end
         
         function keyPressCallback(self,src,evnt)
@@ -24,7 +26,9 @@ classdef TrialController < handle
             if isempty(evnt.Modifier)
                 switch evnt.Key
                   case 'f'
-                    self.addRoiByDrawing();
+                    if self.enableFreehandShortcut
+                        self.addRoiByDrawing();
+                    end
                   case {'d','delete','backspace'}
                     self.deleteSelectedRoi();
                   case 'r'
@@ -35,6 +39,8 @@ classdef TrialController < handle
                     self.selectMap(2);
                   case 'e'
                     self.selectMap(3);
+                  case 'x'
+                    self.replaceRoiByDrawing();
                 end
             elseif strcmp(evnt.Modifier,'control')
                 switch evnt.Key
@@ -43,41 +49,10 @@ classdef TrialController < handle
                 end
             end
         end
-        
-        % function addMap(self,type,varargin)
-        %     mapArrayLen = self.model.getMapArrayLength();
-        %     if mapArrayLen >= self.nMapMax
-        %         error('Cannot add more than %d maps',nMapButton);
-        %     end
-        %     try
-        %         self.model.calculateAndAddNewMap(type,varargin{:});
-        %     catch ME
-        %         if strcmp(ME.identifier,['TrialModel:' ...
-        %                                 'windowValueError'])
-        %             self.view.displayError(ME);
-        %             return
-        %         else
-        %             rethrow(ME)
-        %         end
-        %     end
-        %     self.model.selectMap(mapArrayLen+1);
-        % end
-                
+                        
         function selectMap(self,ind)
             self.model.selectMap(ind);
         end
-        
-        % function findAndUpdateMap(self,mapType,mapOption)
-        %     try
-        %         self.model.findAndUpdateMap(mapType,mapOption);
-        %     catch ME
-        %         if strcmp(ME.identifier,'TrialModel:mapTypeError')
-        %             self.view.displayError(ME)
-        %             return
-        %         end
-        %         rethrow(ME)
-        %     end
-        % end
         
         function mapButtonSelected_Callback(self,src,evnt)
             tag = evnt.NewValue.Tag;
@@ -158,6 +133,7 @@ classdef TrialController < handle
         
         function addRoiByDrawing(self)
             self.model.roiVisible = true;
+            self.enableFreehandShortcut = false;
             rawRoi = imfreehand;
             if ~isempty(rawRoi)
                 position = rawRoi.getPosition();
@@ -171,6 +147,7 @@ classdef TrialController < handle
                 end
                 delete(rawRoi)
             end
+            self.enableFreehandShortcut = true;
         end
        
         function selectRoi_Callback(self,src,evnt)
@@ -205,6 +182,34 @@ classdef TrialController < handle
                 end
             end
         end
+        
+        function replaceRoiByDrawing(self)
+            if length(self.model.selectedRoiTagArray) == 1
+                % TODO at least dislay the edge!!
+                self.view.changeRoiPatchColor('none','selected');
+                roiTag = self.model.selectedRoiTagArray(1);
+                figure(self.view.guiHandles.mainFig);
+                self.enableFreehandShortcut = false;
+                rawRoi = imfreehand;
+                if ~isempty(rawRoi)
+                    position = rawRoi.getPosition();
+                    mapAxes = self.view.guiHandles.mapAxes;
+                    if ~isempty(position)
+                        self.model.updateRoi(roiTag,mapAxes,position);
+                        self.model.selectSingleRoi(roiTag);
+                    else
+                        disp('Empty ROI. No replacement.')
+                    end
+                    delete(rawRoi)
+                end
+                self.enableFreehandShortcut = true;
+                self.view.changeRoiPatchColor('default','selected');
+            else
+                error(['Exactly one ROI should be selected for ' ...
+                       'replacing!']);
+            end
+        end
+        
         
         % Functions for moving selected ROIs
         function enterMoveRoiMode(self)

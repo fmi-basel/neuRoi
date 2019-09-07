@@ -3,6 +3,7 @@ classdef TrialView < handle
         model
         controller
         guiHandles
+        selectedRoiPatchArray
     end
     
     properties (Constant)
@@ -21,6 +22,8 @@ classdef TrialView < handle
             self.displayTitle();
             self.displayMeta();
             self.changeTraceFigVisibility();
+            
+            self.selectedRoiPatchArray = {};
             
             self.listenToModel();
             self.assignCallbacks();
@@ -41,6 +44,8 @@ classdef TrialView < handle
                         @self.deleteRoiPatch);
             addlistener(self.model,'roiUpdated',...
                         @self.updateRoiPatchPosition);
+            addlistener(self.model,'roiTagChanged',...
+                        @self.changeRoiPatchTag);
             addlistener(self.model,'roiArrayReplaced',...
                         @(~,~)self.redrawAllRoiPatch());
             
@@ -229,24 +234,48 @@ classdef TrialView < handle
         end
         
         function addRoiPatch(self,roi)
-            roiPatch = roi.createRoiPatch(self.guiHandles.mapAxes, ...
+            % roiPatch = roi.createRoiPatch(self.guiHandles.mapAxes, ...
+            %                               self.DEFAULT_PATCH_COLOR);
+            roiPatch = roi.createRoiPatch(self.guiHandles.roiGroup, ...
                                           self.DEFAULT_PATCH_COLOR);
             % Add context menu for right click
             roiPatch.UIContextMenu = self.guiHandles.roiMenu;
         end
         
+        
+        function displayRoiTag(self,roiPatch)
+            ptTag = get(roiPatch,'Tag');
+            tag = helper.convertTagToInd(ptTag,'roi');
+            pos = roiPatch.Vertices(1,:);
+            htext = text(self.guiHandles.roiGroup,pos(1),pos(2), ...
+                         num2str(tag));
+            htext.Tag = sprintf('roiTag_%d',tag);
+        end
+        
+        function removeRoiTagText(self,roiTag)
+            txtTag = sprintf('roiTag_%d',roiTag);
+            htext = findobj(self.guiHandles.roiGroup,...
+                               'Type','text',...
+                               'Tag',txtTag);
+            delete(htext);
+        end
+        
+        
         function updateRoiPatchSelection(self,src,evnt)
-            tagArray = evnt.AffectedObject.selectedRoiTagArray;
-            roiPatchArray = self.getRoiPatchArray();
-            for k=1:length(roiPatchArray)
-                roiPatch = roiPatchArray(k);
-                ptTag = get(roiPatch,'Tag');
-                roiTag = helper.convertTagToInd(ptTag,'roi');
-                if ismember(roiTag,tagArray)
-                    roiPatch.Selected = 'on';
-                else
-                    roiPatch.Selected = 'off';
-                end
+            newTagArray = evnt.AffectedObject.selectedRoiTagArray;
+            for k=1:length(self.selectedRoiPatchArray)
+                roiPatch = self.selectedRoiPatchArray{k};
+                roiPatch.Selected = 'off';
+                roiTag = helper.convertTagToInd(roiPatch.Tag,'roi');
+                self.removeRoiTagText(roiTag);
+            end
+            self.selectedRoiPatchArray = {};
+            for k=1:length(newTagArray)
+                tag = newTagArray(k);
+                roiPatch = self.findRoiPatchByTag(tag);
+                roiPatch.Selected = 'on';
+                self.displayRoiTag(roiPatch);
+                self.selectedRoiPatchArray{k} = roiPatch;
             end
         end
         
@@ -255,33 +284,39 @@ classdef TrialView < handle
                 if strcmp(ptcolor,'default')
                     ptcolor = self.DEFAULT_PATCH_COLOR;
                 end
-                roiPatchArray = self.getRoiPatchArray();
-                if strcmp(varargin{1},'selected')
-                    for k=1:length(roiPatchArray)
-                        roiPatch = roiPatchArray(k);
-                        if strcmp(roiPatch.Selected,'on')
-                            set(roiPatch,'Facecolor',ptcolor);
-                        end
-                    end
+                for k=1:length(self.selectedRoiPatchArray)
+                    roiPatch = self.selectedRoiPatchArray{k};
+                    set(roiPatch,'Facecolor',ptcolor);
                 end
             end
         end
         
+        function roiPatch = findRoiPatchByTag(self,tag)
+            ptTag = RoiFreehand.getPatchTag(tag);
+            roiPatch = findobj(self.guiHandles.roiGroup,...
+                               'Type','patch',...
+                               'tag',ptTag);
+            if isempty(roiPatch)
+                error(sprintf('ROI #%d not found!',tag))
+            end
+        end
+
         function updateRoiPatchPosition(self,src,evnt)
             updRoi = evnt.roi;
-            roiPatchArray = self.getRoiPatchArray();
-            for k=1:length(roiPatchArray)
-                roiPatch = roiPatchArray(k);
-                ptTag = get(roiPatch,'Tag');
-                roiTag = helper.convertTagToInd(ptTag,'roi');
-                if isequal(roiTag,updRoi.tag)
-                    updRoi.updateRoiPatchPos(roiPatch);
-                end
-            end
+            roiPatch = self.findRoiByTag(updRoi.tag);
+            updRoi.updateRoiPatchPos(roiPatch);
         end
         
+        function changeRoiPatchTag(self,src,evnt)
+            oldTag = evnt.oldTag;
+            newTag = evnt.newTag;
+            roiPatch = self.findRoiByTag(evnt.oldTag);
+            roiPatch.tag = RoiFreehand.getPatchTag(newTag);
+        end
+        
+        
         function roiPatchArray = getRoiPatchArray(self)
-            mapAxes = self.guiHandles.mapAxes;
+            mapAxes = self.guiHandles.roiGroup;
             children = mapAxes.Children;
             patchInd = arrayfun(@RoiFreehand.isaRoiPatch,children);
             roiPatchArray = children(patchInd);
@@ -294,14 +329,9 @@ classdef TrialView < handle
 
         function deleteRoiPatch(self,src,evnt)
             tagArray = evnt.tagArray;
-            roiPatchArray = self.getRoiPatchArray();
-            for k=1:length(roiPatchArray)
-                roiPatch = roiPatchArray(k);
-                ptTag = get(roiPatch,'Tag');
-                roiTag = helper.convertTagToInd(ptTag,'roi');
-                if ismember(roiTag,tagArray)
-                    delete(roiPatch);
-                end
+            for k=1:length(tagArray)
+                roiPatch = self.findRoiPatchByTag(tagArray(k))'
+                delete(roiPatch);
             end
         end
         
@@ -311,8 +341,7 @@ classdef TrialView < handle
             else
                 roiState = 'off';
             end
-            roiPatchArray = self.getRoiPatchArray();
-            arrayfun(@(x) set(x,'Visible',roiState), roiPatchArray);
+            set(self.guiHandles.roiGroup,'Visible',roiState);
         end
         
         

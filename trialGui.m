@@ -58,6 +58,8 @@ function handles = trialGui(varargin)
     handles.roiMenu = uicontextmenu(handles.mainFig);
     handles.roiMenuEntry1 = uimenu(handles.roiMenu,'Label','Move ROI(s)');
 
+    % Group for displaying ROI
+    handles.roiGroup = hggroup(handles.mapAxes,'Tag','roiGroup');
     
     
     handles.traceFig = figure('Name','Time Trace','Tag','traceFig',...

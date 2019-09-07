@@ -63,19 +63,32 @@ classdef RoiFreehand
                 ptcolor = 'red';
             end
             
-            inputImageSize = size(getimage(parent));
+            try
+                inputImageSize = size(getimage(parent));
+                parentAxes = parent;
+            catch ME
+                try
+                    % if the parent is a group, get imageSize from
+                    % the parent axes of the group
+                    inputImageSize = size(getimage(parent.Parent));
+                    parentAxes = parent.Parent;
+                catch ME
+                    rethrow ME
+                end
+            end
+            
             if ~isequal(inputImageSize,self.imageSize)
                 warning(['Input image size not equal to ROI image ' ...
                          'size!'])
             end
 
             pixelPosition = self.position;
-            axesPosition = getAxesPosition(parent,pixelPosition);
+            axesPosition = getAxesPosition(parentAxes,pixelPosition);
             roiPatch = patch(axesPosition(:,1),axesPosition(:,2),ptcolor,'Parent',parent);
             set(roiPatch,'FaceAlpha',0.5)
             set(roiPatch,'LineStyle','none');
-            set(roiPatch,'Tag',sprintf('roi_%04d',self.tag))
-            % moveit2(roiPatch)
+            ptTag = RoiFreehand.getPatchTag(self.tag);
+            set(roiPatch,'Tag',ptTag);
         end
         
         function updateRoiPatchPos(self,roiPatch)
@@ -96,6 +109,11 @@ classdef RoiFreehand
                 end
             end
         end
+        
+        function ptTag = getPatchTag(tag)
+            ptTag = sprintf('roi_%04d',tag);
+        end
+        
     end
     
 end
