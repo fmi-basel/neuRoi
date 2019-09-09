@@ -47,7 +47,7 @@ planeNum = 1;
 roiFileName = 'binned_x1y1z2_20190825_BH18_37dpf_OB_fastz_s2_o2tca_redo_001__RoiArray.mat';
 planeString = NrModel.getPlaneString(planeNum);
 roiFilePath = fullfile(myexp.roiDir,planeString,roiFileName);
-roiFileList = repmat({roiFilePath},1,length(fileIdxList));
+roiFileList = repmat(roiFilePath,length(fileIdxList),1);
 plotTrace = true;
 myexp.extractTimeTraceBatch(fileIdxList, ...
                             roiFileList,planeNum, ...

@@ -1,12 +1,7 @@
-function filteredSignal = gaussFilter1D(originalSignal,M,alpha)
-gaussianWindow = gausswin(M,alpha);
-if length(size(originalSignal)) == 1
-    filteredSignal = conv(originalSignal, gaussianWindow);
-else
-    oriSize = size(originalSignal);
-    filteredSignal = zeros(oriSize(1),oriSize(2)+M-1);
-    for k=1:size(originalSignal,1)
-        filteredSignal(k,:) = conv(originalSignal(k,:), ...
-                                   gaussianWindow);
-    end
+function filteredSignal = gaussFilter1D(signal,M,alpha,dim)
+if ~exist('dim','var')
+    dim = 1;
 end
+gaussianWindow = gausswin(M,alpha);
+filteredSignal = filter(gaussianWindow,1,signal,[],dim);
+

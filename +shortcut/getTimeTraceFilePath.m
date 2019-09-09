@@ -5,7 +5,7 @@ if ~exist('appendix','var')
 end
 [~,fileBaseName,~] = fileparts(filePath);
 if appendix
-    resFileName = [fileBaseName '_traceResult_' appendix '.mat'];
+    resFileName = [fileBaseName appendix '_traceResult.mat'];
 else
     resFileName = [fileBaseName '_traceResult.mat'];
 end

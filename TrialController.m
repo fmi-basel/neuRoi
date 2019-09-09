@@ -219,43 +219,56 @@ classdef TrialController < handle
             mainFig = self.view.guiHandles.mainFig;
             usrData = get(mainFig,'UserData');
             usrData.oldWindowButtonDownFcn = get(mainFig,'WindowButtonDownFcn');
+            usrData.oldWindowKeyPressFcn = get(mainFig, ...
+                                               'WindowKeyPressFcn');
+            
+            % Initialize moveit data
+            currentRoiPatch = self.view.selectedRoiPatchArray{1};
+            usrData.moveitData.currentRoiPatch = currentRoiPatch;
+            usrData.moveitData.originalXYData = {get(currentRoiPatch,'XData') get(currentRoiPatch,'YData')};
+            
             set(mainFig,'WindowButtonDownFcn',@ ...
                         self.moveRoi_Callback);
+            % press Esc Callback
+            set(self.view.guiHandles.mainFig,'WindowKeyPressFcn', ...
+                              @(s,e)self.moveRoiKeyPressCallback(s,e));
             set(mainFig,'UserData',usrData);
 
-            % TODO press Esc Callback
         end
 
-        function exitMoveRoiMode(self,src)
-        % if exit with success
+        function exitMoveRoiMode(self,src,status)
             thisFig = ancestor(src,'figure');
             thisAxes = get(thisFig,'CurrentAxes');
             usrData = get(thisFig,'UserData');
-            startPoint = usrData.moveitData.startPoint;
-            relativePos = usrData.moveitData.pos;
-            movedPatch = usrData.moveitData.currentHandle;
-            if ~isempty(startPoint) && ~isempty(relativePos)
+            if strcmp(status,'success') && ...
+                    isfield(usrData.moveitData,'startPoint') && ...
+                    isfield(usrData.moveitData,'pos')
+                % if exit with success, update the roi position in
+                % trial model
+                startPoint = usrData.moveitData.startPoint;
+                relativePos = usrData.moveitData.pos;
+                movedPatch = usrData.moveitData.currentHandle;
                 pttag = movedPatch.Tag;
                 roiTag = helper.convertTagToInd(pttag,'roi');
                 axesPos = [movedPatch.XData,movedPatch.YData];
                 self.model.updateRoi(roiTag,thisAxes,axesPos);
+            else
+                movedPatch = usrData.moveitData.currentRoiPatch;
+                XYData = usrData.moveitData.originalXYData;
+                set(movedPatch,'XData',XYData{1});
+                set(movedPatch,'YData',XYData{2});
+
             end
             self.view.changeRoiPatchColor('default','selected');
 
             set(thisFig,'WindowButtonDownFcn',...
                         usrData.oldWindowButtonDownFcn);
+            set(self.view.guiHandles.mainFig,'WindowKeyPressFcn',...
+                              usrData.oldWindowKeyPressFcn);
             rmfield(usrData,'moveitData');
             rmfield(usrData,'oldWindowButtonDownFcn');
+            rmfield(usrData,'oldWindowKeyPressFcn');
             set(thisFig,'UserData',usrData);
-            
-
-            %     self.model.updateRoiPosition by position shift
-            % else
-            %     move back the roiPatch to original position
-            % end
-            
-            % set(mainFig,'WindowButtonDownFcn',@self.selectRoi_Callback)
-
         end
         
         function moveRoi_Callback(self,src,evnt)
@@ -273,9 +286,16 @@ classdef TrialController < handle
                         % start point are saved in
                         % UserData of parent figure
                       case 'open'
-                        self.exitMoveRoiMode(selectedObj);
+                        self.exitMoveRoiMode(selectedObj,'success');
                     end
                 end
+            end
+        end
+        
+        function moveRoiKeyPressCallback(self,src,evnt)
+            if isempty(evnt.Modifier) && strcmp(evnt.Key,'escape')
+                selectedObj = gco;
+                self.exitMoveRoiMode(selectedObj,'cancel');
             end
         end
         

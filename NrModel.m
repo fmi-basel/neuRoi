@@ -654,7 +654,7 @@ classdef NrModel < handle
         
         function [timeTraceMat,roiArray] = ...
                 extractTimeTrace(self,fileIdx,roiFilePath,planeNum)
-            if exist('planeNum','var')
+            if ~exist('planeNum','var')
                 planeNum = 1;
             end
             
@@ -672,11 +672,11 @@ classdef NrModel < handle
             end
             
             if ~exist(roiFilePath,'file')
-                error('ROI file does not exists!')
+                error(sprintf('ROI file %s does not exists!',roiFilePath))
             end
             
             disp(sprintf('Extract time trace ...'))
-            trial = self.loadTrialFromList(fileIdx,'raw');
+            trial = self.loadTrialFromList(fileIdx,'raw',planeNum);
             
             trial.loadRoiArray(roiFilePath,'replace');
             [timeTraceMat,roiArray] = trial.extractTimeTraceMat();

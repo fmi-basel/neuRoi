@@ -248,7 +248,7 @@ classdef TrialView < handle
             tag = helper.convertTagToInd(ptTag,'roi');
             pos = roiPatch.Vertices(1,:);
             htext = text(self.guiHandles.roiGroup,pos(1),pos(2), ...
-                         num2str(tag));
+                         num2str(tag),'FontSize',8,'Color','m');
             htext.Tag = sprintf('roiTag_%d',tag);
         end
         
@@ -275,6 +275,9 @@ classdef TrialView < handle
                 roiPatch = self.findRoiPatchByTag(tag);
                 roiPatch.Selected = 'on';
                 self.displayRoiTag(roiPatch);
+                uistack(roiPatch,'top') % bring the selected roi
+                                        % patch to front of the
+                                        % image and number tag
                 self.selectedRoiPatchArray{k} = roiPatch;
             end
         end
@@ -303,7 +306,7 @@ classdef TrialView < handle
 
         function updateRoiPatchPosition(self,src,evnt)
             updRoi = evnt.roi;
-            roiPatch = self.findRoiByTag(updRoi.tag);
+            roiPatch = self.findRoiPatchByTag(updRoi.tag);
             updRoi.updateRoiPatchPos(roiPatch);
         end
         

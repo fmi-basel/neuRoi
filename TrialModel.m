@@ -662,15 +662,6 @@ classdef TrialModel < handle
         
         function [timeTraceMat,roiArray] = ...
                 extractTimeTraceMat(self,varargin)
-            if nargin == 1
-                % intensityOffset does not change
-            elseif nargin == 2
-                self.intensityOffset = varargin{1};
-                sm = 0;
-            elseif nargin == 3
-                self.intensityOffset = varargin{1};
-                sm = varargin{2};
-            end
             roiArray = self.roiArray;
             nRoi = length(roiArray);
             timeTraceMat = zeros(nRoi,size(self.rawMovie,3));
