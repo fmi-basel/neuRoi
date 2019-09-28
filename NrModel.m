@@ -531,6 +531,7 @@ classdef NrModel < handle
             addParameter(pa,'odorDelayList',[],@ismatrix);
             addParameter(pa,'saveMap',false);
             addParameter(pa,'outFileType','mat',@ischar);
+            addParameter(pa,'fileIdx',0,@ismatrix);
             parse(pa,varargin{:})
             pr = pa.Results;
             planeNum = pr.planeNum;
@@ -540,6 +541,9 @@ classdef NrModel < handle
             if strcmp(inFileType,'raw')
                 inSubDir = self.rawDataDir;
                 inFileList = self.rawFileList;
+                if pr.fileIdx
+                    inFileList = inFileList(pr.fileIdx);
+                end
                 if multiPlane
                     trialOption.frameRate = self.expInfo.frameRate/ ...
                                             self.expInfo.nPlane;
@@ -551,6 +555,9 @@ classdef NrModel < handle
             elseif strcmp(inFileType,'binned')
                 inDir = self.binConfig.outDir;
                 inFileList = self.getFileList('binned');
+                if pr.fileIdx
+                    inFileList = inFileList(pr.fileIdx);
+                end
                 shrinkZ = self.binConfig.param.shrinkFactors(3);
                 if multiPlane
                     inSubDir = fullfile(inDir, ...
@@ -676,6 +683,8 @@ classdef NrModel < handle
             end
             
             disp(sprintf('Extract time trace ...'))
+            disp(sprintf('Data file: #%d, %s', fileIdx, self.rawFileList{fileIdx}))
+            disp(sprintf('ROI file: %s', roiFilePath))
             trial = self.loadTrialFromList(fileIdx,'raw',planeNum);
             
             trial.loadRoiArray(roiFilePath,'replace');
@@ -689,7 +698,6 @@ classdef NrModel < handle
             traceResult.roiArray = roiArray;
             traceResult.roiFilePath = roiFilePath;
             traceResult.rawFilePath = trial.filePath;
-
             save(resFilePath,'traceResult')
         end
         

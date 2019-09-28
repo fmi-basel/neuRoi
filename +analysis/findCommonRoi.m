@@ -1,7 +1,18 @@
-function [commonRoiTagArray,timeTraceMatList,idxMat] = findCommonRoi(traceResultArray)
+function [commonRoiTagArray,timeTraceMatList,idxMat] = ...
+    findCommonRoi(traceResultArray, varargin)
+pa = inputParser;
+addParameter(pa,'removePointRoi',false);
+parse(pa,varargin{:})
+pr = pa.Results;
+
+if pr.removePointRoi
+    traceResultArray(1) = analysis.removePointRoi(traceResultArray(1));
+end
+
 roiTagArrayList = arrayfun(@getRoiTagArray,traceResultArray, ...
                            'UniformOutput',false);
-[commonRoiTagArray,idxMat] = helper.multipleIntersect(roiTagArrayList);
+[commonRoiTagArray,idxMat] = ...
+    helper.multipleIntersect(roiTagArrayList);
 
 timeTraceMatList = {};
 for k=1:length(traceResultArray)

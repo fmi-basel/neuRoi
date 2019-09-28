@@ -207,10 +207,6 @@ classdef TrialModel < handle
 
         end
 
-        function transfromMovie2D(self,tform)
-        end
-        
-        
         function mapSize = getMapSize(self)
             mapSize = size(self.rawMovie(:,:,1));
         end

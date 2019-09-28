@@ -136,7 +136,7 @@ classdef NrController < handle
                 self.view.displayError(errorStruct);
                 return
             end
-            slidingWindowSize = round(slidingWindowSize);
+            % slidingWindowSize = round(slidingWindowSize);
             self.model.responseMaxOption.slidingWindowSize = slidingWindowSize;
             src.String = num2str(slidingWindowSize);
         end
@@ -256,15 +256,17 @@ classdef NrController < handle
             % TODO when window is not integer
             startStr = startText.String;
             endStr = endText.String;
-            startFrameNum = round(str2num(startStr));
-            endFrameNum = round(str2num(endStr));
+            % startFrameNum = round(str2num(startStr));
+            % endFrameNum = round(str2num(endStr));
+            startNum = str2num(startStr);
+            endNum = str2num(endStr);
             switch src.Tag
               case startText.Tag
-                set(src,'String',num2str(startFrameNum));
+                set(src,'String',num2str(startNum));
               case endText.Tag
-                set(src,'String',num2str(endFrameNum));
+                set(src,'String',num2str(endNum));
             end
-            wdw = [startFrameNum endFrameNum];
+            wdw = [startNum endNum];
         end
 
     end

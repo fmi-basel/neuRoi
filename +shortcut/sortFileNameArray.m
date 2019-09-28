@@ -1,4 +1,4 @@
-function stFileNameArray = sortFileNameArray(fileNameArray,sortBy, ...
+function [stFileNameArray,varargout] = sortFileNameArray(fileNameArray,sortBy, ...
                                              order)
 switch sortBy
   case 'odor'
@@ -9,6 +9,9 @@ switch sortBy
     
     [rankSorted,rankOrder] = sort(rankArray);
     stFileNameArray = fileNameArray(rankOrder);
+    if nargout
+        varargout{1} = odorArray(rankOrder);
+    end
 end
 
 function rank = sortNameToRank(sortName,order)
