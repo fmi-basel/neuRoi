@@ -4,6 +4,7 @@ classdef TrialView < handle
         controller
         guiHandles
         selectedRoiPatchArray
+        mapColorMap
     end
     
     properties (Constant)
@@ -27,6 +28,15 @@ classdef TrialView < handle
             
             self.listenToModel();
             self.assignCallbacks();
+            [neuRoiDir, ~, ~]= fileparts(mfilename('fullpath'));
+            cmapPath = fullfile(neuRoiDir, 'colormap', ...
+                                'clut2b.mat');
+            try
+                foo = load(cmapPath);
+                self.mapColorMap = foo.clut2b;
+            catch ME
+                self.mapColorMap = 'default';
+            end
         end
         
         function listenToModel(self)
@@ -156,15 +166,16 @@ classdef TrialView < handle
             mapAxes = self.guiHandles.mapAxes;
             mapImage = self.guiHandles.mapImage;
             set(mapImage,'CData',map.data);
+            cmap = self.mapColorMap;
             switch map.type
               case 'anatomy'
                 colormap(mapAxes,gray);
               case 'response'
-                colormap(mapAxes,'default');
+                colormap(mapAxes,cmap);
               case 'responseMax'
-                colormap(mapAxes,'default');
+                colormap(mapAxes,cmap);
               case 'localCorrelation'
-                colormap(mapAxes,'default');
+                colormap(mapAxes,cmap);
               case 'import'
                 colormap(mapAxes,gray);
               otherwise

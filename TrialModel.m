@@ -401,7 +401,9 @@ classdef TrialModel < handle
             end
             
             % Convert unit of window from second to frame number
-            fZeroWindowFrame = self.convertFromSecToFrame(fZeroWindow);
+            fZeroWindowFrame = ...
+                self.convertFromSecToFrame(fZeroWindow);
+            slidingWindowSizeFrame = self.convertFromSecToFrame(slidingWindowSize);
             
             % Validate window parameter
             nf = self.getNFrameRawMovie();
@@ -413,7 +415,7 @@ classdef TrialModel < handle
             if ~fres
                 mapData = movieFunc.dFoverFMax(self.rawMovie,offset,...
                                                fZeroWindowFrame,...
-                                               slidingWindowSize);
+                                               slidingWindowSizeFrame);
             end
         end
         
