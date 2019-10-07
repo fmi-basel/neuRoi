@@ -1,12 +1,13 @@
 addpath('../../neuRoi')
 %% Clear variables
+close all
 clear all
 %% Step01 Configure experiment and image processing parameters
 % Load 
 % Experiment parameters
-expInfo.name = '2019-09-25-fastZ';
+expInfo.name = '2019-09-25-fastZOB';
 expInfo.frameRate = 30;
-expInfo.odorList = {'ala','trp','ser','acsf','tca','gca','tdca','spont'};
+expInfo.odorList = {'ala','trp','ser','tca','gca','tdca','acsf','spont'};
 expInfo.nTrial = 3;
 expInfo.nPlane = 4;
 
@@ -20,8 +21,13 @@ rawDataDir = fullfile(dataRootDir,'raw_data',expInfo.name);
 % List file command ls -1|awk '{print "\x27" $1 "\x27;..."}'
 
 rawFileList = dir(fullfile(rawDataDir, ...
-                           '20190925_BH18_dof0828_Dp_fastz_s*.tif'));
-rawFileList = arrayfun(@(x) x.name, rawFileList, 'UniformOutput', false);
+                           '20190925_BH18_dof0828_OB_fastz8_s*.tif'));
+rawFileList = arrayfun(@(x) x.name, rawFileList, 'UniformOutput', ...
+                       false);
+% Exclude alignment files
+keepRawInd = find(~cellfun(@(x) length(x), strfind(rawFileList, ...
+                                                  'alignment')));
+rawFileList = rawFileList(keepRawInd);
 
 % Data processing configuration
 % Directory for saving processing results
@@ -71,6 +77,12 @@ for planeNum=1:myexp.expInfo.nPlane
                           'alignOption',{'plotFig',false});
 end
 %% Save experiment configuration
-expFileName = strcat('experimentConfig_',expInfo.name,'.mat');
-expFilePath = fullfile(resultDir,expFileName);
+expFileName = strcat('experimentConfig_',myexp.expInfo.name,'.mat');
+expFilePath = fullfile(myexp.resultDir,expFileName);
 save(expFilePath,'myexp')
+
+% Save this experiment as structure so that Python can read
+myexpStruct = struct(myexp);
+expStructFileName = strcat('experimentConfig_struct_',myexp.expInfo.name,'.mat');
+expStructFilePath = fullfile(myexp.resultDir,expStructFileName);
+save(expStructFilePath,'myexpStruct')
