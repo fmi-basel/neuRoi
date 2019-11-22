@@ -245,8 +245,6 @@ classdef TrialView < handle
         end
         
         function addRoiPatch(self,roi)
-            % roiPatch = roi.createRoiPatch(self.guiHandles.mapAxes, ...
-            %                               self.DEFAULT_PATCH_COLOR);
             roiPatch = roi.createRoiPatch(self.guiHandles.roiGroup, ...
                                           self.DEFAULT_PATCH_COLOR);
             % Add context menu for right click

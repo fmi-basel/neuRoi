@@ -1,4 +1,4 @@
-classdef RoiFreehand
+classdef RoiFreehand < handle
     properties
         tag
         position
@@ -97,6 +97,53 @@ classdef RoiFreehand
             axesPosition = getAxesPosition(parent,pixelPosition);
             set(roiPatch,'XData',axesPosition(:,1),'YData',axesPosition(:,2));
         end
+        
+        
+        function offsetYx = matchRoiPos(self,inputImg,tempImg, ...
+                                        windowSize,fitGauss,plotFlag)
+            if ~exist('fitGauss','var')
+                fitGauss=1;
+            end
+                
+            if ~exist('plotFlag','var')
+                plotFlag=0;
+            end
+            
+            mask = self.createMask();
+            [maskIndX,maskIndY] = find(mask==1);
+            xmin = max(min(maskIndX)-windowSize,1);
+            xmax = min(max(maskIndX)+windowSize,size(inputImg,1));
+            ymin = max(min(maskIndY)-windowSize,1);
+            ymax = min(max(maskIndY)+windowSize,size(inputImg,2));
+            inputRimg = inputImg(xmin:xmax,ymin:ymax);
+            tempRimg = tempImg(xmin:xmax,ymin:ymax);
+            if plotFlag
+                figure
+                imagesc(inputRimg)
+                title('input')
+                figure
+                imagesc(tempRimg)
+                title('temp')
+            end
+            offsetYx = movieFunc.alignImage(inputRimg, ...
+                                            tempRimg,fitGauss,plotFlag);
+        end
+        
+        function shiftRoiPos(self,offsetYx,varargin)
+            if nargin == 2
+                roiPatch = 0;
+            elseif nargin == 3
+                roiPatch = varargin{1};
+            else
+                error('Usage: roi.shiftRoiPos(offsetYx,[roiPatch])')
+            end
+            
+            self.position = self.position + -[offsetYx(2),offsetYx(1)];
+            if RoiFreehand.isaRoiPatch(roiPatch)
+                self.updateRoiPatchPos(roiPatch);
+            end
+        end
+        
     end
     
     methods (Static)

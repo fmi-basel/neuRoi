@@ -635,6 +635,7 @@ classdef TrialModel < handle
             roiIndArray = arrayfun(@(x) self.findRoiByTag(x), ...
                                    tagArray);
         end
+
         
         % Methods for time trace
         function vecSec = convertFromFrameToSec(self,vecFrame)
