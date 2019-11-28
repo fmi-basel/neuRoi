@@ -138,7 +138,7 @@ classdef RoiFreehand < handle
                 error('Usage: roi.shiftRoiPos(offsetYx,[roiPatch])')
             end
             
-            self.position = self.position + -[offsetYx(2),offsetYx(1)];
+            self.position = self.position + [offsetYx(2),offsetYx(1)];
             if RoiFreehand.isaRoiPatch(roiPatch)
                 self.updateRoiPatchPos(roiPatch);
             end

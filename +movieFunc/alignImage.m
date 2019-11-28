@@ -1,4 +1,4 @@
-function offsetYx = alignImage(movingImg,fixedImg,fitGauss,debug)
+function [offsetYx,varargout] = alignImage(movingImg,fixedImg,fitGauss,debug)
 % TODO IMPORTANT! change the code in align batch so that fitGauss
 % was not used because of debugging...
     if ~exist('fitGauss','var')
@@ -9,8 +9,11 @@ function offsetYx = alignImage(movingImg,fixedImg,fitGauss,debug)
         debug = false;
     end
     
-    crossCorrComplex = fastCrossCorrelation2D(movingImg,fixedImg);
-    crossCorr = fftshift(real(crossCorrComplex));
+    fa = fft2(movingImg);
+    fb = fft2(fixedImg);
+    crossCorrComplex = ifft2(conj(fa).*fb);
+    % crossCorr = fftshift(real(crossCorrComplex));
+    crossCorr = fftshift(abs(crossCorrComplex));
     if fitGauss
         [xx,yy] = meshgrid(1:size(movingImg,2),1:size(movingImg,1));
         [fitresult, zfit, fiterr, zerr, resnorm, rr] = ...
@@ -23,6 +26,20 @@ function offsetYx = alignImage(movingImg,fixedImg,fitGauss,debug)
     
     yx0 = ceil((size(fixedImg)+1)/2); % center of image
     offsetYx =  [y-yx0(1), x-yx0(2)];
+    
+    if nargout == 2
+        if fitGauss
+            ccmax = fitresult(7) + fitresult(1);
+        else
+            ccmax = crossCorr[y,x];
+        end
+            
+        rg00 = sum(abs(fa(:)).^2);
+        rf00 = sum(abs(fb(:)).^2);
+        err = 1.0 - ccmax.^2/(rg00*rf00);
+        err = sqrt(err);
+        varargout{1} = err;
+    end
     
     % moving(0) ~=~ fixed(offsetYx)
     
@@ -39,9 +56,4 @@ function offsetYx = alignImage(movingImg,fixedImg,fitGauss,debug)
         plot(yx0(2),yx0(1),'o')
         hold off
     end
-
-    function xcorrComplex = fastCrossCorrelation2D(a,b)
-        fa = fft2(a);
-        fb = fft2(b);
-        xcorrComplex = ifft2(conj(fa).*fb);
         
