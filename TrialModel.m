@@ -18,6 +18,7 @@ classdef TrialModel < handle
         rawMovie
         
         roiArray
+        templateAnatomy
         resultDir
         roiFilePath
     end
@@ -229,7 +230,7 @@ classdef TrialModel < handle
             self.addMap(map);
         end
         
-        function findAndUpdateMap(self,mapType,mapOption)
+        function mapInd = findMapByType(self,mapType)
             currentMap = self.mapArray{self.currentMapInd};
             if strcmp(currentMap.type,mapType)
                 mapInd = self.currentMapInd;
@@ -244,6 +245,10 @@ classdef TrialModel < handle
                 end
                 mapInd = mapInd(1);
             end
+        end
+        
+        function findAndUpdateMap(self,mapType,mapOption)
+            mapInd = findMapByType(self,mapType)
             self.updateMap(mapInd,mapOption);
             if mapInd ~= self.currentMapInd
                 self.selectMap(mapInd);
@@ -541,7 +546,7 @@ classdef TrialModel < handle
             self.roiArray(ind) = freshRoi;
 
             notify(self,'roiUpdated', ...
-                   NrEvent.RoiUpdatedEvent(self.roiArray(ind)));
+                   NrEvent.RoiUpdatedEvent([self.roiArray(ind)]));
             disp(sprintf('Roi #%d updated',tag))
         end
         
@@ -595,6 +600,8 @@ classdef TrialModel < handle
         
         function saveRoiArray(self,filePath)
             roiArray = self.roiArray;
+            ind = self.findMapByType('anatomy');
+            templateAnatomy = self.mapArray{ind}.data;
             save(filePath,'roiArray');
         end
         
@@ -611,6 +618,26 @@ classdef TrialModel < handle
                 self.roiArray = roiArray;
                 notify(self,'roiArrayReplaced');
             end
+            if isfield(foo,'templateAnatomy')
+                self.templateAnatomy = foo.templateAnatomy;
+            end
+        end
+        
+        function matchRoiPos(self,roiTagArray,windowSize)
+            fitGauss = 1;
+            normFlag = 1;
+            roiIndArray = self.findRoiByTagArray(roiTagArray);
+            mapInd = self.findMapByType('anatomy');
+            inputMap = self.mapArray{mapInd}.data;
+            for ind = roiIndArray
+                self.roiArray(ind).matchPos(inputMap, ...
+                                            self.templateAnatomy,...
+                                            windowSize,...
+                                            fitGauss,...
+                                            normFlag)
+            end
+            notify(self,'roiUpdated', ...
+                   NrEvent.RoiUpdatedEvent(self.roiArray(roiIndArray)));
         end
         
         function checkRoiImageSize(self,roi)

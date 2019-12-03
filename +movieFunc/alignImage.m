@@ -1,6 +1,10 @@
-function [offsetYx,varargout] = alignImage(movingImg,fixedImg,fitGauss,debug)
+function [offsetYx,varargout] = alignImage(movingImg,fixedImg,fitGauss,normFlag,debug)
 % TODO IMPORTANT! change the code in align batch so that fitGauss
 % was not used because of debugging...
+    if ~exist('normFlag','var')
+        normFlag = false;
+    end
+    
     if ~exist('fitGauss','var')
         fitGauss = false;
     end
@@ -8,6 +12,13 @@ function [offsetYx,varargout] = alignImage(movingImg,fixedImg,fitGauss,debug)
     if ~exist('debug','var')
         debug = false;
     end
+    
+    if normFlag
+        movingImg = movingImg - mean(movingImg(:));
+        fixedImg = fixedImg - mean(fixedImg(:));
+    end
+    
+
     
     fa = fft2(movingImg);
     fb = fft2(fixedImg);
@@ -31,17 +42,23 @@ function [offsetYx,varargout] = alignImage(movingImg,fixedImg,fitGauss,debug)
         if fitGauss
             ccmax = fitresult(7) + fitresult(1);
         else
-            ccmax = crossCorr[y,x];
+            ccmax = crossCorr(y,x);
         end
-            
-        rg00 = sum(abs(fa(:)).^2);
-        rf00 = sum(abs(fb(:)).^2);
-        err = 1.0 - ccmax.^2/(rg00*rf00);
-        err = sqrt(err);
+        
+        if normFlag
+            corrCoef= ccmax/std(movingImg(:))/std(fixedImg(:))/length(movingImg(:));
+            err = 1.0 - abs(corrCoef);
+        else
+            % rg00 = sum(movingImg(:).^2);
+            % rf00 = sum(fixedImg(:).^2);
+            % err = 1.0 - ccmax.^2/(rg00*rf00);
+            err = nan;
+        end
+        
         varargout{1} = err;
     end
     
-    % moving(0) ~=~ fixed(offsetYx)
+    % The direction of offsetYx: moving(0) ~=~ fixed(offsetYx)
     
     if debug
         disp('yx')

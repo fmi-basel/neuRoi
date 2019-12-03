@@ -314,9 +314,12 @@ classdef TrialView < handle
         end
 
         function updateRoiPatchPosition(self,src,evnt)
-            updRoi = evnt.roi;
-            roiPatch = self.findRoiPatchByTag(updRoi.tag);
-            updRoi.updateRoiPatchPos(roiPatch);
+            updRoiArray = evnt.roiArray;
+            for k=1:length(updRoiArray)
+                roi = updRoiArray(k);
+                roiPatch = self.findRoiPatchByTag(roi.tag);
+                roi.updateRoiPatchPos(roiPatch);
+            end
         end
         
         function changeRoiPatchTag(self,src,evnt)

@@ -3,6 +3,8 @@ classdef RoiFreehand < handle
         tag
         position
         imageSize
+        offsetYx
+        posErr
     end
     
     methods
@@ -92,15 +94,38 @@ classdef RoiFreehand < handle
         end
         
         function updateRoiPatchPos(self,roiPatch)
+            offsetYx = self.offsetYx;
+            offsetFlag = any(offsetYx);
             parent = ancestor(roiPatch,'Axes');
             pixelPosition = self.position;
+            if offsetFlag
+                pixelPosition = pixelPosition + [offsetYx(2), ...
+                                    offsetYx(1)];
+            end
             axesPosition = getAxesPosition(parent,pixelPosition);
-            set(roiPatch,'XData',axesPosition(:,1),'YData',axesPosition(:,2));
+            set(roiPatch,'XData',axesPosition(:,1),'YData', ...
+                         axesPosition(:,2));
+            if offsetFlag
+                %set(roiPatch,'FaceAlpha',0.5);
+                set(roiPatch,'LineStyle','-');
+                set(roiPatch,'UserData','offset');
+                cmap = jet(256);
+                errColorIdx = max(1,round(self.posErr*length(cmap)));
+                disp(errColorIdx)
+                fcolor = cmap(errColorIdx,:);
+                set(roiPatch,'FaceColor',fcolor);
+            else
+                if strcmp(get(roiPatch,'UserData'),'offset')
+                    % TODO reset to default face color
+                    %set(roiPatch,'FaceAlpha',0.5);
+                    set(roiPatch,'LineStyle','none');
+                    set(roiPatch,'UserData',[]);
+                end
+            end
         end
         
-        
-        function offsetYx = matchRoiPos(self,inputImg,tempImg, ...
-                                        windowSize,fitGauss,plotFlag)
+        function offsetYx = matchPos(self,inputImg,tempImg, ...
+                                        windowSize,fitGauss,normFlag,plotFlag)
             if ~exist('fitGauss','var')
                 fitGauss=1;
             end
@@ -125,25 +150,18 @@ classdef RoiFreehand < handle
                 imagesc(tempRimg)
                 title('temp')
             end
-            offsetYx = movieFunc.alignImage(inputRimg, ...
-                                            tempRimg,fitGauss,plotFlag);
+            [self.offsetYx,self.posErr] = movieFunc.alignImage(inputRimg, ...
+                                                 tempRimg,fitGauss,normFlag,plotFlag);
         end
         
-        function shiftRoiPos(self,offsetYx,varargin)
-            if nargin == 2
-                roiPatch = 0;
-            elseif nargin == 3
-                roiPatch = varargin{1};
-            else
-                error('Usage: roi.shiftRoiPos(offsetYx,[roiPatch])')
-            end
-            
+        function acceptShift(self)
+            offsetYx = self.offsetYx;
             self.position = self.position + [offsetYx(2),offsetYx(1)];
-            if RoiFreehand.isaRoiPatch(roiPatch)
-                self.updateRoiPatchPos(roiPatch);
-            end
         end
         
+        function rejectShift(self,roiPatch)
+            self.offsetYx = [0, 0];
+        end
     end
     
     methods (Static)
