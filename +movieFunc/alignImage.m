@@ -61,6 +61,9 @@ function [offsetYx,varargout] = alignImage(movingImg,fixedImg,fitGauss,normFlag,
     % The direction of offsetYx: moving(0) ~=~ fixed(offsetYx)
     
     if debug
+        % One-line code for doing debugging in console
+        % figure('Name','crossCorr');imagesc(crossCorr);hold on;plot(x,y,'*');figure('Name','Fitted Gauss');imagesc(zfit);hold on;plot(x,y,'*')
+        % figure('Name','template');imagesc(fixedImg);figure('Name','input');imagesc(movingImg)
         disp('yx')
         disp([y x])
         disp('y0x0')

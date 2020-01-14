@@ -37,6 +37,10 @@ classdef TrialView < handle
             catch ME
                 self.mapColorMap = 'default';
             end
+            
+            helper.imgzoompan(self.guiHandles.mapAxes,'ButtonDownFcn',...
+                              @(s,e)self.controller.selectRoi_Callback(s,e),...
+                              'ImgHeight',mapSize(1),'ImgWidth',mapSize(2));
         end
         
         function listenToModel(self)
@@ -79,8 +83,8 @@ classdef TrialView < handle
             set(self.guiHandles.contrastMaxSlider,'Callback',...
                @(s,e)self.controller.contrastSlider_Callback(s,e));
             
-            set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
-                @(s,e)self.controller.selectRoi_Callback(s,e));
+            % set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
+            %     @(s,e)self.controller.selectRoi_Callback(s,e));
 
             set(self.guiHandles.roiMenuEntry1,'Callback',...
                 @(~,~)self.controller.enterMoveRoiMode())
