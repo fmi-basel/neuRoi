@@ -43,6 +43,10 @@ classdef TrialController < handle
                     self.enterMoveRoiMode();
                   case 'x'
                     self.replaceRoiByDrawing();
+                  case 'equal'
+                    self.view.zoomFcn(-1);
+                  case 'hyphen'
+                    self.view.zoomFcn(1);
                 end
             elseif strcmp(evnt.Modifier,'control')
                 switch evnt.Key

@@ -5,6 +5,8 @@ classdef TrialView < handle
         guiHandles
         selectedRoiPatchArray
         mapColorMap
+        mapSize
+        zoom
     end
     
     properties (Constant)
@@ -16,8 +18,8 @@ classdef TrialView < handle
             self.model = mymodel;
             self.controller = mycontroller;
             
-            mapSize = self.model.getMapSize();
-            self.guiHandles = trialGui(mapSize);
+            self.mapSize = self.model.getMapSize();
+            self.guiHandles = trialGui(self.mapSize);
             
 
             self.displayTitle();
@@ -38,9 +40,11 @@ classdef TrialView < handle
                 self.mapColorMap = 'default';
             end
             
-            helper.imgzoompan(self.guiHandles.mapAxes,'ButtonDownFcn',...
-                              @(s,e)self.controller.selectRoi_Callback(s,e),...
-                              'ImgHeight',mapSize(1),'ImgWidth',mapSize(2));
+            % Save original settings for zoom
+            self.zoom.origXLim = self.guiHandles.mapAxes.XLim;
+            self.zoom.origYLim = self.guiHandles.mapAxes.YLim;
+            self.zoom.maxZoomScrollCount = 30;
+            self.zoom.scrollCount = 0;
         end
         
         function listenToModel(self)
@@ -83,8 +87,8 @@ classdef TrialView < handle
             set(self.guiHandles.contrastMaxSlider,'Callback',...
                @(s,e)self.controller.contrastSlider_Callback(s,e));
             
-            % set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
-            %     @(s,e)self.controller.selectRoi_Callback(s,e));
+            set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
+                @(s,e)self.controller.selectRoi_Callback(s,e));
 
             set(self.guiHandles.roiMenuEntry1,'Callback',...
                 @(~,~)self.controller.enterMoveRoiMode())
@@ -393,7 +397,7 @@ classdef TrialView < handle
                          'Tag',lineTag);
         end
         
-        function changeTraceFigVisibility(self);
+        function changeTraceFigVisibility(self)
             if self.model.syncTimeTrace
                 set(self.guiHandles.traceFig,'Visible','on');
             else
@@ -401,7 +405,7 @@ classdef TrialView < handle
             end
             figure(self.guiHandles.mainFig)
         end
-        
+
         % function setFigTagPrefix(self,prefix)
         %     mainFig = self.guiHandles.mainFig;
         %     traceFig = self.guiHandles.traceFig;
@@ -410,6 +414,37 @@ classdef TrialView < handle
         %     traceFigTag = traceFig.Tag;
         %     set(traceFig,'Tag',[prefix '_' traceFigTag])
         % end
+        
+        function zoomFcn(self,scrollChange)
+            opt.Magnify = 1.1;
+            opt.XMagnify = 1.0;
+            opt.YMagnify = 1.0;
+            imgWidth = self.mapSize(2);
+            imgHeight = self.mapSize(1);
+
+            if ((self.zoom.scrollCount - scrollChange) <= ...
+                self.zoom.maxZoomScrollCount)
+
+                axish = gca;
+                % calculate the new XLim and YLim
+                cpaxes = mean(axish.CurrentPoint);
+                newXLim = (axish.XLim - cpaxes(1)) * (opt.Magnify * opt.XMagnify)^scrollChange + cpaxes(1);
+                newYLim = (axish.YLim - cpaxes(2)) * (opt.Magnify * opt.YMagnify)^scrollChange + cpaxes(2);
+
+                newXLim = floor(newXLim);
+                newYLim = floor(newYLim);
+                % Check for image border location
+                if (newXLim(1) >= 0 && newXLim(2) <= imgWidth && newYLim(1) >= 0 && newYLim(2) <= imgHeight)
+                    axish.XLim = newXLim;
+                    axish.YLim = newYLim;
+                    self.zoom.scrollCount = self.zoom.scrollCount - scrollChange;
+                else
+                    axish.XLim = self.zoom.origXLim;
+                    axish.YLim = self.zoom.origYLim;
+                    self.zoom.scrollCount = 0;
+                end
+            end
+        end
 
         function displayError(self,errorStruct)
             self.guiHandles.errorDlg = errordlg(errorStruct.message,'TrialController');
