@@ -39,6 +39,8 @@ classdef TrialController < handle
                     self.selectMap(2);
                   case 'e'
                     self.selectMap(3);
+                  case 'v'
+                    self.enterMoveRoiMode();
                   case 'x'
                     self.replaceRoiByDrawing();
                 end
@@ -46,6 +48,8 @@ classdef TrialController < handle
                 switch evnt.Key
                   case 'a'
                     self.selectAllRoi_Callback();
+                  case 'q'
+                    self.loadRoiArray();
                 end
             end
         end

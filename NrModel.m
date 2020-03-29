@@ -27,11 +27,12 @@ classdef NrModel < handle
         alignToTemplate
         mapsAfterLoading
         loadTemplateRoi
-        roiTemplateFilePath        
+        roiTemplateFilePath
+        
+        binConfig
     end 
     
     properties (SetAccess = private, SetObservable = true)
-        binConfig
         anatomyDir
         anatomyConfig
         alignDir
