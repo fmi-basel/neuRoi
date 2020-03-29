@@ -50,7 +50,7 @@ function imgzoompan(hfig, varargin)
 %    for using on axis
 
 
-    %  Run in current figure unless otherwise requested
+%  Run in current figure unless otherwise requested
     if isempty(findobj('type','figure'))
         fprintf('%s -- finds no open figure windows. Quitting.\n', mfilename)
         return
@@ -76,8 +76,10 @@ function imgzoompan(hfig, varargin)
     p.addOptional('ImgHeight', 0, @isnumeric);
 
     % Mouse options and callbacks
-    p.addOptional('PanMouseButton', 2, @isnumeric);
-    p.addOptional('ResetMouseButton', 3, @isnumeric);
+    p.addOptional('PanMouseButton', 3, @isnumeric); 
+    % use 'extend' as selection type, since 'alt' conflicts with right
+    % button click. To pan, use Shift+drag
+    p.addOptional('ResetMouseButton', 0, @isnumeric);
     p.addOptional('ButtonDownFcn',  @(~,~) 0);
     p.addOptional('ButtonUpFcn', @(~,~) 0) ;
 
@@ -98,7 +100,10 @@ function imgzoompan(hfig, varargin)
 
 
     % Set up callback functions
-    set(hfig, 'WindowScrollWheelFcn', @zoom_fcn);
+    % Removed zoom by mouse wheel, use "=" and "-" keys to zoom in
+    % and out
+    % By Bo Hu 2020-03
+    % set(hfig, 'WindowScrollWheelFcn', @zoom_fcn);
     set(hfig, 'WindowButtonDownFcn', @down_fcn);
     set(hfig, 'WindowButtonUpFcn', @up_fcn);
 
@@ -155,10 +160,11 @@ function imgzoompan(hfig, varargin)
 
     %% Mouse Button Callbacks
     function down_fcn(hObj, evt)
+        disp('down triggered')
         opt.ButtonDownFcn(hObj, evt); % First, run callback from options
 
         clickType = evt.Source.SelectionType;
-
+        disp(clickType)
         % Panning action
         panBt = opt.PanMouseButton;
         if (panBt > 0)
@@ -181,6 +187,7 @@ function imgzoompan(hfig, varargin)
 
     % Main mouseButtonUp callback
     function up_fcn(hObj, evt)
+        disp('up triggered')
         opt.ButtonUpFcn(hObj, evt); % First, run callback from options
         
         % Reset action
@@ -208,6 +215,7 @@ function imgzoompan(hfig, varargin)
     % Take in desired Axis to pan
     % Get seed points & assign the Panning Fcn to top level Fig
     function startPan(hAx)
+        disp('startPan')
         hFig = ancestor(hAx, 'Figure', 'toplevel');   % Parent Fig
 
         seedPt = get(hAx, 'CurrentPoint'); % Get init mouse position
@@ -224,6 +232,7 @@ function imgzoompan(hfig, varargin)
 
     % Call this Fcn in your 'WindowButtonUpFcn'
     function stopPan
+        disp('stopPan')
         set(gcbf,'WindowButtonMotionFcn',[]);
         setptr(gcbf,'arrow');
     end %stopPan

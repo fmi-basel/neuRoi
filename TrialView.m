@@ -45,6 +45,10 @@ classdef TrialView < handle
             self.zoom.origYLim = self.guiHandles.mapAxes.YLim;
             self.zoom.maxZoomScrollCount = 30;
             self.zoom.scrollCount = 0;
+            
+            
+            helper.imgzoompan(self.guiHandles.mapAxes,...
+                   'ButtonDownFcn',@(s,e)self.controller.selectRoi_Callback(s,e),'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
         end
         
         function listenToModel(self)
@@ -87,8 +91,8 @@ classdef TrialView < handle
             set(self.guiHandles.contrastMaxSlider,'Callback',...
                @(s,e)self.controller.contrastSlider_Callback(s,e));
             
-            set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
-                @(s,e)self.controller.selectRoi_Callback(s,e));
+            % set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
+            %     @(s,e)self.controller.selectRoi_Callback(s,e));
 
             set(self.guiHandles.roiMenuEntry1,'Callback',...
                 @(~,~)self.controller.enterMoveRoiMode())
