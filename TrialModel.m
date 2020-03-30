@@ -71,6 +71,8 @@ classdef TrialModel < handle
             addParameter(pa,'yxShift',[0 0],validYxShift);
             addParameter(pa,'intensityOffset',0);
             addParameter(pa,'resultDir',pwd());
+            addParameter(pa,'syncTimeTrace',false);
+            
             parse(pa,filePath,varargin{:})
             pr = pa.Results;
             
@@ -151,6 +153,9 @@ classdef TrialModel < handle
 
             % Calculate anatomy map
             self.calculateAndAddNewMap('anatomy');
+
+            % Whether to syncronize time trace while selecting ROIs
+            self.syncTimeTrace = pr.syncTimeTrace;
             
             % Initialize ROI array
             self.roiVisible = true;

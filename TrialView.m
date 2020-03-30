@@ -26,6 +26,9 @@ classdef TrialView < handle
             self.displayMeta();
             self.changeTraceFigVisibility();
             
+            set(self.guiHandles.syncTraceCheckbox,'Value', ...
+                              self.model.syncTimeTrace)
+            
             self.selectedRoiPatchArray = {};
             
             self.listenToModel();
@@ -108,7 +111,10 @@ classdef TrialView < handle
             set(self.guiHandles.traceFig,'WindowKeyPressFcn',...
                 @(s,e)self.controller.keyPressCallback(s,e));
             set(self.guiHandles.traceFig,'CloseRequestFcn', ...
-                @(s,e)self.controller.traceFigClosed_Callback(s,e));
+            @(s,e)self.controller.traceFigClosed_Callback(s,e));
+            
+            set(self.guiHandles.syncTraceCheckbox,'Callback',...
+            @(s,e)self.controller.syncTrace_Callback(s,e));
         end
         
         function displayTitle(self)
@@ -448,6 +454,13 @@ classdef TrialView < handle
                     self.zoom.scrollCount = 0;
                 end
             end
+        end
+        
+        function zoomReset(self)
+            axish = gca;
+            axish.XLim = self.zoom.origXLim;
+            axish.YLim = self.zoom.origYLim;
+            self.zoom.scrollCount = 0;
         end
 
         function displayError(self,errorStruct)

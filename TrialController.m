@@ -43,9 +43,9 @@ classdef TrialController < handle
                     self.enterMoveRoiMode();
                   case 'x'
                     self.replaceRoiByDrawing();
-                  case 'equal'
+                  case {'equal','2'}
                     self.view.zoomFcn(-1);
-                  case 'hyphen'
+                  case {'hyphen','1'}
                     self.view.zoomFcn(1);
                 end
             elseif strcmp(evnt.Modifier,'control')
@@ -54,6 +54,8 @@ classdef TrialController < handle
                     self.selectAllRoi_Callback();
                   case 'q'
                     self.loadRoiArray();
+                  case '1'
+                    self.view.zoomReset();
                 end
             end
         end
@@ -349,6 +351,10 @@ classdef TrialController < handle
                 filePath = fullfile(fileDir,fileName)
                 self.model.loadRoiArray(filePath,option);
             end
+        end
+        
+        function syncTrace_Callback(self,source,evnt)
+            self.setSyncTimeTrace(source.Value);
         end
         
         function setSyncTimeTrace(self,state)

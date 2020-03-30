@@ -132,6 +132,8 @@ classdef NrModel < handle
             end
             
             rawFileName = self.rawFileList{fileIdx};
+            fprintf('Loading %s\n planeNum: %d\n',rawFileName, ...
+                    planeNum)
             
             multiPlane = checkMultiPlane(self,planeNum);
             
