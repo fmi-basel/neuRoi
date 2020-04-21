@@ -4,3 +4,6 @@
 moveit2.m
 # Scrach in demo
 /demos/scratch.m
+# Temporarily ignore NoRMCorre
+/NoRMCorre
+

@@ -9,4 +9,3 @@ trialTable = table(fileList,fileOdorList,'VariableNames', ...
                   {'FileName','Odor'});
 trialTable.Odor = categorical(trialTable.Odor,odorList);
 end
-
