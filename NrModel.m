@@ -577,31 +577,32 @@ classdef NrModel < handle
                 error('inFileType should be either raw or binned!')
             end
             
-            odorList = self.expInfo.odorList;
-            % TODO accept user provided fileOdorList
-            if ~isempty(odorList)
-                trialTable = batch.getTrialTable(inFileList, ...
-                                                 odorList);
-            else
-                trialTable = table(inFileList');
-            end
+            % odorList = self.expInfo.odorList;
+            % % TODO accept user provided fileOdorList
+            % if ~isempty(odorList)
+            %     trialTable = batch.getTrialTable(inFileList, ...
+            %                                      odorList);
+            % else
+            %     trialTable = table(inFileList');
+            % end
             
-            if strcmpi(pr.sortBy,'odor')
-                trialTable = sortrows(trialTable,'Odor');
-            end
+            % if strcmpi(pr.sortBy,'odor')
+            %     trialTable = sortrows(trialTable,'Odor');
+            % end
             
-            if ~isempty(pr.odorDelayList)
-                trialTable = batch.getWindowDelayTable(trialTable, ...
-                                     odorList,pr.odorDelayList);
-                delayList =  trialTable.Delay;
-            else
-                delayList = [];
-            end
+            % if ~isempty(pr.odorDelayList)
+            %     trialTable = batch.getWindowDelayTable(trialTable, ...
+            %                          odorList,pr.odorDelayList);
+            %     delayList =  trialTable.Delay;
+            % else
+            %     delayList = [];
+            % end
                 
-            if nargout == 2
-                varargout{1} = trialTable;
-            end
+            % if nargout == 2
+            %     varargout{1} = trialTable;
+            % end
 
+            delayList = [];
             if pr.saveMap
                 outDir = myexp.getDefaultDir('response_map');
                 if ~exist(outDir,'dir')
@@ -621,7 +622,7 @@ classdef NrModel < handle
             end
                 
             mapArray = batch.calcMapFromFile(inSubDir,...
-                                      trialTable.FileName,...
+                                      inFileList,...
                                       mapType,...
                                       'mapOption',mapOption,...
                                       'windowDelayList',...

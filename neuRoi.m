@@ -1,6 +1,8 @@
 function neuRoi()
-welcHdl = welcomeGui();
-welcHdl.openButton.Callback = @openButton_Callback;
+hNr = NrModel();
+hNrCtrl = NrController(hNr);
+assignin('base','hNr',hNr);
+assignin('base','hNrCtrl',hNrCtrl);
 
 % Initialize with an empty experiment
 
@@ -13,8 +15,6 @@ hNr = foo.myexp;
 hNrCtrl = NrController(hNr);
 assignin('base','hNr',hNr);
 assignin('base','hNrCtrl',hNrCtrl);
-% myexp = empty 
-% mycon = NrController(myexp);
 
 function newButton_Callback(source,event)
 hNr = NrModel();

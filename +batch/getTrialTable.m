@@ -1,11 +1,13 @@
-function trialTable = getTrialTable(fileList,odorList,fileOdorList)
-if ~exist('fileOdorList','var')
-    fileOdorList = cellfun(@iopath.getOdorFromFileName,...
+function trialTable = getTrialTable(fileList,condList,fileCondList)
+if ~exist('fileCondList','var')
+    fileCondList = cellfun(@iopath.getOdorFromFileName,...
                            fileList,...
                            'UniformOutput',false);
 end
 
-trialTable = table(fileList,fileOdorList,'VariableNames', ...
-                  {'FileName','Odor'});
-trialTable.Odor = categorical(trialTable.Odor,odorList);
+trialTable = table(fileCondList,(1:length(fileList))',fileList,...
+                   'VariableNames', {'Cond','fileIdx','FileName'});
+trialTable.Cond = categorical(trialTable.Cond,condList);
+trialTable = sortrows(trialTable,'Cond');
+
 end
