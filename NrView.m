@@ -20,7 +20,19 @@ classdef NrView < handle
             self.assignCallbacks();
         end
         
+        function refreshView(self)
+            self.updateFileListBox();
+            self.displayResponseOption();
+            self.displayResponseMaxOption();
+        end
+        
         function assignCallbacks(self)
+            set(self.guiHandles.loadExpMenu,'Callback',...
+                @(s,e)self.controller.loadExperiment_Callback(s,e));
+            set(self.guiHandles.newExpMenu,'Callback',...
+                @(s,e)self.controller.newExperiment_Callback(s, ...
+                                                              e));
+            
             set(self.guiHandles.fileListBox,'Callback',...
                 @(s,e)self.controller.fileListBox_Callback(s,e));
             set(self.guiHandles.mainFig,'CloseRequestFcn',...

@@ -205,7 +205,38 @@ classdef NrController < handle
         function raiseTrialView(self,ind)
             trialController = self.trialControllerArray{ind};
             trialController.raiseView();
-        end           
+        end
+        
+        
+        function loadExperiment(self,filePath)
+            foo = load(filePath);
+            self.model = foo.myexp;
+            self.view.model = self.model;
+            self.view.refreshView();
+        end
+        
+        function loadExperiment_Callback(self,src,evnt)
+            [fileName,fileDir] = uigetfile('*.mat',['Open ' ...
+                                'Experiment']);
+            if fileName
+                filePath = fullfile(fileDir,fileName);
+                self.loadExperiment(filePath);
+            end
+        end
+        
+        function newExperiment(self)
+            self.model = NrModel();
+            self.view.model = self.model;
+            self.view.refreshView();
+        end
+        
+        function newExperiment_Callback(self,src,evnt)
+            self.newExperiment()
+        end
+        
+        function importRawData_Callback(self,src,evnt)
+            gui.importRawDataGui()
+        end
         
         function mainFigClosed_Callback(self,src,evnt)
             for i=1:length(self.trialContrlArray)

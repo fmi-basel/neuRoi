@@ -40,13 +40,14 @@ classdef NrModel < handle
     end
     
     methods
-        function self = NrModel(rawDataDir,rawFileList,resultDir, ...
-                                expInfo,varargin)
+        function self = NrModel(varargin)
             pa = inputParser;
-            addRequired(pa,'rawDataDir');
-            addRequired(pa,'rawFileList');
-            addRequired(pa,'resultDir');
-            addRequired(pa,'expInfo');
+            addParameter(pa,'rawDataDir','',@ischar);
+            addParameter(pa,'rawFileList','',@ischar);
+            addParameter(pa,'resultDir','',@ischar);
+            defaultExpInfo.frameRate = 1;
+            defaultExpInfo.nPlane = 1;
+            addParameter(pa,'expInfo',defaultExpInfo,@isstruct);
             % addParameter(pa,'alignFilePath','',@ischar)
             addParameter(pa,'roiDir','',@ischar);
             addParameter(pa,'loadFileType','raw',@ischar);
@@ -75,22 +76,21 @@ classdef NrModel < handle
                          defaultResponseMaxOption,@isstruct);
             
 
-            parse(pa,rawDataDir,rawFileList,resultDir,expInfo, ...
-                  varargin{:})
+            parse(pa,varargin{:})
             pr = pa.Results;
 
             self.trialArray = TrialModel.empty;
             
-            self.expInfo = expInfo; % expInfo.nPlane is the total
+            self.expInfo = pr.expInfo; % expInfo.nPlane is the total
                                     % number of planes in the data
-            self.rawDataDir = rawDataDir;
-            self.rawFileList = rawFileList;
-            self.resultDir = resultDir;
+            self.rawDataDir = pr.rawDataDir;
+            self.rawFileList = pr.rawFileList;
+            self.resultDir = pr.resultDir;
             
             self.anatomyDir = 'anatomy';
             
             self.alignDir = 'alignment';
-            self.alignResult = cell(1,expInfo.nPlane);
+            self.alignResult = cell(1,pr.expInfo.nPlane);
             
             if ~isempty(pr.roiDir)
                 self.roiDir = pr.roiDir;
@@ -108,6 +108,13 @@ classdef NrModel < handle
             self.roiTemplateFilePath = '';
             
             self.planeNum = 1; % The plane number for loading file
+        end
+        
+        function importRawData(self,expInfo,rawDataDir,rawFileList,resultDir)
+            self.expInfo = pr.expInfo;
+            self.rawDataDir = pr.rawDataDir;
+            self.rawFileList = pr.rawFileList;
+            self.resultDir = pr.resultDir;
         end
         
         function tagArray = getTagArray(self)
@@ -795,14 +802,10 @@ classdef NrModel < handle
     methods (Static)
         function obj = loadobj(s)
             if isstruct(s)
-                obj = NrModel(s.rawDataDir,s.rawFileList, ...
-                              s.resultDir,s.expInfo);
+                obj = NrModel();
                 
                 for fn = fieldnames(s)'
-                    if ~ismember(fn,{'rawDataDir','rawFileList', ...
-                                     'resultDir','expInfo'})
-                        obj.(fn{1}) = s.(fn{1});
-                    end
+                    obj.(fn{1}) = s.(fn{1});
                 end
                 
                 if isstruct(obj.alignResult)
