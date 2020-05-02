@@ -105,7 +105,7 @@ classdef NrView < handle
                         @(s,e)self.displayLoadFileType());
         end
         
-        function updateFileListBox(self)
+        function updateFileListBox(self,src,event)
             rawFileList = self.model.rawFileList;
             fileNameArray = {};
             for k = 1:length(rawFileList)

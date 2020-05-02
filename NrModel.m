@@ -111,10 +111,10 @@ classdef NrModel < handle
         end
         
         function importRawData(self,expInfo,rawDataDir,rawFileList,resultDir)
-            self.expInfo = pr.expInfo;
-            self.rawDataDir = pr.rawDataDir;
-            self.rawFileList = pr.rawFileList;
-            self.resultDir = pr.resultDir;
+            self.expInfo = expInfo;
+            self.rawDataDir = rawDataDir;
+            self.rawFileList = rawFileList;
+            self.resultDir = resultDir;
         end
         
         function tagArray = getTagArray(self)
