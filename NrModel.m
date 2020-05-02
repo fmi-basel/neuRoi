@@ -117,6 +117,64 @@ classdef NrModel < handle
             self.resultDir = resultDir;
         end
         
+        function processRawData(self,varargin)
+            pa = inputParser;
+            addParameter(pa,'subtractScan',false);
+            addParameter(pa,'noSignalWindow',1);
+            addParameter(pa,'mcWithinTrial',false);
+            addParameter(pa,'mcBetweenTrial',true);
+            addParameter(pa,'binning',false);
+            addParameter(pa,'binDir','');
+            addParameter(pa,'binParam',[]);
+            parse(pa,hNr,varargin{:})
+            pr = pa.Results;
+
+            if pr.subtractScan
+                trialOption = struct('process',true,'noSignalWindow',[1 10]);
+            else
+                trialOption = {}; %
+            end
+            
+            % Motion correction within trial
+            if pr.mcWithinTrial
+                % For now motion correction within trial only
+                % support single plane data
+                % TODO add multiplane support
+                self.motionCorrBatch(trialOption,motionCorrDir)
+            end
+            
+            % Subsampling
+            if pr.binning
+                binParam = pr.binParam;
+                binParam.trialOption = trialOption;
+                for planeNum=1:self.expInfo.nPlane
+                    self.binMovieBatch(binParam,pr.binDir,planeNum);
+                end
+            end
+            
+            % Motion correction between trials
+            if pr.mcBetweenTrial
+                if pr.binning
+                    anatomyParam.inFileType = 'binned';
+                    anatomyParam.trialOption = [];
+                else
+                    anatomyParam.inFileType = 'raw';
+                    anatomyParam.trialOption = trialOption;
+                end
+                
+                for planeNum=1:myexp.expInfo.nPlane
+                    self.calcAnatomyBatch(anatomyParam,planeNum);
+                end
+
+                templateRawName = self.rawFileList{1};
+                for planeNum=1:myexp.expInfo.nPlane
+                    self.alignTrialBatch(templateRawName,...
+                                         'planeNum',planeNum,...
+                                         'alignOption',{'plotFig',false});
+                end
+            end
+        end
+        
         function tagArray = getTagArray(self)
             tagArray = arrayfun(@(x) x.tag,self.trialArray, ...
                                 'Uniformoutput',false);
