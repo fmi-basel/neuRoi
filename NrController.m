@@ -4,6 +4,7 @@ classdef NrController < handle
         view
         trialContrlArray
         rootListener
+        importGui
     end
     
     methods
@@ -20,6 +21,59 @@ classdef NrController < handle
         % function setLoadMovieOption(self,loadMovieOption)
         %     self.model.loadMovieOption = loadMovieOption;
         % end
+        
+                
+        function loadExperiment(self,filePath)
+            foo = load(filePath);
+            fld = fieldnames(foo);
+            fld = fld{1};
+            if ismember(fld,{'myexp','self'})
+                self.model = foo.(fld);
+                self.view.model = self.model;
+                self.view.refreshView();
+            else
+                error('Invalid experiment file!')
+            end
+        end
+        
+        function loadExperiment_Callback(self,src,evnt)
+            [fileName,fileDir] = uigetfile('*.mat',['Open ' ...
+                                'Experiment']);
+            if fileName
+                filePath = fullfile(fileDir,fileName);
+                self.loadExperiment(filePath);
+            end
+        end
+        
+        function newExperiment(self)
+            self.model = NrModel();
+            self.view.model = self.model;
+            self.view.refreshView();
+        end
+        
+        function newExperiment_Callback(self,src,evnt)
+            self.newExperiment()
+        end
+        
+        function importRawData_Callback(self,src,evnt)
+            self.importGui = gui.importRawDataGui(self.model);
+        end
+        
+        function saveExperiment_Callback(self,src,evnt)
+            filePath = self.model.getDefaultFile('experiment');
+            [fileName,fileDir] = uiputfile(filePath,'Save experiment');
+            if fileName
+                filePath = fullfile(fileDir,fileName);
+                self.model.saveExperiment(filePath);
+            end
+        end
+
+        function expInfo_Callback(self,src,evnt)
+            tag = src.Tag;
+            propName = regex(tag,'Edit')
+            val = str2num(src.String);
+            self.model.expInfo.(propName) = val;
+        end
         
         function addFilePath_Callback(self,filePath)
             self.model.addFilePath(filePath);
@@ -206,38 +260,7 @@ classdef NrController < handle
             trialController = self.trialControllerArray{ind};
             trialController.raiseView();
         end
-        
-        
-        function loadExperiment(self,filePath)
-            foo = load(filePath);
-            self.model = foo.myexp;
-            self.view.model = self.model;
-            self.view.refreshView();
-        end
-        
-        function loadExperiment_Callback(self,src,evnt)
-            [fileName,fileDir] = uigetfile('*.mat',['Open ' ...
-                                'Experiment']);
-            if fileName
-                filePath = fullfile(fileDir,fileName);
-                self.loadExperiment(filePath);
-            end
-        end
-        
-        function newExperiment(self)
-            self.model = NrModel();
-            self.view.model = self.model;
-            self.view.refreshView();
-        end
-        
-        function newExperiment_Callback(self,src,evnt)
-            self.newExperiment()
-        end
-        
-        function importRawData_Callback(self,src,evnt)
-            gui.importRawDataGui()
-        end
-        
+                
         function mainFigClosed_Callback(self,src,evnt)
             for i=1:length(self.trialContrlArray)
                 trialContrl = self.trialContrlArray(i);

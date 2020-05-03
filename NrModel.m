@@ -126,7 +126,7 @@ classdef NrModel < handle
             addParameter(pa,'binning',false);
             addParameter(pa,'binDir','');
             addParameter(pa,'binParam',[]);
-            parse(pa,hNr,varargin{:})
+            parse(pa,varargin{:})
             pr = pa.Results;
 
             if pr.subtractScan
@@ -140,6 +140,7 @@ classdef NrModel < handle
                 % For now motion correction within trial only
                 % support single plane data
                 % TODO add multiplane support
+                motionCorrDir = self.getDefaultDir('motion_corr');
                 self.motionCorrBatch(trialOption,motionCorrDir)
             end
             
@@ -162,12 +163,12 @@ classdef NrModel < handle
                     anatomyParam.trialOption = trialOption;
                 end
                 
-                for planeNum=1:myexp.expInfo.nPlane
+                for planeNum=1:self.expInfo.nPlane
                     self.calcAnatomyBatch(anatomyParam,planeNum);
                 end
 
                 templateRawName = self.rawFileList{1};
-                for planeNum=1:myexp.expInfo.nPlane
+                for planeNum=1:self.expInfo.nPlane
                     self.alignTrialBatch(templateRawName,...
                                          'planeNum',planeNum,...
                                          'alignOption',{'plotFig',false});
@@ -832,6 +833,16 @@ classdef NrModel < handle
                 dd = fullfile(self.resultDir,'response_map');
               case 'roi'
                 dd = fullfile(self.resultDir,'roi');
+              case 'motion_corr'
+                dd = fullfile(self.resultDir,'motion_corr');
+            end
+        end
+        
+        function fp = getDefaultFile(self,fileName)
+            switch fileName
+              case 'experiment'
+                fileName = sprintf('experiment_%s.mat',self.expInfo.name);
+                fp = fullfile(self.resultDir,fileName);
             end
         end
         
@@ -848,6 +859,10 @@ classdef NrModel < handle
                     fileList = iopath.modifyFileName(rawFileList, ...
                                                      binPrefix,'','tif');
             end
+        end
+        
+        function saveExperiment(self,filePath)
+            save(filePath,'self')
         end
         
         function s = saveobj(self)

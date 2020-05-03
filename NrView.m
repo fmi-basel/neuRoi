@@ -15,15 +15,15 @@ classdef NrView < handle
             % self.displayLoadMovieOption();
             
             self.listenToModel();
-            self.displayResponseOption();
-            self.displayResponseMaxOption();
             self.assignCallbacks();
+            self.refreshView();
         end
         
         function refreshView(self)
             self.updateFileListBox();
             self.displayResponseOption();
             self.displayResponseMaxOption();
+            self.displayExpInfo();
         end
         
         function assignCallbacks(self)
@@ -32,7 +32,23 @@ classdef NrView < handle
             set(self.guiHandles.newExpMenu,'Callback',...
                 @(s,e)self.controller.newExperiment_Callback(s, ...
                                                               e));
+
+            set(self.guiHandles.saveExpMenu,'Callback',...
+                @(s,e)self.controller.saveExperiment_Callback(s, ...
+                                                              e));
+
+            % Callbacks for expInfo
+            set(self.guiHandles.frameRateEdit,'Callback',...
+                @(s,e)self.controller.expInfo_Callback(s,e));
+            set(self.guiHandles.nPlaneEdit,'Callback',...
+                @(s,e)self.controller.expInfo_Callback(s,e));
             
+            % Callbacks for import raw data
+            set(self.guiHandles.importRawDataButton,'Callback',...
+                @(s,e)self.controller.importRawData_Callback(s,e));
+
+            
+            % Callbacks for loading files
             set(self.guiHandles.fileListBox,'Callback',...
                 @(s,e)self.controller.fileListBox_Callback(s,e));
             set(self.guiHandles.mainFig,'CloseRequestFcn',...
@@ -103,6 +119,9 @@ classdef NrView < handle
                         @(s,e)self.displayPlaneNum());
             addlistener(self.model,'loadFileType','PostSet',...
                         @(s,e)self.displayLoadFileType());
+            addlistener(self.model,'expInfo','PostSet',...
+                        @(s,e)self.displayExpInfo());
+
         end
         
         function updateFileListBox(self,src,event)
@@ -113,6 +132,12 @@ classdef NrView < handle
                 [~,fileNameArray{k},~] = fileparts(filePath);
             end
             set(self.guiHandles.fileListBox,'String',fileNameArray);
+        end
+        
+        function displayExpInfo(self)
+            expInfo = self.model.expInfo;
+            self.guiHandles.frameRateEdit.String = num2str(expInfo.frameRate);
+            self.guiHandles.nPlaneEdit.String = num2str(expInfo.nPlane);
         end
         
         function displayLoadMovieOption(self)
