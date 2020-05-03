@@ -52,8 +52,8 @@ classdef TrialController < handle
                 switch evnt.Key
                   case 'a'
                     self.selectAllRoi_Callback();
-                  case 'q'
-                    self.loadRoiArray();
+                  % case 'q'
+                  %   self.loadRoiArray();
                   case '1'
                     self.view.zoomReset();
                 end
@@ -68,6 +68,14 @@ classdef TrialController < handle
             tag = evnt.NewValue.Tag;
             ind = helper.convertTagToInd(tag,'mapButton');
             self.model.selectMap(ind);
+        end
+        
+        function importMapCallback(self,src,evnt)
+            [fileName,fileDir] = uigetfile('*.tif','Import map from file');
+            if fileName
+                filePath = fullfile(fileDir,fileName);
+                self.model.importMap(filePath)
+            end
         end
         
         function contrastSlider_Callback(self,src,evnt)
