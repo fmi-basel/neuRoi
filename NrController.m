@@ -28,7 +28,9 @@ classdef NrController < handle
             fld = fieldnames(foo);
             fld = fld{1};
             if ismember(fld,{'myexp','self'})
-                self.model = foo.(fld);
+                model = foo.(fld);
+                model.trialArray = TrialModel.empty;
+                self.model = model;
                 self.view.model = self.model;
                 self.view.refreshView();
             else

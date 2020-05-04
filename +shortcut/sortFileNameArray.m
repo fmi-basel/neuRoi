@@ -11,6 +11,7 @@ switch sortBy
     stFileNameArray = fileNameArray(rankOrder);
     if nargout
         varargout{1} = odorArray(rankOrder);
+        varargout{2} = rankOrder;
     end
 end
 
