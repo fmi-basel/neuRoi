@@ -1,4 +1,4 @@
-addpath('../../../neuRoi')
+addpath('../')
 %% Clear variables
 clear all
 %% Step01 Configure experiment and image processing parameters
@@ -16,7 +16,7 @@ expInfo.nPlane = 4;
 % expSubDir = fullfile(expInfo.name,'OB');
 % % Raw data
 % dataRootDir = fullfile(rootPaths.extHardDisk,'Ca_imaging');
-rawDataDir = '/media/hubo/BoHu_FMI/Ca_imaging/raw_data/test-data/';
+rawDataDir = '../raw_data/test-data/';
 
 % List file command ls -1|awk '{print "\x27" $1 "\x27;..."}'
 

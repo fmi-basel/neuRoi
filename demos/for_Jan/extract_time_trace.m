@@ -1,11 +1,10 @@
 %% Add path
-addpath('../../../neuRoi')
-addpath('../../../neuRoi/NoRMCorre')
+addpath('..')
 %% Clear variables
 clear all
 close all
 %% Step01 Load experiment configuration from file
-expFilePath = '/media/hubo/BoHu_FMI/Ca_imaging/raw_data/test-data/results/experiment_test-data.mat'
+expFilePath = '../raw_data/test-data/results/experiment_test-data.mat'
 foo = load(expFilePath);
 myexp = foo.self;
 disp(myexp.expInfo)
