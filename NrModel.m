@@ -43,7 +43,7 @@ classdef NrModel < handle
         function self = NrModel(varargin)
             pa = inputParser;
             addParameter(pa,'rawDataDir','',@ischar);
-            addParameter(pa,'rawFileList','',@ischar);
+            addParameter(pa,'rawFileList','',@iscell);
             addParameter(pa,'resultDir','',@ischar);
             defaultExpInfo.frameRate = 1;
             defaultExpInfo.nPlane = 1;
