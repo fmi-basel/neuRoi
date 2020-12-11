@@ -5,6 +5,8 @@ classdef NrModel < handle
         rawDataDir
         rawFileList
         resultDir
+        
+        trialTable
 
         trialArray
         currentTrialIdx
@@ -591,6 +593,17 @@ classdef NrModel < handle
             self.alignResult{planeNum} = foo.alignResult;
         end
         
+        function arrangeTrialTable(self)
+            trialTable = batch.getTrialTable(self.rawFileList,self.expInfo.odorList);
+            trialTable = batch.addTrialNum(trialTable);
+            self.trialTable = trialTable;
+        end
+        
+        function removeTrialFromTable(self, fileIdxList)
+            rowLogic = ismember(self.trialTable.fileIdx, fileIdxList);
+            self.trialTable(rowLogic,:) = [];
+        end
+        
         function [mapArray,varargout] = calcMapBatch(self,...
                             inFileType,mapType,mapOption,varargin)
             pa = inputParser;
@@ -796,7 +809,6 @@ classdef NrModel < handle
                 end
             end
         end
-
         
         function multiPlane = checkMultiPlane(self,planeNum)
             multiPlane = false;

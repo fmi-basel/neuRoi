@@ -25,6 +25,7 @@ classdef TrialModel < handle
         
     properties (Access = private)
         mapArray
+        roiTagMax
     end
     
     properties (SetObservable)
@@ -35,7 +36,7 @@ classdef TrialModel < handle
     end
     
     properties (Constant)
-        MAX_N_ROI = 400
+        MAX_N_ROI = 800
     end
     
     events
@@ -160,6 +161,7 @@ classdef TrialModel < handle
             % Initialize ROI array
             self.roiVisible = true;
             self.roiArray = RoiFreehand.empty();
+            self.roiTagMax = 0;
             
         end
         
@@ -477,8 +479,8 @@ classdef TrialModel < handle
             if isempty(self.roiArray)
                 roi.tag = 1;
             else
-                tagArray = self.getAllRoiTag();
-                roi.tag = max(tagArray)+1;
+                roi.tag = self.roiTagMax+1;
+                self.roiTagMax = roi.tag;
             end
             self.roiArray(end+1) = roi;
             
@@ -621,6 +623,8 @@ classdef TrialModel < handle
                 arrayfun(@(x) self.addRoi(x),roiArray);
             elseif strcmp(option,'replace')
                 self.roiArray = roiArray;
+                tagArray = self.getAllRoiTag();
+                self.roiTagMax = max(tagArray);
                 notify(self,'roiArrayReplaced');
             end
             if isfield(foo,'templateAnatomy')

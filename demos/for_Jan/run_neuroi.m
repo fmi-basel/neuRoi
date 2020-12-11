@@ -1,2 +1,4 @@
-% Start neuRoi Gui
+%% Add path
+addpath('../../')
+%% Start neuRoi Gui
 hNrCtrl = neuRoi()

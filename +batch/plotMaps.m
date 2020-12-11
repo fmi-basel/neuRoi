@@ -23,6 +23,7 @@ else
 end
 
 nRow = max(trialTable.trialNum);
+nRow = 3;
 if strcmp(mapArrayType,'cell')
     nMap = length(mapArray);
 else
@@ -85,3 +86,6 @@ for k=1:length(ha)
         delete(ha(k))
     end
 end
+
+end
+

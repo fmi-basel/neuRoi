@@ -1,5 +1,5 @@
 %% Add path
-addpath('..')
+addpath('../..')
 %% Clear variables
 clear all
 close all
@@ -87,7 +87,9 @@ myexp.alignToTemplate = true;
 % If you want to subtract then resonance scanning noise pattern,
 % set 'process' option as true
 myexp.trialOptionRaw = struct('process',true,...
-                              'noSignalWindow',[1 6]);
+                              'noSignalWindow',[1 6],..
+                              'motionCorr',true,'motionCorrDir',motionCorrDir);
+%%XXXX
 
 % Indices of files for time trace extraction
 fileIdxList = 1:length(myexp.rawFileList);
