@@ -160,6 +160,7 @@ classdef TrialModel < handle
             
             % Initialize ROI array
             self.roiVisible = true;
+            mapSize = getMapSize(self);
             self.roiArray = RoiFreehand.empty();
             self.roiTagMax = 0;
             
@@ -455,10 +456,6 @@ classdef TrialModel < handle
             if nargin == 2
                 if isa(varargin{1},'RoiFreehand')
                     roi = varargin{1};
-                elseif isstruct(varargin{1})
-                    % Add ROI from structure
-                    roiStruct = varargin{1};
-                    roi = RoiFreehand(roiStruct);
                 else
                     % TODO add ROI from mask
                     error('Wrong usage!')
@@ -474,8 +471,7 @@ classdef TrialModel < handle
                 error('Maximum number of ROIs exceeded!')
             end
             
-            self.checkRoiImageSize(roi);
-
+            % TODO validate ROI position (should not go outside of image)
             if isempty(self.roiArray)
                 roi.tag = 1;
             else
@@ -549,7 +545,7 @@ classdef TrialModel < handle
             oldRoi = self.roiArray(ind);
             freshRoi = RoiFreehand(varargin{:});
             freshRoi.tag = tag;
-            self.checkRoiImageSize(freshRoi);
+            % TODO validate ROI position (should not go outside of image)
             self.roiArray(ind) = freshRoi;
 
             notify(self,'roiUpdated', ...
@@ -619,6 +615,13 @@ classdef TrialModel < handle
                 if nRoi >= self.MAX_N_ROI
                     error('Maximum number of ROIs exceeded!')
                 end
+            self.insertRoiArray(roiArray,option)
+            if isfield(foo,'templateAnatomy')
+                self.templateAnatomy = foo.templateAnatomy;
+            end
+        end
+
+        function insertRoiArray(self,roiArray,option)
             if strcmp(option,'merge')
                 arrayfun(@(x) self.addRoi(x),roiArray);
             elseif strcmp(option,'replace')
@@ -627,9 +630,37 @@ classdef TrialModel < handle
                 self.roiTagMax = max(tagArray);
                 notify(self,'roiArrayReplaced');
             end
-            if isfield(foo,'templateAnatomy')
-                self.templateAnatomy = foo.templateAnatomy;
+        end
+
+        
+        function importRoisFromMask(self,filePath)
+            maskImg = movieFunc.readTiff(filePath);
+            if ~isequal(size(maskImg),self.getMapSize())
+                error(['Image size of mask does not match the map size ' ...
+                       '(pixel size in x and y)!'])
             end
+            tagArray = unique(maskImg);
+            roiArray = RoiFreehand.empty();
+            for k=1:length(tagArray)
+                tag = tagArray(k);
+                if tag ~= 0
+                    mask = maskImg == tag;
+                    poly = roiFunc.mask2poly(mask);
+                    if length(poly) > 1
+                        % TODO If the mask corresponds multiple polygon,
+                        % for simplicity,
+                        % take the largest polygon
+                        warning(sprintf('ROI %d has multiple components, only taking the largest one.',tag))
+                        pidx = find([poly.Length] == max([poly.Length]));
+                        poly = poly(pidx);
+                    end
+                    position = [poly.X',poly.Y'];
+                    roi = RoiFreehand(position);
+                    roi.tag = tag;
+                    roiArray(end+1) = roi;
+                end
+            end
+            self.insertRoiArray(roiArray,'replace')
         end
         
         function matchRoiPos(self,roiTagArray,windowSize)
@@ -649,13 +680,13 @@ classdef TrialModel < handle
                    NrEvent.RoiUpdatedEvent(self.roiArray(roiIndArray)));
         end
         
-        function checkRoiImageSize(self,roi)
-            mapSize = self.getMapSize();
-            if ~isequal(roi.imageSize,mapSize)
-                error(['Image size of ROI does not match the map size ' ...
-                       '(pixel size in x and y)!'])
-            end
-        end
+        % function checkRoiImageSize(self,roi)
+        %     mapSize = self.getMapSize();
+        %     if ~isequal(roi.imageSize,mapSize)
+        %         error(['Image size of ROI does not match the map size ' ...
+        %                '(pixel size in x and y)!'])
+        %     end
+        % end
         
         function ind = findRoiByTag(self,tag)
             ind = find(arrayfun(@(x) isequal(x.tag,tag), ...
@@ -721,7 +752,8 @@ classdef TrialModel < handle
         % GETTIMETRACE get raw time trace within a ROI
         % from the input raw movie
         % Usage: timeTraceRaw = getTimeTrace(rawMovie,roi)
-            mask = roi.createMask;
+            mapSize = size(rawMovie(:,:,1));
+            mask = roi.createMask(mapSize);
             [maskIndX maskIndY] = find(mask==1);
             roiMovie = rawMovie(maskIndX,maskIndY,:);
             timeTraceRaw = squeeze(mean(mean(roiMovie,1),2));
