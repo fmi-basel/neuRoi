@@ -125,6 +125,7 @@ classdef NrModel < handle
             addParameter(pa,'noSignalWindow',1);
             addParameter(pa,'mcWithinTrial',false);
             addParameter(pa,'mcBetweenTrial',true);
+            addParameter(pa,'mcBTTemplateIdx',1);
             addParameter(pa,'binning',false);
             addParameter(pa,'binDir','');
             addParameter(pa,'binParam',[]);
@@ -169,7 +170,7 @@ classdef NrModel < handle
                     self.calcAnatomyBatch(anatomyParam,planeNum);
                 end
 
-                templateRawName = self.rawFileList{1};
+                templateRawName = self.rawFileList{pr.mcBTTemplateIdx};
                 for planeNum=1:self.expInfo.nPlane
                     self.alignTrialBatch(templateRawName,...
                                          'planeNum',planeNum,...

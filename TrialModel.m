@@ -480,8 +480,8 @@ classdef TrialModel < handle
                 roi.tag = 1;
             else
                 roi.tag = self.roiTagMax+1;
-                self.roiTagMax = roi.tag;
             end
+            self.roiTagMax = roi.tag;
             self.roiArray(end+1) = roi;
             
             notify(self,'roiAdded')
