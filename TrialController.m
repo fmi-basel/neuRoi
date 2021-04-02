@@ -327,10 +327,10 @@ classdef TrialController < handle
             else
                 defFileName = [self.model.fileBaseName ...
                                '_RoiArray.mat'];
-                defFilePath = fullfile(self.model.resultDir,defFileName);
+                defFilePath = fullfile(self.model.roiDir,defFileName);
                 [fileName,fileDir] = uiputfile('*.mat','Save ROIs',defFilePath);
                 if fileName
-                    self.model.resultDir = fileDir;
+                    self.model.roiDir = fileDir;
                     filePath = fullfile(fileDir,fileName);
                     self.model.roiFilePath = filePath;
                     self.model.saveRoiArray(filePath);
@@ -340,7 +340,7 @@ classdef TrialController < handle
         
         function loadRoiArray(self)
             [fileName,fileDir] = uigetfile('*.mat','Load ROIs', ...
-                                           self.model.resultDir);
+                                           self.model.roiDir);
             if fileName
                 % Ask user whether to merge with existing ROIs or
                 % replace the ROIs
@@ -360,7 +360,17 @@ classdef TrialController < handle
                 self.model.loadRoiArray(filePath,option);
             end
         end
-        
+
+        function importRoisFromImageJ(self)
+            [fileName,fileDir] = uigetfile('*.mat','Import ROIs from ImageJ', ...
+                                           self.model.jroiDir);
+            if fileName
+                option = 'replace';
+                filePath = fullfile(fileDir,fileName)
+                self.model.importRoisFromImageJ(filePath);
+            end
+        end
+
         function syncTrace_Callback(self,source,evnt)
             self.setSyncTimeTrace(source.Value);
         end

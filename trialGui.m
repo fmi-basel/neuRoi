@@ -17,6 +17,8 @@ function handles = trialGui(varargin)
                                  'Save ROIs','Accelerator','S');
     handles.loadRoiMenu = uimenu(handles.fileMenu,'Text',...
                                  'Load ROIs','Accelerator','L');
+    handles.importRoisFromImageJMenu = uimenu(handles.fileMenu,'Text',...
+                                 'Import ROIs from ImageJ','Accelerator','I');
     
     handles.mapMenu = uimenu(handles.mainFig,'Text','Map');
     handles.importMapMenu = uimenu(handles.mapMenu,'Text',....
@@ -80,6 +82,8 @@ function handles = trialGui(varargin)
     figure(handles.mainFig)
     
 
+end
+
 function button = createMapButton(buttonGroup,ind)
     position = [0.15*(ind-1),0,0.15,1];
     tag = sprintf('mapButton_%d',ind);
@@ -89,6 +93,8 @@ function button = createMapButton(buttonGroup,ind)
                        'String',num2str(ind),...
                        'Units','normal',...
                        'Position',position);
+
+end
 
 function deleteDefaultFigureMenu(fig)
     set(0,'showhiddenhandles','on')
@@ -100,4 +106,7 @@ function deleteDefaultFigureMenu(fig)
         delete(hobj)
     end
     set(0,'showhiddenhandles','off')
+
+    
+end
 

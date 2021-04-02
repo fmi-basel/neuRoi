@@ -19,8 +19,10 @@ classdef TrialModel < handle
         
         roiArray
         templateAnatomy
-        resultDir
+        roiDir
         roiFilePath
+        
+        jroiDir
     end
         
     properties (Access = private)
@@ -71,7 +73,8 @@ classdef TrialModel < handle
             validYxShift = @(x) isequal(size(x),[1 2]);
             addParameter(pa,'yxShift',[0 0],validYxShift);
             addParameter(pa,'intensityOffset',0);
-            addParameter(pa,'resultDir',pwd());
+            addParameter(pa,'roiDir',pwd());
+            addParameter(pa,'jroiDir',pwd());
             addParameter(pa,'syncTimeTrace',false);
             
             parse(pa,filePath,varargin{:})
@@ -131,8 +134,12 @@ classdef TrialModel < handle
                                          self.motionCorrOption.nFramePerStep);
                 end
                 
-                if pr.resultDir
-                    self.resultDir = pr.resultDir;
+                if pr.roiDir
+                    self.roiDir = pr.roiDir;
+                end
+            
+                if pr.jroiDir
+                    self.jroiDir = pr.jroiDir;
                 end
             end
             
@@ -662,6 +669,13 @@ classdef TrialModel < handle
             end
             self.insertRoiArray(roiArray,'replace')
         end
+        
+        function importRoisFromImageJ(self,filePath)
+            [jroiArray] = roiFunc.ReadImageJROI(filePath);
+            roiArray = roiFunc.convertFromImageJRoi(jroiArray);
+            self.insertRoiArray(roiArray,'replace');
+        end
+        
         
         function matchRoiPos(self,roiTagArray,windowSize)
             fitGauss = 1;

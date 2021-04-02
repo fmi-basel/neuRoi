@@ -1,7 +1,7 @@
-function maskImg = convertRoiArrayToMask(roiArray)
-    maskImg = zeros(roiArray(1).imageSize);
+function maskImg = convertRoiArrayToMask(roiArray,imageSize)
+    maskImg = zeros(imageSize);
     for roi=roiArray
-        maskImg = maskImg + roi.createMask()*roi.tag;
+        maskImg = min(maskImg + roi.createMask(imageSize)*roi.tag, roi.tag);
     end
     
 end

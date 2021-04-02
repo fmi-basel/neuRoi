@@ -20,6 +20,7 @@ classdef NrModel < handle
         responseMaxOption
         
         roiDir
+        jroiDir
         
         loadFileType
         planeNum
@@ -52,6 +53,7 @@ classdef NrModel < handle
             addParameter(pa,'expInfo',defaultExpInfo,@isstruct);
             % addParameter(pa,'alignFilePath','',@ischar)
             addParameter(pa,'roiDir','',@ischar);
+            addParameter(pa,'jroiDir','',@ischar);
             addParameter(pa,'loadFileType','raw',@ischar);
             defaultTrialOptionRaw = struct('process',true,...
                                 'noSignalWindow',[1 12], ...
@@ -98,6 +100,12 @@ classdef NrModel < handle
                 self.roiDir = pr.roiDir;
             else
                 self.roiDir = self.getDefaultDir('roi');
+            end
+            
+            if ~isempty(pr.jroiDir)
+                self.jroiDir = pr.jroiDir;
+            else
+                self.jroiDir = self.getDefaultDir('jroi');
             end
             
             self.loadFileType = pr.loadFileType;
@@ -251,16 +259,23 @@ classdef NrModel < handle
             if multiPlane
                 planeString = NrModel.getPlaneString(planeNum);
                 roiDir = fullfile(self.roiDir,planeString);
+                jroiDir = fullfile(self.jroiDir,planeString);
             else
                 roiDir = self.roiDir;
+                jroiDir = self.jroiDir;
             end
             
             if ~exist(roiDir)
                 mkdir(roiDir)
             end
-            
+
+            if ~exist(jroiDir)
+                mkdir(jroiDir)
+            end
+
             trialOption.yxShift = offsetYx;
-            trialOption.resultDir = roiDir;
+            trialOption.roiDir = roiDir;
+            trialOption.jroiDir = jroiDir;
             trialOption.frameRate = frameRate;
             trial = self.loadTrial(filePath,trialOption);
             trial.sourceFileIdx = fileIdx;
@@ -846,6 +861,8 @@ classdef NrModel < handle
                 dd = fullfile(self.resultDir,'response_map');
               case 'roi'
                 dd = fullfile(self.resultDir,'roi');
+              case 'jroi'
+                dd = fullfile(self.resultDir,'imagej_roi');
               case 'motion_corr'
                 dd = fullfile(self.resultDir,'motion_corr');
             end
