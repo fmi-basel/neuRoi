@@ -18,6 +18,7 @@ classdef NrModel < handle
 
         responseOption
         responseMaxOption
+        localCorrelationOption
         
         roiDir
         jroiDir
@@ -337,6 +338,8 @@ classdef NrModel < handle
                 mapOption = self.responseOption;
               case 'responseMax'
                 mapOption = self.responseMaxOption;
+              case 'localCorrelation'
+                mapOption = self.localCorrelationOption;
               otherwise
                 error('NrModel:mapTypeTagError',['Map type of ' ...
                                     'the button is wrong!'])
@@ -865,6 +868,8 @@ classdef NrModel < handle
                 dd = fullfile(self.resultDir,'imagej_roi');
               case 'motion_corr'
                 dd = fullfile(self.resultDir,'motion_corr');
+              case 'df_rgb'
+                dd = fullfile(self.resultDir,'df_rgb');
             end
         end
         

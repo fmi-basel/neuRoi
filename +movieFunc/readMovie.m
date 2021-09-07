@@ -43,8 +43,8 @@ function rawMovie = readMovie(filePath,meta,varargin)
     if nFramePerStep <= 0
         error('nFramePerStep should be a positive integer')
     end
-    
-    warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning')
+    % suppress tiff warnings 'MATLAB:imagesci:tiffmexutils:libtiffWarning'
+    warning('off', 'all')
     TifLink = Tiff(filePath, 'r');
     frameNumArray = frameRange(1):nFramePerStep:frameRange(2);
     nFrame = length(frameNumArray);
