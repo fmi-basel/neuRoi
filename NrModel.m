@@ -22,6 +22,7 @@ classdef NrModel < handle
         
         roiDir
         jroiDir
+        maskDir
         
         loadFileType
         planeNum
@@ -54,7 +55,6 @@ classdef NrModel < handle
             addParameter(pa,'expInfo',defaultExpInfo,@isstruct);
             % addParameter(pa,'alignFilePath','',@ischar)
             addParameter(pa,'roiDir','',@ischar);
-            addParameter(pa,'jroiDir','',@ischar);
             addParameter(pa,'loadFileType','raw',@ischar);
             defaultTrialOptionRaw = struct('process',true,...
                                 'noSignalWindow',[1 12], ...
@@ -103,11 +103,8 @@ classdef NrModel < handle
                 self.roiDir = self.getDefaultDir('roi');
             end
             
-            if ~isempty(pr.jroiDir)
-                self.jroiDir = pr.jroiDir;
-            else
-                self.jroiDir = self.getDefaultDir('jroi');
-            end
+            self.maskDir = self.getDefaultDir('stardist_mask');
+
             
             self.loadFileType = pr.loadFileType;
             self.trialOptionRaw = pr.trialOptionRaw;
@@ -260,23 +257,28 @@ classdef NrModel < handle
             if multiPlane
                 planeString = NrModel.getPlaneString(planeNum);
                 roiDir = fullfile(self.roiDir,planeString);
-                jroiDir = fullfile(self.jroiDir,planeString);
             else
                 roiDir = self.roiDir;
-                jroiDir = self.jroiDir;
             end
             
             if ~exist(roiDir)
                 mkdir(roiDir)
             end
 
-            if ~exist(jroiDir)
-                mkdir(jroiDir)
+            if multiPlane
+                planeString = NrModel.getPlaneString(planeNum);
+                maskDir = fullfile(self.maskDir,planeString);
+            else
+                maskDir = self.maskDir;
+            end
+            
+            if ~exist(maskDir)
+                mkdir(maskDir)
             end
 
             trialOption.yxShift = offsetYx;
             trialOption.roiDir = roiDir;
-            trialOption.jroiDir = jroiDir;
+            trialOption.maskDir = maskDir;
             trialOption.frameRate = frameRate;
             trial = self.loadTrial(filePath,trialOption);
             trial.sourceFileIdx = fileIdx;
@@ -853,23 +855,13 @@ classdef NrModel < handle
         end
         
         function dd = getDefaultDir(self,dirName)
-            switch dirName
-              case 'binned'
-                dd = fullfile(self.resultDir,'binned');
-              case 'anatomy'
-                dd = fullfile(self.resultDir,'anatomy');
-              case 'alignment'
-                dd = fullfile(self.resultDir,'alignment');
-              case 'response_map'
-                dd = fullfile(self.resultDir,'response_map');
-              case 'roi'
-                dd = fullfile(self.resultDir,'roi');
-              case 'jroi'
-                dd = fullfile(self.resultDir,'imagej_roi');
-              case 'motion_corr'
-                dd = fullfile(self.resultDir,'motion_corr');
-              case 'df_rgb'
-                dd = fullfile(self.resultDir,'df_rgb');
+            dirNameList = {'binned','anatomy','alignment',...
+                           'response_map','roi','motion_corr','df_rgb',...
+                          'stardist_mask'};
+            if ismember(dirName, dirNameList)
+                dd = fullfile(self.resultDir,dirName);
+            else
+                error('Directory name not in list!')
             end
         end
         

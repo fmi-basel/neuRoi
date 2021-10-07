@@ -23,6 +23,7 @@ classdef TrialModel < handle
         roiFilePath
         
         jroiDir
+        maskDir
     end
         
     properties (Access = private)
@@ -75,6 +76,7 @@ classdef TrialModel < handle
             addParameter(pa,'intensityOffset',0);
             addParameter(pa,'roiDir',pwd());
             addParameter(pa,'jroiDir',pwd());
+            addParameter(pa,'maskDir',pwd());
             addParameter(pa,'syncTimeTrace',false);
             
             parse(pa,filePath,varargin{:})
@@ -141,6 +143,11 @@ classdef TrialModel < handle
                 if pr.jroiDir
                     self.jroiDir = pr.jroiDir;
                 end
+                
+                if pr.maskDir
+                    self.maskDir = pr.maskDir;
+                end
+
             end
             
             % User specified frame rate
@@ -528,6 +535,8 @@ classdef TrialModel < handle
         end
         
         function tagArray = getAllRoiTag(self)
+        % TODO remove uniform false
+        % Debug tag data type (uint16 or double)
             tagArray = arrayfun(@(x) x.tag, self.roiArray);
         end
         
@@ -663,7 +672,7 @@ classdef TrialModel < handle
                     end
                     position = [poly.X',poly.Y'];
                     roi = RoiFreehand(position);
-                    roi.tag = tag;
+                    roi.tag = double(tag);
                     roiArray(end+1) = roi;
                 end
             end

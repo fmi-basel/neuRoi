@@ -371,6 +371,16 @@ classdef TrialController < handle
             end
         end
 
+        function importRoisFromMask(self)
+            [fileName,fileDir] = uigetfile('*.tif','Import ROIs from mask', ...
+                                           self.model.maskDir);
+            if fileName
+                option = 'replace';
+                filePath = fullfile(fileDir,fileName)
+                self.model.importRoisFromMask(filePath);
+            end
+        end
+        
         function syncTrace_Callback(self,source,evnt)
             self.setSyncTimeTrace(source.Value);
         end
