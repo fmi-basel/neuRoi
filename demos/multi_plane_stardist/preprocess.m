@@ -15,7 +15,7 @@ rootPaths = load('../../../paths/rootPaths.mat'); % this file should be changed 
 dataRootDir = fullfile(rootPaths.extHardDisk,'BCE', 'Ca_imaging');
 
 % Directory where raw data of this experiment is stored
-expSubDir = fullfile(expInfo.name,'OB');
+expSubDir = fullfile(expInfo.name,'Dp');
 rawDataDir = fullfile(dataRootDir,expSubDir);
 
 % Get the raw data files, filter out files not needed
