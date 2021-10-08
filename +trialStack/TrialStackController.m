@@ -17,6 +17,10 @@ classdef TrialStackController < handle
                 switch evnt.Key
                   case {'j','k'}
                     self.slideTrialCallback(evnt)
+                  case 'q'
+                    self.model.selectMapType(1)
+                  case 'w'
+                    self.model.selectMapType(2)
                 end
             end
         end
@@ -45,7 +49,7 @@ classdef TrialStackController < handle
                 self.view.setContrastLim(contrastLim);
             end
             self.view.changeMapContrast(contrastLim);
-            self.model.saveContrastLimToCurrentMap(contrastLim);
+            self.model.saveContrastLim(contrastLim);
         end
 
         function contrastLim = ...
@@ -85,7 +89,7 @@ classdef TrialStackController < handle
             else
                 vcl = dataLim;
             end
-            self.model.saveContrastLimToCurrentMap(vcl);
+            self.model.saveContrastLim(vcl);
             self.view.setDataLimAndContrastLim(dataLim,vcl);
             self.view.changeMapContrast(vcl);
         end

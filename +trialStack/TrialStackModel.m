@@ -7,6 +7,7 @@ classdef TrialStackModel < handle
         nTrial
         
         contrastLimArray
+        contrastForAllTrial
         mapTypeList
     end
     
@@ -29,6 +30,7 @@ classdef TrialStackModel < handle
             self.mapTypeList = {'anatomy','response'};
             self.contrastLimArray = cell(length(self.mapTypeList),...
                                          self.nTrial);
+            self.contrastForAllTrial = false
         end
         
         function data = getMapData(self,mapType,trialIdx)
@@ -49,17 +51,18 @@ classdef TrialStackModel < handle
             contrastLim = self.getContrastLimForCurrentMap();
             if isempty(contrastLim)
                 contrastLim = helper.minMax(map.data);
-                self.saveContrastLimToCurrentMap(contrastLim)
+                self.saveContrastLim(contrastLim);
             end
             map.contrastLim = contrastLim;
         end
         
-        function saveContrastLimToCurrentMap(self,contrastLim)
+        function saveContrastLim(self,contrastLim)
             mapTypeIdx = self.findMapTypeIdx(self.mapType);
-            self.contrastLimArray{mapTypeIdx,self.currentTrialIdx} = contrastLim;
-            disp(self.currentTrialIdx)
-            disp(contrastLim)
-            disp(self.contrastLimArray)
+            if self.contrastForAllTrial
+                [self.contrastLimArray{mapTypeIdx,:}] = deal(contrastLim);
+            else
+                self.contrastLimArray{mapTypeIdx,self.currentTrialIdx} = contrastLim;
+            end
         end
         
         function climit = getContrastLimForCurrentMap(self)
@@ -76,6 +79,9 @@ classdef TrialStackModel < handle
             self.currentTrialIdx = newIdx;
         end
         
+        function selectMapType(self,idx)
+           self.mapType = self.mapTypeList{idx};
+        end
     end
 
 end
