@@ -857,7 +857,7 @@ classdef NrModel < handle
         function dd = getDefaultDir(self,dirName)
             dirNameList = {'binned','anatomy','alignment',...
                            'response_map','roi','motion_corr','df_rgb',...
-                          'stardist_mask'};
+                          'stardist_mask','trial_stack'};
             if ismember(dirName, dirNameList)
                 dd = fullfile(self.resultDir,dirName);
             else
