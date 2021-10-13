@@ -35,8 +35,6 @@ classdef TrialStackView < handle
         function assignCallbacks(self)
             set(self.guiHandles.mainFig,'WindowKeyPressFcn',...
                               @(s,e)self.controller.keyPressCallback(s,e));
-            set(self.guiHandles.mainFig,'WindowScrollWheelFcn',...
-                              @(s,e)self.controller.ScrollWheelFcnCallback(s,e));
             set(self.guiHandles.contrastMinSlider,'Callback',...
                               @(s,e)self.controller.contrastSlider_Callback(s,e));
             set(self.guiHandles.contrastMaxSlider,'Callback',...
@@ -52,6 +50,7 @@ classdef TrialStackView < handle
         
         function displayCurrentMap(self)
             map = self.model.getCurrentMap();
+            setTrialNumberSlider(self.model.currentTrialIdx);
             self.plotMap(map);
             self.displayMeta(map.meta);
             self.controller.updateContrastForCurrentMap();

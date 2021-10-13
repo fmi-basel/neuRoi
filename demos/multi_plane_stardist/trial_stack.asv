@@ -4,14 +4,9 @@ addpath('../../neuRoi/')
 %% Load experiment configuration from file
 clear all
 expName = '2021-09-02-DpOBEM-JH18';
-expSubDir =  fullfile(expName,'Dp');
-if getenv('COMPUTERNAME')=='F462L-3B17DA' %JE Pc path to run the code
-    expFilePath = sprintf(['C:/Data/eckhjan/test/%s/' ...
-                        'experiment_%s.mat'],expSubDir,expName);
-else
-    expFilePath = sprintf(['/home/hubo/Projects/Ca_imaging/results/%s/' ...
+expSubDir = fullfile(expName,'Dp');
+expFilePath = sprintf(['C:/Data/eckhjan/test/%s/' ...
                     'experiment_%s.mat'],expSubDir,expName);
-end
 foo = load(expFilePath);
 myexp = foo.self;
 myexp.expInfo.odorList =  {'phe','trp','arg','tdca','tca','gca','acsf','spont'};
