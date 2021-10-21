@@ -9,6 +9,9 @@ classdef TrialStackModel < handle
         contrastLimArray
         contrastForAllTrial
         mapTypeList
+		roiProvided
+        roiArrays
+        SingleRoi
     end
     
     properties (SetObservable)
@@ -18,7 +21,7 @@ classdef TrialStackModel < handle
     
     methods
         function self = TrialStackModel(rawFileList, anatomyArray,...
-                                        responseArray)
+                                        responseArray,roiArrays)
             % TODO check sizes of all arrays
             self.rawFileList = rawFileList;
             self.anatomyArray = anatomyArray;
@@ -31,6 +34,23 @@ classdef TrialStackModel < handle
             self.contrastLimArray = cell(length(self.mapTypeList),...
                                          self.nTrial);
             self.contrastForAllTrial = false
+			if ~exist('roiArrays','var')
+                self.roiProvided= false;
+            else
+                self.roiArrays=roiArrays;
+                self.roiProvided=true;
+                roiSize=size(roiArrays);
+                if roiSize(1)==1
+                    self.SingleRoi=true;
+                else
+                    self.SingleRoi=false
+                    if roiSize(1)~=self.mapSize
+                        self.roiArrays= [];
+                        self.roiProvided=false;
+                    end
+                end
+
+            end
         end
         
         function data = getMapData(self,mapType,trialIdx)
@@ -87,6 +107,17 @@ classdef TrialStackModel < handle
         
         function selectMapType(self,idx)
            self.mapType = self.mapTypeList{idx};
+        end
+		function roiArray = getCurrentRoiArray(self)
+            if self.roiProvided== true
+                if self.SingleRoi
+                      roiArray =self.roiArrays;
+                else
+                    roiArray =self.roiArrays(self.currentTrialIdx,:);
+                end
+            else
+                roiArray=[];
+            end
         end
     end
 
