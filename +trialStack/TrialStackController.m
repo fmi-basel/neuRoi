@@ -11,12 +11,15 @@ classdef TrialStackController < handle
             MaxTrialnumber = self.model.getMaxTrialnumber;
             self.view.setTrialNumberandSliderLim(1,[1,MaxTrialnumber]);
             self.view.displayCurrentMap();
+            self.view.redrawAllRoiAsOnePatch();
         end
         
         function ScrollWheelFcnCallback(self, src, evnt)
         %JE-Mouswheelscroll functionality for scrolling trough the trials
-        %TO DO: zoom function can casues problems and should be deactivated first  
-            self.model.currentTrialIdx = self.model.currentTrialIdx-round(evnt.VerticalScrollCount); %- to get the direction as i prefer it, JE
+        %TO DO: zoom function can casues problems and should be deactivated first
+            tempTrial =self.model.currentTrialIdx-round(evnt.VerticalScrollCount); % - to get the direction as i prefer it, JE
+            self.model.currentTrialIdx = tempTrial;
+            self.view.setTrialNumberSlider(self.model.currentTrialIdx);
         end
 
         function keyPressCallback(self, src, evnt)
@@ -47,7 +50,14 @@ classdef TrialStackController < handle
             if NewTrialNumber~=self.model.currentTrialIdx %To prevent looping with identical Idx
                 self.model.currentTrialIdx=NewTrialNumber;
             end
+        end
 
+        function RoiAlphaSlider_Callback(self,src,evnt)
+            NewAlpha= self.view.getRoiAlphaSliderValue;
+            %self.model.NewAlphaAllRois(NewAlpha); %not needed since we
+            %draw them in one patch
+            self.view.AlphaForRoiOnePatch=NewAlpha;
+            self.view.redrawAllRoiAsOnePatch();
         end
         
         function contrastSlider_Callback(self,src,evnt)
