@@ -35,6 +35,8 @@ classdef NrModel < handle
         roiTemplateFilePath
         
         binConfig
+
+        ReferenceTrialIdx
     end 
     
     properties (SetAccess = private, SetObservable = true)
@@ -897,6 +899,20 @@ classdef NrModel < handle
                 s.(fn{1}) = self.(fn{1});
             end
         end
+
+        %BUnwarpJ
+        function CalculateBUnwarpJ(self)
+            FilesWORef = self.rawFileList;
+            FilesWORef(self.ReferenceTrialIdx) = [];
+            FilesWORef= arrayfun(@(x) fullfile(self.resultDir,self.anatomyDir,strcat("plane0",string(self.planeNum)),strcat("anatomy_",x)), FilesWORef);
+            ReferenceFile = self.rawFileList(self.ReferenceTrialIdx);
+            Rois=load(fullfile(self.roiDir,strcat("plane0",string(self.planeNum)),"20210902_JH18_Dp_s3_o4arg_001__RoiArray.mat"));
+            %Rois=fullfile(self.maskDir,strcat("plane0",string(self.planeNum)),"mask_merged_20210902_JH18_Dp_s3_o4arg_001_.tif");
+            ReferenceFile=fullfile(self.resultDir,self.anatomyDir,strcat("plane0",string(self.planeNum)),strcat("anatomy_",ReferenceFile));
+            BUnwarpJ.CalcAndApplyBUnwarpJ(ReferenceFile,FilesWORef,Rois.roiArray,[1,1,0],2,true);
+           
+        end
+
     end
 
     methods (Static)

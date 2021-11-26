@@ -38,7 +38,9 @@ end
 
 %%Change this according to your imagej
 javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\plugins\bUnwarpJ_-2.6.13.jar');
-javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\jars\ij-1.53c.jar');
+javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\jars\ij-1.53f.jar');
+javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\plugins\mpicbg_-1.4.1.jar');
+javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\jars\mpicbg-1.4.1.jar');
 
 
 
@@ -177,6 +179,10 @@ if ~SkipTransformationCalc
         TempTrial=ImageJ_LoaderEngine.openImage(TrialImages(i));
 
         [filepath,name,ext] = fileparts(TrialImages(i));
+        
+        SIFTObject= SIFT_ExtractPointRoi();
+        SIFTObject.exec(TempTrial,Reference,1.6,3,64,1024,4,8,0.92,25,0.05,1);
+        TempTrial.show();
 
         tempString= strcat("Start calculating transformation at ",datestr(now,'HH:MM:SS.FFF'));
         disp(tempString);
@@ -254,8 +260,8 @@ if OutputFreehandROI
 
         %create FreehandRois from tranformed roi masks
         roiArray = RoiFreehand.empty();
-        for j=1:RoiNumber
-            %[col,row]=find(OutputMask==j); not needed anymore
+        for j=1:ReferenceMask(RoiNumber).tag
+            [col,row]=find(OutputMask==j); %not needed anymore
             if ~isempty(row)
                 %from TrialModel
                  poly = roiFunc.mask2poly(OutputMask==j);
@@ -263,7 +269,7 @@ if OutputFreehandROI
                      % TODO If the mask corresponds multiple polygon,
                      % for simplicity,
                      % take the largest polygon
-                     warning(sprintf('ROI %d has multiple components, only taking the largest one.',tag))
+                     warning(sprintf('ROI %d has multiple components, only taking the largest one.',j))
                      pidx = find([poly.Length] == max([poly.Length]));
                      poly = poly(pidx);
                  end
@@ -401,8 +407,8 @@ function RoiMap=createROIMaskFromFreehandROI(FreehandroiArray,heigth, width)
 
     for i=1:nRoi
         newroi=FreehandroiArray(i);
-        binaryImage =newroi.tag* newroi.createMask([512,512]);
-        RoiMap= min(RoiMap+ uint16(binaryImage),newroi.tag);
+        binaryImage =double(newroi.tag)* newroi.createMask([512,512]);
+        RoiMap= min(RoiMap+ uint16(binaryImage),double(newroi.tag));
     end
 
 end

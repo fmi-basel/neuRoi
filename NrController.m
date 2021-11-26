@@ -280,6 +280,16 @@ classdef NrController < handle
                 delete(self.view)
             end
         end
+
+        % Callbacks for BUnwaprJ
+        function BUnwarpJReferencetrial_Callback(self,src,evnt)
+            self.model.ReferenceTrialIdx=src.Value;
+        end
+
+        function BUnwarpJCalculateButton_Callback(self,src,evnt)
+            self.model.CalculateBUnwarpJ();
+        end
+
     end
     
     methods (Static)

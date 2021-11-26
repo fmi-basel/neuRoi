@@ -107,6 +107,15 @@ classdef NrView < handle
             set(self.guiHandles.updateResponseMaxMapButton,'Callback',...
             @(s,e) self.controller.updateMapButton_Callback(s,e));
 
+            % Callbacks fo BUnwaprJ
+            set(self.guiHandles.BUnwarpJCalculateButton,'Callback',...
+            @(s,e)self.controller.BUnwarpJCalculateButton_Callback(s,e));
+
+            set(self.guiHandles.BUnwarpJReferencetrial,'Callback',...
+            @(s,e)self.controller.BUnwarpJReferencetrial_Callback(s,e));
+
+
+
         end
         
         function listenToModel(self)
@@ -132,6 +141,7 @@ classdef NrView < handle
                 [~,fileNameArray{k},~] = fileparts(filePath);
             end
             set(self.guiHandles.fileListBox,'String',fileNameArray);
+            set(self.guiHandles.BUnwarpJReferencetrial,'String',fileNameArray);
         end
         
         function displayExpInfo(self)
