@@ -307,7 +307,7 @@ classdef NrController < handle
         end
 
         function BUnwarpJSIFTPara_Callback(self,src,evnt)
-            TempParameter=StructDlg(self.model.SIFTParameter,'SIFT parameter');
+            TempParameter=StructDlg(self.model.SIFTParameter,'SIFT parameter',[],ü);
             self.model.SIFTParameter=TempParameter;
         end
         %obsolete since CKAHE added

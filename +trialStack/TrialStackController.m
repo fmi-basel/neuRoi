@@ -12,6 +12,12 @@ classdef TrialStackController < handle
             self.view.setTrialNumberandSliderLim(1,[1,MaxTrialnumber]);
             self.view.displayCurrentMap();
             self.view.redrawAllRoiAsOnePatch();
+            if ~isempty(mymodel.transformationParameter)
+                self.view.displayTransformationData(mymodel.transformationParameter);
+                if ~isempty(mymodel.transformationName)
+                    self.view.displayTransformationName(mymodel.transformationName);
+                end
+            end
         end
         
         function ScrollWheelFcnCallback(self, src, evnt)

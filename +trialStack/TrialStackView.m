@@ -7,7 +7,7 @@ classdef TrialStackView < BaseClasses.Base_trial_view
     end
 
     methods
-        function self = TrialStackView(mymodel,mycontroller)
+        function self = TrialStackView(mymodel,mycontroller,mytransformationParameter)
             self.model = mymodel;
             self.controller = mycontroller;
             self.guiHandles = trialStack.trialStackGui(self.model.mapSize);
@@ -26,6 +26,8 @@ classdef TrialStackView < BaseClasses.Base_trial_view
             self.listenToModel();
             self.assignCallbacks();
             self.setRoiAlphaSlider(0.5);
+          
+
         end
         
         function listenToModel(self)
@@ -70,6 +72,16 @@ classdef TrialStackView < BaseClasses.Base_trial_view
         function displayMeta(self,meta)
             metaStr = helper.convertOptionToString(meta);
             set(self.guiHandles.metaText,'String',metaStr);
+        end
+
+        function displayTransformationData(self, TransformationParameter)
+            TransformationStr=helper.deconvoluteStruct(TransformationParameter);
+            TransformationStr=helper.deconvoluteStruct2Str(TransformationStr);
+            set(self.guiHandles.TransformationListbox,'String',TransformationStr);
+        end
+
+        function displayTransformationName(self, TransformationName)
+            set(self.guiHandles.mainFig,'Name',TransformationName);    
         end
         
         function plotMap(self,map)

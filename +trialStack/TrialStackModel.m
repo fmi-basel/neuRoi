@@ -13,6 +13,9 @@ classdef TrialStackModel < handle
         roiArrays
         roiArray
         SingleRoi
+
+        transformationParameter
+        transformationName
     end
     
     properties (SetObservable)
@@ -40,7 +43,7 @@ classdef TrialStackModel < handle
     
     methods
         function self = TrialStackModel(rawFileList, anatomyArray,...
-                                        responseArray,roiArrays)
+                                        responseArray,roiArrays,transformationParameter,transformationName)
             % TODO check sizes of all arrays
             self.rawFileList = rawFileList;
             self.anatomyArray = anatomyArray;
@@ -68,10 +71,17 @@ classdef TrialStackModel < handle
                         self.roiArrays= [];
                         self.roiProvided=false;
                     else
-                        self.roiArray=roiArrays(1,:);
+                        self.roiArray=roiArrays{1};
                     end
                 end
-
+            end
+            if exist('transformationParameter','var')
+                self.transformationParameter=transformationParameter;
+            else
+                self.transformationParameter=string();
+            end
+            if exist('transformationName','var')
+                self.transformationName=transformationName;
             end
         end
         
@@ -136,7 +146,7 @@ classdef TrialStackModel < handle
                 if self.SingleRoi
                       roiArray =self.roiArrays;
                 else
-                    roiArray =self.roiArrays(self.currentTrialIdx,:);
+                    roiArray =self.roiArrays{self.currentTrialIdx};
                 end
             else
                 roiArray=[];

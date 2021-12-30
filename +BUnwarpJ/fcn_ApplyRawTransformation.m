@@ -5,7 +5,7 @@ function [Outputimage]= fcn_ApplyRawTransformation(Image , transformationPath)
 
     %TO DO compare input size with transformation!
 
-    [xcorr, ycorr, height, width]= fcn_LoadRawTransformation(transformationPath);
+    [xcorr, ycorr, height, width]= BUnwarpJ.fcn_LoadRawTransformation(transformationPath);
     
     %clipping max min values. rethink about this...this will messup the last
     %and first pixel. Does NAN helps?
