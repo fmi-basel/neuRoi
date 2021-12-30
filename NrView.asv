@@ -140,7 +140,7 @@ classdef NrView < handle
             @(s,e)self.controller.BUnwarpJCLAHEPara_Callback(s,e));
 
             set(self.guiHandles.BUnwarpJSIFTPara,'Callback',...
-            @(s,e)self.controller.BUnwarpJSIFTPara_Callback(s,e));
+            @(s,e)self.controller.BUnwarpJCLAHEPara_Callback(s,e));
 
 
         end

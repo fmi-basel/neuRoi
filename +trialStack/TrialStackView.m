@@ -1,13 +1,13 @@
-classdef TrialStackView < handle
+classdef TrialStackView < BaseClasses.Base_trial_view
     properties
-        model
-        controller
-        guiHandles
-        mapColorMap
+%         model
+%         controller
+%         guiHandles
+%         mapColorMap
     end
 
     methods
-        function self = TrialStackView(mymodel,mycontroller)
+        function self = TrialStackView(mymodel,mycontroller,mytransformationParameter)
             self.model = mymodel;
             self.controller = mycontroller;
             self.guiHandles = trialStack.trialStackGui(self.model.mapSize);
@@ -25,26 +25,37 @@ classdef TrialStackView < handle
 
             self.listenToModel();
             self.assignCallbacks();
+            self.setRoiAlphaSlider(0.5);
+          
+
         end
         
         function listenToModel(self)
+            listenToModel@BaseClasses.Base_trial_view(self); %call base function
             addlistener(self.model,'currentTrialIdx','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'mapType','PostSet',@self.selectAndDisplayMap);
+            addlistener(self.model,'loadNewRois',@(~,~)self.redrawAllRoiPatch());
         end
         
         function assignCallbacks(self)
-            set(self.guiHandles.mainFig,'WindowKeyPressFcn',...
-                              @(s,e)self.controller.keyPressCallback(s,e));
-            set(self.guiHandles.mainFig,'WindowScrollWheelFcn',...
-                              @(s,e)self.controller.ScrollWheelFcnCallback(s,e));
+            assignCallbacks@BaseClasses.Base_trial_view(self); %call base function
+%             set(self.guiHandles.mainFig,'WindowKeyPressFcn',...
+%                               @(s,e)self.controller.keyPressCallback(s,e));
+%             set(self.guiHandles.mainFig,'WindowScrollWheelFcn',...
+%                               @(s,e)self.controller.ScrollWheelFcnCallback(s,e));
             set(self.guiHandles.contrastMinSlider,'Callback',...
                               @(s,e)self.controller.contrastSlider_Callback(s,e));
             set(self.guiHandles.contrastMaxSlider,'Callback',...
                               @(s,e)self.controller.contrastSlider_Callback(s,e));
+            set(self.guiHandles.RoiAlphaSlider,'Callback',...
+                              @(s,e)self.controller.RoiAlphaSlider_Callback(s,e));
             set(self.guiHandles.TrialNumberSlider,'Callback',...
                               @(s,e)self.controller.TrialNumberSlider_Callback(s,e));
+             
 
         end
+
+       
         
         function selectAndDisplayMap(self,src,evnt)
             self.displayCurrentMap();
@@ -55,11 +66,22 @@ classdef TrialStackView < handle
             self.plotMap(map);
             self.displayMeta(map.meta);
             self.controller.updateContrastForCurrentMap();
+            self.redrawAllRoiAsOnePatch;
         end
         
         function displayMeta(self,meta)
             metaStr = helper.convertOptionToString(meta);
             set(self.guiHandles.metaText,'String',metaStr);
+        end
+
+        function displayTransformationData(self, TransformationParameter)
+            TransformationStr=helper.deconvoluteStruct(TransformationParameter);
+            TransformationStr=helper.deconvoluteStruct2Str(TransformationStr);
+            set(self.guiHandles.TransformationListbox,'String',TransformationStr);
+        end
+
+        function displayTransformationName(self, TransformationName)
+            set(self.guiHandles.mainFig,'Name',TransformationName);    
         end
         
         function plotMap(self,map)
@@ -76,8 +98,18 @@ classdef TrialStackView < handle
                 colormap(mapAxes,'default');
             end
         end
+
+        %JE-Methods for changing Alpha values
+
+        function setRoiAlphaSlider(self, NewAlpha)
+             set(self.guiHandles.RoiAlphaSlider ,'Value',NewAlpha);
+        end
+
+        function NewAlpha = getRoiAlphaSliderValue(self)
+            NewAlpha=self.guiHandles.RoiAlphaSlider.Value;
+        end
         
-        %JE-Methods for chaning trial via slider
+        %JE-Methods for changing trial via slider
         function setTrialNumberandSliderLim(self,Trialnumber,SliderLim)
             set(self.guiHandles.TrialNumberSlider ,'Min',SliderLim(1),'Max',SliderLim(2),...
                    'Value',Trialnumber, 'SliderStep',[1, 5]/(SliderLim(2)-SliderLim(1))); 

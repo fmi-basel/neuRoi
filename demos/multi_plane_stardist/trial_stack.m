@@ -56,7 +56,7 @@ anatomyArray = batch.loadStack(inDir,anatomyFileList);
 %% Start trialStack GUI
 stackModel = trialStack.TrialStackModel(rawFileList,...
                                         anatomyArray,...
-                                        responseArray); 
+                                        responseArray, roiArrays); 
 stackCtrl = trialStack.TrialStackController(stackModel);
 stackModel.contrastForAllTrial = true;
 % Help for the gui (keyboard shortcut):
