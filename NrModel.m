@@ -992,7 +992,8 @@ classdef NrModel < handle
                 
                 %add Trasnformationname to list;sve calculated rois to load
                 %them later; clear variables
-                self.CalculatedTransformationsList(length(self.CalculatedTransformationsList)+1)={TransformName};
+                % self.CalculatedTransformationsList(length(self.CalculatedTransformationsList)+1)={TransformName};
+                self.CalculatedTransformationsList{length(self.CalculatedTransformationsList)+1}=TransformName;
                 save(fullfile(self.resultDir,"BUnwarpJ",TransformName,"Rois.mat"),"RoiArray");
                 save(fullfile(self.resultDir,"BUnwarpJ",TransformName,"TransformationParameters.mat"),"TransformationParameters");
                 self.BUnwarpJCalculated= true;

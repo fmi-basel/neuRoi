@@ -60,10 +60,17 @@ else
 end
 
 %%Change this according to your imagej
-javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\plugins\bUnwarpJ_-2.6.13.jar');
-javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\jars\ij-1.53f.jar');
-javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\plugins\mpicbg_-1.4.1.jar');%for SIFT
-javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\jars\mpicbg-1.4.1.jar');%for SIFT
+
+% javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\plugins\bUnwarpJ_-2.6.13.jar');
+% javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\jars\ij-1.53f.jar');
+% javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\plugins\mpicbg_-1.4.1.jar');%for SIFT
+% javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\jars\mpicbg-1.4.1.jar');%for SIFT
+
+imagej_dir = '/home/hubo/Software/Fiji.app'
+javaaddpath(fullfile(imagej_dir,'plugins','bUnwarpJ_-2.6.13.jar'));
+javaaddpath(fullfile(imagej_dir,'jars','ij-1.53f.jar'));
+javaaddpath(fullfile(imagej_dir,'plugins','mpicbg_-1.4.1.jar'));%for SIFT
+javaaddpath(fullfile(imagej_dir,'jars','mpicbg-1.4.1.jar'));%for SIFT
 
 
 
