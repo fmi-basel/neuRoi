@@ -6,4 +6,5 @@ moveit2.m
 /demos/scratch.m
 # Temporarily ignore NoRMCorre
 /NoRMCorre
-
+# Autosaved matlab files
+*.asv
