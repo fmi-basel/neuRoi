@@ -9,13 +9,14 @@ classdef TrialStackModel < handle
         contrastLimArray
         contrastForAllTrial
         mapTypeList
-		roiProvided
-        roiArrays
+        templateRoiArray
+        roiArrayStack
         roiArray
         SingleRoi
 
         transformationParameter
         transformationName
+        transformDir
     end
     
     properties (SetObservable)
@@ -42,39 +43,34 @@ classdef TrialStackModel < handle
     end
     
     methods
-        function self = TrialStackModel(rawFileList, anatomyArray,...
-                                        responseArray,roiArrays,transformationParameter,transformationName)
+        function self = TrialStackModel(rawFileList,templateRoiArray,...
+                                        anatomyArray,...
+                                        responseArray,...
+                                        transformationParameter,transformationName,...
+                                        transformDir,...
+                                        roiArrayStack)
             % TODO check sizes of all arrays
             self.rawFileList = rawFileList;
             self.anatomyArray = anatomyArray;
             self.responseArray = responseArray;
             self.mapSize = size(anatomyArray(:,:,1));
             self.mapType = 'anatomy';
-            self.nTrial = length(rawFileList)
+            self.nTrial = length(rawFileList);
             self.currentTrialIdx = 1;
             self.mapTypeList = {'anatomy','response'};
             self.contrastLimArray = cell(length(self.mapTypeList),...
                                          self.nTrial);
-            self.contrastForAllTrial = false
-			if ~exist('roiArrays','var')
-                self.roiProvided= false;
+            self.contrastForAllTrial = false;
+            
+            self.templateRoiArray = templateRoiArray;
+            self.transformDir = transformDir;
+            
+            if exist('roiArrayStack','var')
+                self.roiArrayStack=roiArrayStack;
             else
-                self.roiArrays=roiArrays;
-                self.roiProvided=true;
-                roiSize=size(roiArrays);
-                if roiSize(1)==1
-                    self.SingleRoi=true;
-                    self.roiArray=roiArrays;
-                else
-                    self.SingleRoi=false;
-                    if roiSize(1)~=self.nTrial
-                        self.roiArrays= [];
-                        self.roiProvided=false;
-                    else
-                        self.roiArray=roiArrays{1};
-                    end
-                end
+                self.transformTemplateRoiArray();
             end
+            
             if exist('transformationParameter','var')
                 self.transformationParameter=transformationParameter;
             else
@@ -83,6 +79,11 @@ classdef TrialStackModel < handle
             if exist('transformationName','var')
                 self.transformationName=transformationName;
             end
+        end
+        
+        function transformTemplateRoiArray(self)
+            self.roiArrayStack = BUnwarpJ.transformRoiArray(self.templateRoiArray,self.mapSize,...
+                                                            self.rawFileList, self.transformDir);
         end
         
         function data = getMapData(self,mapType,trialIdx)
@@ -141,13 +142,10 @@ classdef TrialStackModel < handle
         function selectMapType(self,idx)
            self.mapType = self.mapTypeList{idx};
         end
-		function roiArray = getCurrentRoiArray(self)
-            if self.roiProvided== true
-                if self.SingleRoi
-                      roiArray =self.roiArrays;
-                else
-                    roiArray =self.roiArrays{self.currentTrialIdx};
-                end
+        
+        function roiArray = getCurrentRoiArray(self)
+            if length(self.roiArrayStack)
+                roiArray =self.roiArrayStack(self.currentTrialIdx).roi;
             else
                 roiArray=[];
             end
@@ -199,7 +197,7 @@ classdef TrialStackModel < handle
                     ind = self.findRoiByTag(tag);
                 end
             else
-                error('Too Many/few input args!')
+                error('Too many/few input args!')
             end
             
             if ~isequal(self.selectedRoiTagArray,[tag])
@@ -336,25 +334,6 @@ classdef TrialStackModel < handle
             end
         end
         
-        function saveRoiArray(self,filePath)
-            roiArray = self.roiArray;
-            ind = self.findMapByType('anatomy');
-            templateAnatomy = self.mapArray{ind}.data;
-            save(filePath,'roiArray');
-        end
-        
-        function loadRoiArray(self,filePath,option)
-            foo = load(filePath);
-            roiArray = foo.roiArray;
-            nRoi = length(roiArray);
-                if nRoi >= self.MAX_N_ROI
-                    error('Maximum number of ROIs exceeded!')
-                end
-            self.insertRoiArray(roiArray,option)
-            if isfield(foo,'templateAnatomy')
-                self.templateAnatomy = foo.templateAnatomy;
-            end
-        end
 
         function insertRoiArray(self,roiArray,option)
             if strcmp(option,'merge')
@@ -366,88 +345,17 @@ classdef TrialStackModel < handle
                 notify(self,'roiArrayReplaced');
             end
         end
-
         
-        function importRoisFromMask(self,filePath)
-            maskImg = movieFunc.readTiff(filePath);
-            if ~isequal(size(maskImg),self.getMapSize())
-                error(['Image size of mask does not match the map size ' ...
-                       '(pixel size in x and y)!'])
-            end
-            tagArray = unique(maskImg);
-            roiArray = RoiFreehand.empty();
-            for k=1:length(tagArray)
-                tag = tagArray(k);
-                if tag ~= 0
-                    mask = maskImg == tag;
-                    poly = roiFunc.mask2poly(mask);
-                    if length(poly) > 1
-                        % TODO If the mask corresponds multiple polygon,
-                        % for simplicity,
-                        % take the largest polygon
-                        warning(sprintf('ROI %d has multiple components, only taking the largest one.',tag))
-                        pidx = find([poly.Length] == max([poly.Length]));
-                        poly = poly(pidx);
-                    end
-                    position = [poly.X',poly.Y'];
-                    roi = RoiFreehand(position);
-                    roi.tag = double(tag);
-                    roiArray(end+1) = roi;
-                end
-            end
-            self.insertRoiArray(roiArray,'replace')
+        function saveRoiArrayStack(self)
+            roiDir = fullfile(self.transformDir, 'roi');
+            filePath = fullfile(roiDir, 'roiArrayStack.mat');
+            save(filePath, self.roiArrayStack)
         end
         
-        function importRoisFromImageJ(self,filePath)
-            [jroiArray] = roiFunc.ReadImageJROI(filePath);
-            roiArray = roiFunc.convertFromImageJRoi(jroiArray);
-            self.insertRoiArray(roiArray,'replace');
+        function saveTrialStack(self)
+            stackFile = fullfile(self.transformDir, 'trial_stack.mat')
+            save(stackFile, 'self')
         end
-        
-        
-        function matchRoiPos(self,roiTagArray,windowSize)
-            fitGauss = 1;
-            normFlag = 1;
-            roiIndArray = self.findRoiByTagArray(roiTagArray);
-            mapInd = self.findMapByType('anatomy');
-            inputMap = self.mapArray{mapInd}.data;
-            for ind = roiIndArray
-                self.roiArray(ind).matchPos(inputMap, ...
-                                            self.templateAnatomy,...
-                                            windowSize,...
-                                            fitGauss,...
-                                            normFlag)
-            end
-            notify(self,'roiUpdated', ...
-                   NrEvent.RoiUpdatedEvent(self.roiArray(roiIndArray)));
-        end
-        
-        % function checkRoiImageSize(self,roi)
-        %     mapSize = self.getMapSize();
-        %     if ~isequal(roi.imageSize,mapSize)
-        %         error(['Image size of ROI does not match the map size ' ...
-        %                '(pixel size in x and y)!'])
-        %     end
-        % end
-        
-        function ind = findRoiByTag(self,tag)
-            ind = find(arrayfun(@(x) isequal(x.tag,tag), ...
-                                self.roiArray),1);
-            if ~isempty(ind)
-                ind = ind(1);
-            else
-                error(sprintf('Cannot find ROI with tag %d!',tag))
-            end
-        end
-        
-        function roiIndArray = findRoiByTagArray(self,tagArray)
-            roiIndArray = arrayfun(@(x) self.findRoiByTag(x), ...
-                                   tagArray);
-        end
-
-
-
     end
-
 end
 

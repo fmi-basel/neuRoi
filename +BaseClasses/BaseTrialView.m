@@ -1,4 +1,4 @@
-classdef Base_trial_view < handle
+classdef BaseTrialView < handle
 
 
    properties

@@ -1,6 +1,6 @@
 %%%%% Jan Eckhardt/FMI/AG Friedrich/Basel/Switzerland 08.2021
 
-function [TransformedMasks]= CalcAndApplyBUnwarpJ(ReferenceImage, TrialImages, ReferenceMask, PathInput,ROIType,OutputFreehandROI,UseSIFT,SIFTParameters, SaveFolder, BUnwarpJParameters )
+function [TransformedMasks]= CalcAndApplyBUnwarpJ(ReferenceImage, TrialImages, ReferenceMask, PathInput,ROIType,OutputFreehandROI,UseSIFT,SIFTParameters, SaveFolder, BUnwarpJParameters, varargin)
 
 %Path are supposed to be tiff for images
 %PathInput optional: Default is true
@@ -15,10 +15,19 @@ function [TransformedMasks]= CalcAndApplyBUnwarpJ(ReferenceImage, TrialImages, R
 
 %TODO: Console progress!! almost done
 
+    
+    pa = inputParser;
+    addParameter(pa,'SkipTransformationCalc',false,@islogical);
+    addParameter(pa,'OutputFreehandROI',false,@islogical);
+    addParameter(pa,'transformRoi',false,@islogical);
+    parse(pa,varargin{:})
+    pr = pa.Results;
 
+    
 SaveMatricesAsTifs = false;
 ApplyTransformWithBUnwaprJ = false;
-SkipTransformationCalc =false;
+SkipTransformationCalc = pr.SkipTransformationCalc;
+OutputFreehandROI = pr.OutputFreehandROI;
 TransformationGridStart =0;
 TransformationGridEnd =2;
 AlternativeSaveFolder = false;
@@ -36,9 +45,6 @@ if ~exist('ROIType','var')
         ROIType= 0;
 end
 
-if ~exist('OutputFreehandROI','var')
-        OutputFreehandROI= false;
-end
 
 if ~exist('UseSIFT','var')
         UseSIFT= false;        
@@ -327,7 +333,11 @@ end
 
 tempString= strcat("Apply transformations to Referencemask at ",datestr(now,'HH:MM:SS.FFF'));
 disp(tempString);
-%%select output format (FreehandROI or Matrix) 
+%%select output format (FreehandROI or Matrix)
+if ~pr.transformRoi
+    return
+end
+
 if OutputFreehandROI
 
     %nRoi = length(jroiArray);
@@ -338,18 +348,25 @@ if OutputFreehandROI
 %                 RoiMap=createROIMaskFromImageJRoi(jroiArray,512, 512);
 %                 tempString= strcat("Apply transformations to Referencemask at ",datestr(now,'HH:MM:SS.FFF'));
 %                 disp(tempString);
+    se = strel('diamond',1);
+    % Dilate the RoiMap for 1 pixel, so to prevent the resulted ROIs from being shrinked
+    RoiMap = imdilate(RoiMap,se);
+
     for i=1:length(TrialImages) 
 
         [filepath,name,ext] = fileparts(TrialImages(i));
         OutputMask= BUnwarpJ.fcn_ApplyRawTransformation(RoiMap , fullfile(RawTransformationFolder,strcat(name,"_transformationRaw.txt")));
-
+        
+        
         %create FreehandRois from tranformed roi masks
         roiArray = RoiFreehand.empty();
         for j=1:max(max(OutputMask))
             [col,row]=find(OutputMask==j); %not needed anymore
+
             if ~isempty(row)
                 %from TrialModel
-                 poly = roiFunc.mask2poly(OutputMask==j);
+                roiMask = OutputMask==j;
+                 poly = roiFunc.mask2poly(roiMask);
                  if length(poly) > 1
                      % TODO If the mask corresponds multiple polygon,
                      % for simplicity,
@@ -386,33 +403,6 @@ if OutputFreehandROI
 else
 
     TransformedMasks=zeros(length(TrialImages),512,512);
-% 
-%                 roiArray = convertFromImageJRoi(jroiArray);
-% 
-%                 nRoi = length(roiArray);
-%                 RoiMap = zeros(512, 'uint16');
-% 
-%                 for i=1:nRoi
-%                     newroi=roiArray(i);
-%                     %newroi.imageSize=[512,512];
-%                     nPositions=length(newroi.position);
-%                     binaryImage =newroi.tag* newroi.createMask([512,512]);
-%                     RoiMap= min(RoiMap+ uint16(binaryImage),newroi.tag);
-%                 end
-
-%                 if SaveMatricesAsTifs
-%                     imwrite(uint16(RoiMap),strcat("C:\Data\eckhjan\Matlab_stuff\TestMatlab\anatomy\trials\mask0.tif"));
-%                 end
-%                 if ApplyTransformWithBUnwaprJ
-%                     if SaveMatricesAsTifs
-%                         MaskToTranf=ImageJ_LoaderEngine.openImage(strcat("C:\Data\eckhjan\Matlab_stuff\TestMatlab\anatomy\trials\mask0.tif"));
-%                         TransfMask =MaskToTranf.duplicate(); 
-%                     else
-%                         imwrite(uint16(RoiMap),strcat("C:\Data\eckhjan\Matlab_stuff\TestMatlab\anatomy\trials\mask0.tif"));
-%                         MaskToTranf=ImageJ_LoaderEngine.openImage(strcat("C:\Data\eckhjan\Matlab_stuff\TestMatlab\anatomy\trials\mask0.tif"));
-%                         TransfMask =MaskToTranf.duplicate();
-%                     end
-%                 end
 
     for i=1:length(TrialImages)
 

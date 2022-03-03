@@ -1,4 +1,4 @@
-classdef TrialStackView < BaseClasses.Base_trial_view
+classdef TrialStackView < BaseClasses.BaseTrialView
     properties
 %         model
 %         controller
@@ -31,14 +31,14 @@ classdef TrialStackView < BaseClasses.Base_trial_view
         end
         
         function listenToModel(self)
-            listenToModel@BaseClasses.Base_trial_view(self); %call base function
+            listenToModel@BaseClasses.BaseTrialView(self); %call base function
             addlistener(self.model,'currentTrialIdx','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'mapType','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'loadNewRois',@(~,~)self.redrawAllRoiPatch());
         end
         
         function assignCallbacks(self)
-            assignCallbacks@BaseClasses.Base_trial_view(self); %call base function
+            assignCallbacks@BaseClasses.BaseTrialView(self); %call base function
 %             set(self.guiHandles.mainFig,'WindowKeyPressFcn',...
 %                               @(s,e)self.controller.keyPressCallback(s,e));
 %             set(self.guiHandles.mainFig,'WindowScrollWheelFcn',...

@@ -33,7 +33,7 @@ function output = deconvoluteStruct2Str(input,parentStruct,parentName)
             if UseParentStruct
                 output(i)=sprintf('%s_%s:%s',parentName,name,value);
             else
-                output(i)=sprintf('%s:%s',name,value)
+                output(i)=sprintf('%s:%s',name,value);
             end
         end
     end
