@@ -56,7 +56,6 @@ classdef TrialStackModel < handle
             self.mapSize = size(anatomyArray(:,:,1));
             self.mapType = 'anatomy';
             self.nTrial = length(rawFileList);
-            self.currentTrialIdx = 1;
             self.mapTypeList = {'anatomy','response'};
             self.contrastLimArray = cell(length(self.mapTypeList),...
                                          self.nTrial);
@@ -79,6 +78,8 @@ classdef TrialStackModel < handle
             if exist('transformationName','var')
                 self.transformationName=transformationName;
             end
+            
+            self.currentTrialIdx = 1;
         end
         
         function transformTemplateRoiArray(self)
@@ -145,7 +146,7 @@ classdef TrialStackModel < handle
         
         function roiArray = getCurrentRoiArray(self)
             if length(self.roiArrayStack)
-                roiArray =self.roiArrayStack(self.currentTrialIdx).roi;
+                roiArray =self.roiArrayStack(self.currentTrialIdx);
             else
                 roiArray=[];
             end

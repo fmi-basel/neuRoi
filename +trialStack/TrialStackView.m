@@ -4,6 +4,8 @@ classdef TrialStackView < BaseClasses.BaseTrialView
 %         controller
 %         guiHandles
 %         mapColorMap
+        roiColorMap
+        roiVisible
     end
 
     methods
@@ -11,22 +13,31 @@ classdef TrialStackView < BaseClasses.BaseTrialView
             self.model = mymodel;
             self.controller = mycontroller;
             self.guiHandles = trialStack.trialStackGui(self.model.mapSize);
-            [neuRoiDir, ~, ~]= fileparts(mfilename('fullpath'));
+            [funcDir, ~, ~]= fileparts(mfilename('fullpath'));
+            neuRoiDir = fullfile(funcDir,'..');
             
             % Load customized color map
-            cmapPath = fullfile(neuRoiDir, 'colormap', ...
-                                'clut2b.mat');
+            cmapDir = fullfile(neuRoiDir,'colormap');
+            mapCmapPath = fullfile(cmapDir,'clut2b.mat');
             try
-                foo = load(cmapPath);
+                foo = load(mapCmapPath);
                 self.mapColorMap = foo.clut2b;
             catch ME
                 self.mapColorMap = 'default';
             end
 
+            roiCmapPath = fullfile(cmapDir,'roicolormap.mat');
+            try
+                foo = load(roiCmapPath);
+                self.roiColorMap = foo.roicolormap;
+            catch ME
+                self.roiColorMap = 'lines';
+            end
+
             self.listenToModel();
             self.assignCallbacks();
             self.setRoiAlphaSlider(0.5);
-          
+            self.roiVisible = true;
 
         end
         
@@ -55,8 +66,6 @@ classdef TrialStackView < BaseClasses.BaseTrialView
 
         end
 
-       
-        
         function selectAndDisplayMap(self,src,evnt)
             self.displayCurrentMap();
         end
@@ -66,13 +75,14 @@ classdef TrialStackView < BaseClasses.BaseTrialView
             self.plotMap(map);
             self.displayMeta(map.meta);
             self.controller.updateContrastForCurrentMap();
-            self.redrawAllRoiAsOnePatch;
+            self.drawAllRoisOverlay();
         end
         
         function displayMeta(self,meta)
             metaStr = helper.convertOptionToString(meta);
             set(self.guiHandles.metaText,'String',metaStr);
         end
+        
 
         function displayTransformationData(self, TransformationParameter)
             TransformationStr=helper.deconvoluteStruct(TransformationParameter);
@@ -99,9 +109,30 @@ classdef TrialStackView < BaseClasses.BaseTrialView
             end
         end
 
+        function drawAllRoisOverlay(self)
+            mapAxes = self.guiHandles.mapAxes;
+            roiImgData = self.model.roiArray.convertToMask();
+            if isfield(self.guiHandles,'roiImg')
+                self.guiHandles.roiImg.CData = roiImgData;
+                self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
+            else
+                self.guiHandles.roiImg = imagesc(roiImgData,'Parent',self.guiHandles.roiAxes);
+                set(self.guiHandles.roiAxes,'color','none','visible','off')
+                self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
+                colormap(self.guiHandles.roiAxes,self.roiColorMap);
+                self.setRoiVisibility();
+            end
+        end
+        
         %JE-Methods for changing Alpha values
+        
+        function setRoiImgAlpha(self,newAlpha)
+            self.AlphaForRoiOnePatch = newAlpha;
+            roiImgData = self.guiHandles.roiImg.CData;
+            self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
+        end
 
-        function setRoiAlphaSlider(self, NewAlpha)
+        function setRoiAlphaSlider(self,NewAlpha)
              set(self.guiHandles.RoiAlphaSlider ,'Value',NewAlpha);
         end
 
@@ -182,6 +213,26 @@ classdef TrialStackView < BaseClasses.BaseTrialView
             for k=1:2
                 contrastSliderArr(end+1-k).Value = contrastLim(k);
             end
+        end
+        
+        function toggleRoiVisibility(self)
+            self.roiVisible = ~self.roiVisible;
+            self.setRoiVisibility();
+        end
+        
+        function setRoiVisibility(self)
+            if self.roiVisible
+                roiState = 'on';
+            else
+                roiState = 'off';
+            end
+            set(self.guiHandles.roiImg,'Visible',roiState);
+        end
+            
+            
+        function deleteFigures(self)
+            mainFig = self.guiHandles.mainFig;
+            delete(mainFig);
         end
     end
     

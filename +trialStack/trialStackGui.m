@@ -2,8 +2,9 @@ function handles = trialStackGui(mapSize)
 % TRIALSTACKGUI create a GUI for sliding over stack of images from all trials
     handles.mainFig = figure('Position',[300,0,750,650]); 
     %handles.mainFig = figure('Units','normalized','Position',[0.2 0.5 0.4 0.4])
-    handles.mapAxes = axes('Position',[0.15 0.1 0.8 0.72]);
+    handles.mapAxes = axes('Position',[0.15 0.1 0.8 0.72],'Parent',handles.mainFig);
     handles.mapImage  = imagesc(zeros(mapSize),'Parent',handles.mapAxes);
+    handles.roiAxes = axes('Position',[0.15 0.1 0.8 0.72],'Parent',handles.mainFig);
 
     % Sliders for contrast adjustment
     handles.contrastSliderGroup = uibuttongroup('Position',[0.7,0.86,0.25,0.14]);
@@ -42,10 +43,4 @@ function handles = trialStackGui(mapSize)
                                           'Units','normal',...
                                          'Position',[0 0 1 0.025]);
 
-    % UIContextMenu for ROI
-%     handles.roiMenu = uicontextmenu(handles.mainFig);
-%     handles.roiMenuEntry1 = uimenu(handles.roiMenu,'Label','Move ROI(s)');
-    % Group for displaying ROI
-    handles.roiGroup = hggroup(handles.mapAxes,'Tag','roiGroup');
-    
 end

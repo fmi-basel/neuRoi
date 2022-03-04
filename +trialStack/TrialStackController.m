@@ -11,7 +11,8 @@ classdef TrialStackController < handle
             MaxTrialnumber = self.model.getMaxTrialnumber;
             self.view.setTrialNumberandSliderLim(1,[1,MaxTrialnumber]);
             self.view.displayCurrentMap();
-            self.view.redrawAllRoiAsOnePatch();
+            % self.view.redrawAllRoiAsOnePatch();
+            % self.view.drawAllRoisOverlay();
             if ~isempty(mymodel.transformationParameter)
                 self.view.displayTransformationData(mymodel.transformationParameter);
                 if ~isempty(mymodel.transformationName)
@@ -37,9 +38,15 @@ classdef TrialStackController < handle
                     self.model.selectMapType(1)
                   case 'w'
                     self.model.selectMapType(2)
+                  case 't'
+                    self.toggleRoiVisibility()
                 end
             end
         end
+        
+function toggleRoiVisibility(self)
+self.view.toggleRoiVisibility()
+end
         
         function slideTrialCallback(self,evnt)
             if strcmp(evnt.Key, 'k')
@@ -59,11 +66,8 @@ classdef TrialStackController < handle
         end
 
         function RoiAlphaSlider_Callback(self,src,evnt)
-            NewAlpha= self.view.getRoiAlphaSliderValue;
-            %self.model.NewAlphaAllRois(NewAlpha); %not needed since we
-            %draw them in one patch
-            self.view.AlphaForRoiOnePatch=NewAlpha;
-            self.view.redrawAllRoiAsOnePatch();
+            newAlpha= self.view.getRoiAlphaSliderValue;
+            self.view.setRoiImgAlpha(newAlpha);
         end
         
         function contrastSlider_Callback(self,src,evnt)
@@ -125,6 +129,16 @@ classdef TrialStackController < handle
             self.model.saveContrastLim(vcl);
             self.view.setDataLimAndContrastLim(dataLim,vcl);
             self.view.changeMapContrast(vcl);
+        end
+        
+        function delete(self)
+            if isvalid(self.view)
+                self.view.deleteFigures();
+                delete(self.view)
+            end
+            if isvalid(self.model)
+                delete(self.model)
+            end
         end
     end
 end

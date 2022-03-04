@@ -976,12 +976,15 @@ classdef NrModel < handle
                     FilesWORef=self.NormTrialsForBUnwarpJ(FilesWORef,BUnwarpJFolder,TransformationParameters.Reference_idx,TransformationParameters.CLAHE,TransformationParameters.CLAHE_Parameters);
                 end
     
-                ReferenceFile = FilesWORef(TransformationParameters.Reference_idx);
+                % ReferenceFile = FilesWORef(TransformationParameters.Reference_idx);
+                referenceFile = self.rawFileList{TransformationParameters.Reference_idx};
+                transformDir = fullfile(self.resultDir,'BUnwarpJ',TransformName,TransformationParameters.Plane);
+                referenceImgFile = fullfile(transformDir,iopath.modifyFileName(referenceFile,'anatomy_','_Norm','tif'));
                 % Do not remove the reference file, so that it undergo same processing as other files
                 % FilesWORef(TransformationParameters.Reference_idx) = [];
 
                 %Calculate and apply BUnwarpJ
-                BUnwarpJ.CalcAndApplyBUnwarpJ(ReferenceFile,FilesWORef,Rois,[1,1,1],2,true,TransformationParameters.SIFT,TransformationParameters.SIFTParameters,BUnwarpJFolder,TransformationParameters.BunwarpJ_Parameters, varargin{:});
+                BUnwarpJ.CalcAndApplyBUnwarpJ(referenceImgFile,FilesWORef,Rois,[1,1,1],2,true,TransformationParameters.SIFT,TransformationParameters.SIFTParameters,BUnwarpJFolder,TransformationParameters.BunwarpJ_Parameters, varargin{:});
                 
                 %incooperate reference rois
                 % referenceRoi= struct("roi",load(Rois).roiArray,"trial",strcat(self.anatomyDir,"_",RoiFilePrefix));
@@ -1086,8 +1089,8 @@ classdef NrModel < handle
                 transformationParameter = transformationParameter.TransformationParameters;
                 
                 transformDir = fullfile(self.resultDir,"BUnwarpJ",CalculatedTransformationName,planeString);
-                templateRoiFile = fullfile(transformDir,'roi','template_RoiArray.mat');
-                templateRoiArray = load(templateRoiFile);
+                templateRoiFile = fullfile(transformDir,'roi','template_RoiArray.tif');
+                templateRoiArray = roiFunc.RoiArray('maskImgFile', templateRoiFile);
                 
                 responseArray = self.calcResponseMapArray();
                 self.stackModel = trialStack.TrialStackModel(fileList,...
