@@ -542,13 +542,24 @@ classdef TrialModel < handle
         
         function selectAllRoi(self)
             tagArray = self.getAllRoiTag();
+            self.selectMultipleRoiByTag(tagArray)
+        end
+        
+        function selectMultipleRoiByTag(self, tagArray)
             self.unselectAllRoi();
             self.selectedRoiTagArray = tagArray;
             for k=1:length(tagArray)
                 tag = tagArray(k);
                 notify(self,'roiSelected',NrEvent.RoiEvent(tag));
             end
-            disp('All Rois selected')
+            disp('Multiple ROIs selected')
+        end
+
+        function selectMultipleRoiByIdx(self, idxArray)
+            self.unselectAllRoi();
+            allTagArray = self.getAllRoiTag();
+            tagArray = allTagArray(idxArray);
+            self.selectMultipleRoiByTag(tagArray)
         end
         
         function unselectAllRoi(self)

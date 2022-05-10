@@ -1152,7 +1152,9 @@ classdef NrModel < handle
                 obj = NrModel();
                 
                 for fn = fieldnames(s)'
+                    if ~strcmp(fn,'BUnwarpJRoiCellarray')
                     obj.(fn{1}) = s.(fn{1});
+                    end
                 end
                 
                 if isstruct(obj.alignResult)
