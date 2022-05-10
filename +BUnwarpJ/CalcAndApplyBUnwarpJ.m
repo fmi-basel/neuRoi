@@ -85,7 +85,7 @@ end
 
 imagej_dir = '/home/hubo/Software/Fiji.app'
 javaaddpath(fullfile(imagej_dir,'plugins','bUnwarpJ_-2.6.13.jar'));
-javaaddpath(fullfile(imagej_dir,'jars','ij-1.53f.jar'));
+javaaddpath(fullfile(imagej_dir,'jars','ij-1.53q.jar'));
 javaaddpath(fullfile(imagej_dir,'plugins','mpicbg_-1.4.1.jar'));%for SIFT
 javaaddpath(fullfile(imagej_dir,'jars','mpicbg-1.4.1.jar'));%for SIFT
 

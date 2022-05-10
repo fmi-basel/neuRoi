@@ -955,7 +955,15 @@ classdef NrModel < handle
 
                 %helper.unfold(TransformationParameters) %for debugging-shows the TransformationParameters
                 %ReferenceIdx=self.ReferenceTrialIdx; %obsolete
-                FilesWORef = self.rawFileList(self.selectedFileIdx);
+                if self.selectedFileIdx
+                    FilesWORef = self.rawFileList(self.selectedFileIdx);
+                    if ~ismember(self.ReferenceTrialIdx, self.selectedFileIdx)
+                        error(sprintf('Reference trial # %d  %s not in selected file list!',...
+                                      self.ReferenceTrialIdx, self.rawFileList{TransformationParameters.Reference_idx}))
+                    end
+                else
+                    FilesWORef = self.rawFileList;
+                end
                 TransformName=self.TransformationName;
                 FilesWORef= arrayfun(@(x) fullfile(self.resultDir,self.anatomyDir,TransformationParameters.Plane,strcat("anatomy_",x)), FilesWORef);
                 BUnwarpJFolder= fullfile(self.resultDir,"BUnwarpJ",TransformName,TransformationParameters.Plane);
@@ -1067,14 +1075,34 @@ classdef NrModel < handle
             end
 
         end
+        
+        function templateRoiFile = getTemplateRoiFile(self, transformDir)
+            templateRoiFile = fullfile(transformDir,'template_roi_mask.tif');
+        end
 
+        function generateTemplateRoiArrayFile(self, transformDir, transformationParameter)
+            tp = transformationParameter;
+            templateRoiFile = self.getTemplateRoiFile(transformDir);
+            roiFile = fullfile(self.getDefaultDir('roi'), tp.Plane, iopath.modifyFileName(tp.Reference_trial, '','_RoiArray','mat'));
+            anatomyFile = fullfile(transformDir, iopath.modifyFileName(tp.Reference_trial, 'anatomy_','_Norm','tif'));
+            anaImg = imread(anatomyFile);
+            foo = load(roiFile);
+            roiArr = foo.roiArray;
+            roiMask = roiFunc.convertRoiArrayToMask(roiArr, size(anaImg));
+            movieFunc.saveTiff(roiMask,templateRoiFile);
+        end
+        
         function InspectBUnwarpJ(self)
             if self.BUnwarpJCalculated
                 planeString = NrModel.getPlaneString(self.planeNum);
                 inDir = fullfile(self.resultDir,self.anatomyDir, ...
                  planeString);
 
-                fileList = self.rawFileList(self.selectedFileIdx);
+                if self.selectedFileIdx
+                    fileList = self.rawFileList(self.selectedFileIdx);
+                else
+                    fileList = self.rawFileList;
+                end
                 anatomyPrefix = self.anatomyConfig.filePrefix;
                 anatomyFileList = iopath.modifyFileName(fileList, ...
                                         anatomyPrefix, ...
@@ -1089,7 +1117,11 @@ classdef NrModel < handle
                 transformationParameter = transformationParameter.TransformationParameters;
                 
                 transformDir = fullfile(self.resultDir,"BUnwarpJ",CalculatedTransformationName,planeString);
-                templateRoiFile = fullfile(transformDir,'roi','template_RoiArray.tif');
+                templateRoiFile = self.getTemplateRoiFile(transformDir);
+                if ~exist(templateRoiFile, 'file')
+                    self.generateTemplateRoiArrayFile(transformDir, transformationParameter)
+                end
+                
                 templateRoiArray = roiFunc.RoiArray('maskImgFile', templateRoiFile);
                 
                 responseArray = self.calcResponseMapArray();
