@@ -16,13 +16,29 @@ classdef NrModel < handle
         alignFilePath
         alignResult
 
+        setupMode %1=SetupA; 3=SetupC/VR
+        loadMapFromFile %Mainly for SetupC mode
+        blankingstructureFileList %Mainly for SetupC mode
+        
         responseOption
         responseMaxOption
         localCorrelationOption
+        SetupCAnatomyOption = struct('skipping',5,...
+                                              'offset',0);
+        SetupCResponseOption = struct('skipping',5,...
+                                              'lowerPercentile',25,...
+                                              'offset',0);
+        SetupCMaxResponseOption=struct('skipping',5,...
+                                              'lowerPercentile',25,...
+                                              'slidingWindowSize',3,...
+                                              'offset',0);
+        SetupCCorrOption= struct('skipping',5,...
+                                              'tileSize',16 );
         
         roiDir
         jroiDir
         maskDir
+        precalculatedMapDir
         
         loadFileType
         planeNum
@@ -36,10 +52,13 @@ classdef NrModel < handle
         
         binConfig
 
+
+       
+
         ReferenceTrialIdx
-        UseSFITForBUnwarpJ
-        UseHistEqualForBUnwarpJ
-        UseCLAHEForBUnwarpJ
+        UseSFITForBUnwarpJ =false
+        UseHistEqualForBUnwarpJ= false
+        UseCLAHEForBUnwarpJ= false
         BUnwarpJCalculated
         BUnwarpJRoiCellarray
         TransformationName
@@ -65,6 +84,7 @@ classdef NrModel < handle
             addParameter(pa,'rawDataDir','',@ischar);
             addParameter(pa,'rawFileList','',@iscell);
             addParameter(pa,'resultDir','',@ischar);
+            addParameter(pa,'precalculatedMapDir','',@ischar);    
             defaultExpInfo.frameRate = 1;
             defaultExpInfo.nPlane = 1;
             addParameter(pa,'expInfo',defaultExpInfo,@isstruct);
@@ -76,7 +96,7 @@ classdef NrModel < handle
                                 'intensityOffset',-30);
             defaultTrialOptionBinned = struct('process',false,...
                                 'noSignalWindow',[], ...
-                                'intensityOffset',100);
+                                'intensityOffset',100);   
             addParameter(pa,'trialOptionRaw',defaultTrialOptionRaw, ...
                          @isstruct);
             addParameter(pa,'trialOptionBinned', ...
@@ -95,6 +115,31 @@ classdef NrModel < handle
             addParameter(pa,'responseMaxOption', ...
                          defaultResponseMaxOption,@isstruct);
             addParameter(pa,'TransformationTooltip',struct(),@isstruct);
+            %SetupCTab map options
+            defaultSetupCAnatomyOption = struct('skipping',5,...
+                                                  'offset',0  );
+            defaultSetupCResponseOption = struct('skipping',5,...
+                                              'lowerPercentile',25,...
+                                              'offset',0);
+            defaultSetupCMaxResponseOption = struct('skipping',5,...
+                                              'lowerPercentile',25,...
+                                              'slidingWindowSize',3,...
+                                              'offset',0);
+            defaultSetupCCorrOption = struct('skipping',5,...
+                                              'tileSize',16 );
+             addParameter(pa,'SetupCAnatomyOption',defaultSetupCAnatomyOption, ...
+                         @isstruct);
+             addParameter(pa,'SetupCResponseOption',defaultSetupCResponseOption, ...
+                         @isstruct);
+             addParameter(pa,'SetupCMaxResponseOption',defaultSetupCMaxResponseOption, ...
+                         @isstruct);
+             addParameter(pa,'SetupCCorrOption',defaultSetupCCorrOption, ...
+                         @isstruct);
+
+
+            %SetupMode parameter
+            defaultSetupModeParameter = 1;
+            addParameter(pa, 'SetupMode',defaultSetupModeParameter, @isinteger);
             
             %BUnwarpJ/SIFT/CLAHE parameter
             defaultBUnwarpJParameter = struct('TransformationGridStart',0,...
@@ -127,9 +172,13 @@ classdef NrModel < handle
             
             self.expInfo = pr.expInfo; % expInfo.nPlane is the total
                                     % number of planes in the data
+
+            self.setupMode=pr.SetupMode;
+            
             self.rawDataDir = pr.rawDataDir;
             self.rawFileList = pr.rawFileList;
             self.resultDir = pr.resultDir;
+            self.precalculatedMapDir=pr.precalculatedMapDir;
             
             self.anatomyDir = 'anatomy';
             
@@ -150,6 +199,10 @@ classdef NrModel < handle
             self.trialOptionBinned = pr.trialOptionBinned;
             self.responseOption = pr.responseOption;
             self.responseMaxOption = pr.responseMaxOption;
+            self.SetupCAnatomyOption=pr.SetupCAnatomyOption;
+            self.SetupCResponseOption=pr.SetupCResponseOption;
+            self.SetupCCorrOption=pr.SetupCCorrOption;
+              
             self.mapsAfterLoading = {};
             self.loadTemplateRoi = false;
             self.roiTemplateFilePath = '';
@@ -252,6 +305,9 @@ classdef NrModel < handle
             
             multiPlane = checkMultiPlane(self,planeNum);
             
+            if self.setupMode==3 %SetupC maps are precalculated so we use 'raw' so the names are correct
+                fileType='raw';
+            end
             switch fileType
               case 'raw'
                 fileName = rawFileName;
@@ -289,7 +345,7 @@ classdef NrModel < handle
 
             if self.alignToTemplate
                 offsetYx = self.getTrialOffsetYx(fileIdx,planeNum);
-            else
+            else            
                 warning('The trial might not be aligned in X and Y!')
                 offsetYx = [0,0];
             end
@@ -320,6 +376,8 @@ classdef NrModel < handle
             trialOption.roiDir = roiDir;
             trialOption.maskDir = maskDir;
             trialOption.frameRate = frameRate;
+            trialOption.loadMapFromFile= self.loadMapFromFile;
+            trialOption.setupMode=self.setupMode;
             trial = self.loadTrial(filePath,trialOption);
             trial.sourceFileIdx = fileIdx;
         end
@@ -382,6 +440,14 @@ classdef NrModel < handle
                 mapOption = self.responseMaxOption;
               case 'localCorrelation'
                 mapOption = self.localCorrelationOption;
+              case 'SetupCAnatomy'
+                mapOption = self.SetupCAnatomyOption;
+              case 'SetupCResponse'
+                 mapOption = self.SetupCResponseOption;
+              case 'SetupCResponseMax'
+                 mapOption = self.SetupCMaxResponseOption;
+              case 'SetupCCorr'
+                 mapOption = self.SetupCCorrOption;
               otherwise
                 error('NrModel:mapTypeTagError',['Map type of ' ...
                                     'the button is wrong!'])
@@ -419,6 +485,19 @@ classdef NrModel < handle
             end
                 
         end
+
+        function LoadMapsFromFileCurrTrial(self,TempMapFolder)
+            MapFiles=dir(strcat(TempMapFolder,"/*.mat"));
+            [~,idx] = sort([MapFiles.datenum]);
+            MapFiles = MapFiles(idx);
+            trial = self.getCurrentTrial();
+            for i=1:length(MapFiles)
+                trial.LoadAndAddMapFromFile(fullfile(MapFiles(i).folder,MapFiles(i).name));
+            end
+            %trial.LoadAndAddMapFromFile(MapFiles);
+            
+        end
+
         
         function motionCorrBatch(self,trialOption,outDir,fileIdx)
         % MOTIONCORRBATCH motion correction within trial
@@ -870,6 +949,78 @@ classdef NrModel < handle
                 end
             end
         end
+
+        function SetupCExtractTracesDfoverf(self)
+            planeString = NrModel.getPlaneString(self.planeNum);
+            CalculatedTransformationName= self.CalculatedTransformationsList(self.CalculatedTransformationsIdx);
+            RoisStruc= load(fullfile(self.resultDir,"BUnwarpJ",CalculatedTransformationName,"Rois.mat"));
+            TempCellArray=struct2cell(RoisStruc.RoiArray);
+            blankingPath=fullfile(self.resultDir,strcat(nameParts{1},'_',nameParts{2},'_blankingstruct.mat'));
+            if exist(blankingPath)
+                load(blankingPath);
+                framesToBlank=[blankingstruct.blankingdx blankingstruct.blankingdy];
+                framesToBlank= unique(framesToBlank);
+                temprawfile(:,:,framesToBlank)= [];
+            end
+            self.BUnwarpJRoiCellarray=squeeze(TempCellArray(1,:,:));
+            NameCellArray=squeeze(TempCellArray(2,:,:));
+            NameCellArray=cellstr(NameCellArray);
+            disp("Start calculating cellTraces");
+            mkdir(fullfile(self.resultDir,'cellTraces',planeString,CalculatedTransformationName{1}));  
+            for i=1:length(self.rawFileList)
+                
+                AquiName=strsplit(self.rawFileList{i},'.');
+                outputFolder=(fullfile(self.resultDir,'cellTraces',planeString,CalculatedTransformationName{1},AquiName{1}));
+                mkdir(outputFolder);
+                index=find(contains(NameCellArray,AquiName{1}));
+                disp("load stack");
+                tempRawFile=load(fullfile(self.rawDataDir,self.rawFileList{index}));
+                disp("loading done");
+                %tempRawFile=load('C:\Data\temp\2020Oct13\registeredStacks\2020Oct13_003_neuRoiIO-test.mat');
+                tempRawFile=tempRawFile.stack;
+                stackMin=min(tempRawFile,[],'all');
+                tempRawFile=tempRawFile-stackMin;
+                AquiRois=self.BUnwarpJRoiCellarray{index};
+                maxRoiTag=AquiRois(length(AquiRois)).tag;
+                frameCount=size(tempRawFile);
+                mapSize=frameCount(1:2);
+                frameCount=frameCount(3);
+                %OutputMatrix=zeros(frameCount,maxRoiTag);
+                OutputMatrix=[];
+                oldTag=1;
+                for j=1:length(AquiRois)
+                    tempRoi=AquiRois(j);
+                    newtag=tempRoi.tag;
+                    difTags=uint8(newtag-oldTag);
+                    if difTags>1
+                        for k=1:(difTags-1)
+                            OutputMatrix(:,end+1)=zeros(frameCount,1);
+                        end
+                    end
+                    mask = tempRoi.createMask(mapSize);
+                    [maskIndX maskIndY] = find(mask==1);
+                    roiMovie = tempRawFile(maskIndX,maskIndY,:);
+                    timeTraceRaw = squeeze(mean(mean(roiMovie,1),2));
+                    OutputMatrix(:,end+1)=timeTraceRaw;
+                    oldTag=newtag;
+                end
+                
+                %df/f calculations
+                fZeroRawPercentile=prctile(OutputMatrix,25,1);
+                fZeroRaw=double(OutputMatrix);
+                fZeroRaw(fZeroRaw> fZeroRawPercentile)=NaN;
+                fZeroRaw =mean(fZeroRaw,1,"omitnan");
+                offset=0;
+                OutputMatrix=(OutputMatrix-fZeroRaw)./(fZeroRaw-offset);
+
+
+
+                
+                %save("C:\Data\temp\RoiTest.mat",'OutputMatrix');
+                save(fullfile(outputFolder,AquiName{1}),'OutputMatrix');
+            end
+            disp("cellTraces done");
+        end
         
         function multiPlane = checkMultiPlane(self,planeNum)
             multiPlane = false;
@@ -953,6 +1104,16 @@ classdef NrModel < handle
                 %helper.unfold(TransformationParameters) %for debugging-shows the TransformationParameters
                 %ReferenceIdx=self.ReferenceTrialIdx; %obsolete
                 FilesWORef = self.rawFileList;
+                for i =1:length(FilesWORef)
+                    [filepath,name,ext]=fileparts(FilesWORef{i});
+                    FilesWORef(i)={strcat(name,'.tif')};
+                end
+%                 [filepath,name,ext]=fileparts(FilesWORef);
+%                 if ext=='tif'
+%                     FilesWORef=arrayfun(@(x) strcat(x,'.tif'),filepath);
+%                 else
+%                 end
+
                 TransformName=self.TransformationName;
                 FilesWORef= arrayfun(@(x) fullfile(self.resultDir,self.anatomyDir,TransformationParameters.Plane,strcat("anatomy_",x)), FilesWORef);
                 BUnwarpJFolder= fullfile(self.resultDir,"BUnwarpJ",TransformName,TransformationParameters.Plane);
@@ -981,7 +1142,7 @@ classdef NrModel < handle
     
                 
                 %Calculate and apply BUnwarpJ
-                NewRoiArray=BUnwarpJ.CalcAndApplyBUnwarpJ(ReferenceFile,FilesWORef,Rois,[1,1,1],2,true,TransformationParameters.SIFT,TransformationParameters.SIFTParameters,BUnwarpJFolder,TransformationParameters.BunwarpJ_Parameters);
+                NewRoiArray=BUnwarpJ.CalcAndApplyBUnwarpJ(ReferenceFile,FilesWORef,Rois,[1,1,1],2,true,TransformationParameters.SIFT,TransformationParameters.SIFTParameters,BUnwarpJFolder,TransformationParameters.BunwarpJ_Parameters,512,256);
                 
                 %incooperate reference rois
                 referenceRoi= struct("roi",load(Rois).roiArray,"trial",strcat(self.anatomyDir,"_",RoiFilePrefix));
@@ -992,6 +1153,9 @@ classdef NrModel < handle
                 
                 %add Trasnformationname to list;sve calculated rois to load
                 %them later; clear variables
+                if isempty(self.CalculatedTransformationsList)
+                    self.CalculatedTransformationsIdx=1;
+                end
                 self.CalculatedTransformationsList(length(self.CalculatedTransformationsList)+1)={TransformName};
                 save(fullfile(self.resultDir,"BUnwarpJ",TransformName,"Rois.mat"),"RoiArray");
                 save(fullfile(self.resultDir,"BUnwarpJ",TransformName,"TransformationParameters.mat"),"TransformationParameters");
@@ -1073,7 +1237,7 @@ classdef NrModel < handle
                 inDir = fullfile(self.resultDir,self.anatomyDir, ...
                  planeString);
 
-                anatomyPrefix = self.anatomyConfig.filePrefix;
+                anatomyPrefix ='anatomy_'; %self.anatomyConfig.filePrefix;
                 anatomyFileList = iopath.modifyFileName(self.rawFileList, ...
                                         anatomyPrefix, ...
                                         '','tif');
@@ -1091,7 +1255,9 @@ classdef NrModel < handle
                 transformationParameter=transformationParameter.TransformationParameters;
                 stackModel = trialStack.TrialStackModel(self.rawFileList,...
                                         anatomyArray,...
-                                        anatomyArray,self.BUnwarpJRoiCellarray,transformationParameter,string(CalculatedTransformationName)); %[{Rois.roiArray}; self.BUnwarpJRoiCellarray]); 
+                                        anatomyArray,self.BUnwarpJRoiCellarray,...
+                                        transformationParameter,string(CalculatedTransformationName),...
+                                        self.resultDir,planeString,squeeze(TempCellArray(2,:,:))); %[{Rois.roiArray}; self.BUnwarpJRoiCellarray]); 
                 stackCtrl = trialStack.TrialStackController(stackModel);
                 stackModel.contrastForAllTrial = true;  
             

@@ -17,7 +17,7 @@ function [Outputimage]= fcn_ApplyRawTransformation(Image , transformationPath)
     
     Outputimage = zeros(width,height);
     Imagesize=size(Image);
-    Outputimage= Image(sub2ind([Imagesize(1) Imagesize(2)],uint16(permute(ycorr,[2 1])),uint16(permute(xcorr,[2 1]))));
+    Outputimage= Image(sub2ind([Imagesize(2) size(1)],uint16(permute(ycorr,[2 1])),uint16(permute(xcorr,[2 1]))));
     
 
 end

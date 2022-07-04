@@ -232,17 +232,17 @@ classdef TrialModel < handle
                 [col,row]=find(OutputMask==j); %not needed anymore
                 if ~isempty(row)
                     %from TrialModel
-%                      poly = roiFunc.mask2poly(OutputMask==j);
+                     poly = roiFunc.mask2poly(OutputMask==j);
                      mask=OutputMask==j;
                      BW3 = imresize(mask,3,'nearest');
                      B3 = bwboundaries(BW3);
                      B3 = B3{1};
                 
-                     poly.X = ((B3(:,2) + 1)/3)';
-                     poly.Y = ((B3(:,1) + 1)/3)';
+                     P.X = (B3(:,2) + 1)/3;
+                     P.Y = (B3(:,1) + 1)/3;
                 
-                     poly.Length=length(poly.X);
-                     poly.Fill=1;
+                     P.Length=length(P.X);
+                     P.Fill=1;
 
                      if length(poly) > 1
                          % TODO If the mask corresponds multiple polygon,
@@ -255,7 +255,7 @@ classdef TrialModel < handle
                      xposition=poly.X;
                      yposition=poly.Y;
                      position = [xposition',yposition'];
-                     newroi = RoiFreehand(position);
+                     NewRoiArray = RoiFreehand(position);
     
                      %newroi = RoiFreehand([row,col]); old and wrong- need
                      %contour of roi, not all pixel values

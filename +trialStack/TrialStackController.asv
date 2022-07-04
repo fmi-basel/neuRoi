@@ -46,12 +46,8 @@ classdef TrialStackController < handle
             end
         end
 
-        function SaveRoiNormal_Callback(self,src,evnt)
-            self.model.SaveRoiNormal();
-        end
-
         function ExportRois_Callback(self,src,evnt)
-            self.model.ExportRois();
+            
         end
 
         function selectRoi_Callback(self,src,evnt)

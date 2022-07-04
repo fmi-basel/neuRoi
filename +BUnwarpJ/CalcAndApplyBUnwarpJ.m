@@ -1,6 +1,6 @@
 %%%%% Jan Eckhardt/FMI/AG Friedrich/Basel/Switzerland 08.2021
 
-function [TransformedMasks]= CalcAndApplyBUnwarpJ(ReferenceImage, TrialImages, ReferenceMask, PathInput,ROIType,OutputFreehandROI,UseSIFT,SIFTParameters, SaveFolder, BUnwarpJParameters )
+function [TransformedMasks]= CalcAndApplyBUnwarpJ(ReferenceImage, TrialImages, ReferenceMask, PathInput,ROIType,OutputFreehandROI,UseSIFT,SIFTParameters, SaveFolder, BUnwarpJParameters,width, height )
 
 %Path are supposed to be tiff for images
 %PathInput optional: Default is true
@@ -167,7 +167,7 @@ if PathInput(3)
             %%need to be done-load mat files etc-should be done-need to be
             %%tested
             FreehandroiArray = load(ReferenceMask);
-            RoiMap = createROIMaskFromFreehandROI(FreehandroiArray.roiArray,512, 512);
+            RoiMap = createROIMaskFromFreehandROI(FreehandroiArray.roiArray,width, height);
             RoiNumber =length(FreehandroiArray.roiArray);
             
         
@@ -182,7 +182,7 @@ if PathInput(3)
     
             
             [jroiArray] = ReadImageJROI(filePath);
-            RoiMap=createROIMaskFromImageJRoi(jroiArray,512, 512);
+            RoiMap=createROIMaskFromImageJRoi(jroiArray,width, height);
             RoiNumber =length(jroiArray);
           
 
@@ -197,10 +197,10 @@ else
     
     switch ROIType
          case 2 %FreehandRoi masks
-             RoiMap = createROIMaskFromFreehandROI(ReferenceMask,512, 512);
+             RoiMap = createROIMaskFromFreehandROI(ReferenceMask,width, height);
              RoiNumber =length(ReferenceMask);
          case 1 %ImageJ masks/from Stardist
-              RoiMap=createROIMaskFromImageJRoi(ReferenceMask,512, 512);
+              RoiMap=createROIMaskFromImageJRoi(ReferenceMask,width, height);
               RoiNumber =length(ReferenceMask);
          case 0 %matrix masks
              RoiMap = ReferenceMask;
@@ -352,7 +352,9 @@ if OutputFreehandROI
                      pidx = find([poly.Length] == max([poly.Length]));
                      poly = poly(pidx);
                  end
-                 position = [poly.X',poly.Y'];
+                 xposition=poly.X;
+                 yposition=poly.Y;
+                 position = [xposition',yposition'];
                  newroi = RoiFreehand(position);
 
                  %newroi = RoiFreehand([row,col]); old and wrong- need
@@ -482,11 +484,11 @@ end
 function RoiMap=createROIMaskFromFreehandROI(FreehandroiArray,heigth, width)
     nRoi= length(FreehandroiArray);
 
-    RoiMap = zeros(heigth, width, 'uint16');
+    RoiMap = zeros( width,heigth, 'uint16');
 
     for i=1:nRoi
         newroi=FreehandroiArray(i);
-        binaryImage =double(newroi.tag)* newroi.createMask([512,512]);
+        binaryImage =double(newroi.tag)* newroi.createMask([ width,heigth]);
         RoiMap= min(RoiMap+ uint16(binaryImage),double(newroi.tag));
     end
 

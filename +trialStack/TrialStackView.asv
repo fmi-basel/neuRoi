@@ -89,7 +89,6 @@ classdef TrialStackView < BaseClasses.Base_trial_view
                 self.deleteAllRoiAsOnePatch();
                 self.redrawAllRoiPatch();
             else
-                self.model.SaveCurrentRoiArrayInRoiArrays();
                 self.model.unselectAllRoi();
                 self.deleteAllRoiPatch();
                 self.redrawAllRoiAsOnePatch();
