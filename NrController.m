@@ -358,12 +358,12 @@ classdef NrController < handle
         end
 
         function BUnwarpJPara_Callback(self,src,evnt)
-            TempParameter=thirdPartyTools.StructDlg(self.model.BUnwarpJParameter,'BUnwarpJ parameter');
+            TempParameter=thirdPartyTools.structdlg.StructDlg(self.model.BUnwarpJParameter,'BUnwarpJ parameter');
             self.model.BUnwarpJParameter=TempParameter;
         end
 
         function BUnwarpJCLAHEPara_Callback(self,src,evnt)
-            TempParameter=thirdPartyTools.StructDlg(self.model.CLAHEParameter,'CLAHE parameter');
+            TempParameter=thirdPartyTools.structdlg.StructDlg(self.model.CLAHEParameter,'CLAHE parameter');
             self.model.CLAHEParameter=TempParameter;
         end
 
@@ -372,7 +372,7 @@ classdef NrController < handle
         end
 
         function BUnwarpJSIFTPara_Callback(self,src,evnt)
-            TempParameter=thirdPartyTools.StructDlg(self.model.SIFTParameter,'SIFT parameter');
+            TempParameter=thirdPartyTools.structdlg.StructDlg(self.model.SIFTParameter,'SIFT parameter');
             self.model.SIFTParameter=TempParameter;
         end
         %obsolete since CKAHE added

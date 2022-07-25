@@ -260,7 +260,7 @@ classdef NrController < handle
             self.trialContrlArray(end+1) = trialContrl;
             trialContrl.raiseView();
             
-            if ~self.model.loadMapFromFile %ignores mapsAfterLoading if true
+            if isempty(self.model.loadMapFromFile) || ~self.model.loadMapFromFile %ignores mapsAfterLoading if true
                 mapsAfterLoading = self.model.mapsAfterLoading;
                 if length(mapsAfterLoading)
                     for k = 1:length(mapsAfterLoading)
@@ -343,7 +343,7 @@ classdef NrController < handle
         end
 
         function SetupCExtractTracesDfoverfButton_Callback(self,src,evnt)
-            
+            self.model.SetupCExtractTracesDfoverf();
         
         end
 
@@ -358,7 +358,7 @@ classdef NrController < handle
         end
 
         function BUnwarpJPara_Callback(self,src,evnt)
-            TempParameter=thirdPartyTools.StructDlg(self.model.BUnwarpJParameter,'BUnwarpJ parameter');
+            TempParameter=thirdPartyTools.structdlg.StructDlg(self.model.BUnwarpJParameter,'BUnwarpJ parameter');
             self.model.BUnwarpJParameter=TempParameter;
         end
 
@@ -372,7 +372,7 @@ classdef NrController < handle
         end
 
         function BUnwarpJSIFTPara_Callback(self,src,evnt)
-            TempParameter=thirdPartyTools.StructDlg(self.model.SIFTParameter,'SIFT parameter');
+            TempParameter=thirdPartyTools.structdlg.StructDlg(self.model.SIFTParameter,'SIFT parameter');
             self.model.SIFTParameter=TempParameter;
         end
         %obsolete since CKAHE added

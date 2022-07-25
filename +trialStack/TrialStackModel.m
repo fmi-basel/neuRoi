@@ -203,7 +203,7 @@ classdef TrialStackModel < handle
             roiArray=self.roiArrays{i};
             trialName=split(self.rawFileList{i},'.');
             trialName=trialName{1};
-            filename=fullfile(self.resultDir,"roi2",self.planeString,strcat(trialName,"RoiArray.mat"));
+            filename=fullfile(self.resultDir,"roi",self.planeString,strcat(trialName,"RoiArray.mat"));
             if isfile(filename)
                 answer=questdlg(strcat('File ',trialName,' already exists',{newline},'Replace or rename(_2) the file to save?'),'File already exists','Replace','Rename','modal');
                 switch answer
