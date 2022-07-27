@@ -353,7 +353,7 @@ if OutputFreehandROI
             [col,row]=find(OutputMask==j); %not needed anymore
             if ~isempty(row)
                 %from TrialModel
-                 poly = roiFunc.mask2Poly(OutputMask==j);
+                 poly = roiFunc.mask2poly(OutputMask==j);
                  if length(poly) > 1
                      % TODO If the mask corresponds multiple polygon,
                      % for simplicity,
