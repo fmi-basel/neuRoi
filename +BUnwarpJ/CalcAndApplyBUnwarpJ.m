@@ -72,12 +72,12 @@ else
 end
 
 %%Change this according to your imagej
-if getenv('COMPUTERNAME')=='F462L-3B17DA'
+if strcmp(getenv('COMPUTERNAME'),'F462L-3B17DA')
     javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\plugins\bUnwarpJ_-2.6.13.jar');
     javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\jars\ij-1.53f.jar');
     javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\plugins\mpicbg_-1.4.1.jar');%for SIFT
     javaaddpath('C:\Users\eckhjan\fiji-win64\Fiji.app\jars\mpicbg-1.4.1.jar');%for SIFT
-elseif getenv('COMPUTERNAME')=='vcw1050'
+elseif strcmp(getenv('COMPUTERNAME'),'vcw1050')
     javaaddpath('C:\fiji-win64\Fiji.app\plugins\bUnwarpJ_-2.6.13.jar');
     javaaddpath('C:\fiji-win64\Fiji.app\jars\ij-1.53f.jar');
     javaaddpath('C:\fiji-win64\Fiji.app\plugins\mpicbg_-1.4.1.jar');%for SIFT
