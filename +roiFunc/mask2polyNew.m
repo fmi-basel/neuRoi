@@ -1,4 +1,4 @@
-function P =mask2poly(mask)
+function P =mask2polyNew(mask)
     
     BW3 = imresize(mask,3,'method','nearest');
     B3 = bwboundaries(BW3);
