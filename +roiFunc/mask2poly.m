@@ -1,6 +1,6 @@
-function P =mask2Poly(obj, mask)
+function P =mask2poly(mask)
     
-    BW3 = imresize(mask,3,'nearest');
+    BW3 = imresize(mask,3,'method','nearest');
     B3 = bwboundaries(BW3);
     B3 = B3{1};
 

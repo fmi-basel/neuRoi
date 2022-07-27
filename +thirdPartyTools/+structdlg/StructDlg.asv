@@ -695,7 +695,7 @@ return;
 
 %%%%%%%%%%%%%%%%%
 function ud = prepare2evaluate(str,f,h,ud)
-self_ref = thirdPartyTools.structdlg.struct_mfile_reference('','this',{str});
+self_ref = struct_mfile_reference('','this',{str});
 if (isempty(self_ref))
    return;
 end
@@ -1113,7 +1113,7 @@ if (isempty(h))
    cmenu = uicontextmenu;
    item1 = uimenu(cmenu, ...
       'Label',         ['Reset (to: ''' opt_label ''')'], ...
-      'Callback',      ['thirdPartyTools.structdlg.StructDlg(''reset(' f ')'')'] );
+      'Callback',      ['StructDlg(''reset(' f ')'')'] );
 
    width = size(char(val),2) + 10;
    h = uicontrol(h_fig, ...
@@ -1128,7 +1128,7 @@ if (isempty(h))
       'Value',      selected, ...
       'Tag',        f, ...
       'UIContextMenu',  cmenu, ...
-      'Callback',   ['thirdPartyTools.structdlg.StructDlg({''' f '''});']);
+      'Callback',   ['StructDlg({''' f '''});']);
 else
    set(h,'Value',  selected);
 end
@@ -1156,9 +1156,9 @@ if (isempty(h))
       'FontSize',       9, ...
       'Tag',            f, ...
       'TooltipString',  tooltipstr, ...
-      'callback',       ['thirdPartyTools.structdlg.StructDlg({''' f '''});']);
+      'callback',       ['StructDlg({''' f '''});']);
 
-   push_ud.cmd    = 'thirdPartyTools.structdlg.StructDlg';
+   push_ud.cmd    = 'StructDlg';
    push_ud.params = units; % units are specified here for the tooltip string only
    set(h,'Userdata',push_ud);
 end
