@@ -25,6 +25,8 @@ classdef TrialStackModel < handle
         planeString
         TransformationFiles
 
+        roiSavedStatus
+
     end
     
     properties (SetObservable)
@@ -97,8 +99,45 @@ classdef TrialStackModel < handle
             if exist('transformationName','var')
                 self.transformationName=transformationName;
             end
+
+            self.roiSavedStatus=true;
         end
         
+        function deleteRoiCurrent(self)
+            tagArray = self.selectedRoiTagArray;
+            self.unselectAllRoi();
+            indArray = self.findRoiByTagArray(tagArray);
+            self.roiArray(indArray) = [];
+            self.roiArrays{ self.currentTrialIdx}=self.roiArray;
+            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
+%             currentRoiArray = self.roiArrays{ self.currentTrialIdx};
+%              for i=1:numel(currentRoiArray)
+%                  if currentRoiArray(i).tag==RoiTag
+%                     wantedRoi=i;
+%                     %return
+%                  end
+%              end
+             %wantedRoi= cellfun(@(x) x.tag==RoiTag,currentRoiArray);
+             %wantedRoiIndex=find(wantedRoi);
+%              self.unselectRoi(wantedRoi);
+%              currentRoiArray(wantedRoi)=[];
+             
+             %notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(wantedRoi));
+        end
+
+        function deleteRoiAll(self)
+            tagArray = self.selectedRoiTagArray;
+            self.unselectAllRoi();
+            indArray = self.findRoiByTagArray(tagArray);
+            self.roiArray(indArray) = [];
+%             currentRoiArray = self.roiArrays{ self.currentTrialIdx};
+%             wantedRoi= cellfun(@(x) x.tag==RoiTag,currentRoiArray);
+%             wantedRoiIndex=find(wantedRoi);
+            for i=1:numel(self.roiArrays)
+                self.roiArrays{i}(indArray)=[];
+            end
+            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
+        end
         
         function data = getMapData(self,mapType,trialIdx)
             switch mapType
@@ -204,6 +243,9 @@ classdef TrialStackModel < handle
             trialName=split(self.rawFileList{i},'.');
             trialName=trialName{1};
             filename=fullfile(self.resultDir,"roi",self.planeString,strcat(trialName,"_RoiArray.mat"));
+            if i==self.transformationParameter.Reference_idx
+                continue
+            end
             if isfile(filename)
                 answer=questdlg(strcat('File ',trialName,' already exists',{newline},'Replace or rename(_2) the file to save?'),'File already exists','Replace','Rename','modal');
                 switch answer

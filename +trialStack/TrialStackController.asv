@@ -46,8 +46,28 @@ classdef TrialStackController < handle
             end
         end
 
-        function ExportRois_Callback(self,src,evnt)
+        function deleteSelectedRoi(self,src,evnt)
+            currentRoiPatch = self.view.selectedRoiPatchArray{1};
+            tagString=currentRoiPatch.tag;
+            tagString=strsplit(tagString,'_');
+            roiTag=str2do
+            answer=questdlg("Do you want to delete the roi only in the current trial or in all trials?","Roi deleting",...
+                'Current','All','Cancel');
             
+            switch answer
+                case 'Current'
+                    self.model.deleteRoiCurrent(currentRoiPatch.tag);
+                case 'All'
+                    self.model.deleteRoiAll(currentRoiPatch.tag);
+            end
+        end
+
+        function SaveRoiNormal_Callback(self,src,evnt)
+            self.model.SaveRoiNormal();
+        end
+
+        function ExportRois_Callback(self,src,evnt)
+            self.model.ExportRois();
         end
 
         function selectRoi_Callback(self,src,evnt)

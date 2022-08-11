@@ -46,12 +46,31 @@ classdef TrialStackController < handle
             end
         end
 
+        function deleteSelectedRoi(self,src,evnt)
+%             currentRoiPatch = self.view.selectedRoiPatchArray{1};
+%             tagString=currentRoiPatch.Tag;
+%             tagString=strsplit(tagString,'_');
+%             roiTag=int16(str2num(tagString{2}));
+            answer=questdlg("Do you want to delete the roi only in the current trial or in all trials?","Roi deleting",...
+                'Current','All','Cancel');
+            
+            switch answer
+                case 'Current'
+                    self.model.deleteRoiCurrent();
+                case 'All'
+                    self.model.deleteRoiAll();
+            end
+            self.view.RoiSaveStatus('Rois have been changed and not saved','red');
+        end
+
         function SaveRoiNormal_Callback(self,src,evnt)
             self.model.SaveRoiNormal();
+            self.view.RoiSaveStatus('Rois saved','green');
         end
 
         function ExportRois_Callback(self,src,evnt)
             self.model.ExportRois();
+            self.view.RoiSaveStatus('Rois exported','green');
         end
 
         function selectRoi_Callback(self,src,evnt)
@@ -140,6 +159,7 @@ classdef TrialStackController < handle
             rmfield(usrData,'oldWindowButtonDownFcn');
             rmfield(usrData,'oldWindowKeyPressFcn');
             set(thisFig,'UserData',usrData);
+            self.view.RoiSaveStatus('Rois have been changed and not saved','red');
         end
         
         function moveRoi_Callback(self,src,evnt)

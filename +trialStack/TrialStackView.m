@@ -83,6 +83,12 @@ classdef TrialStackView < BaseClasses.Base_trial_view
 
         end
 
+        function RoiSaveStatus(self, Text, Color)
+            set(self.guiHandles.roiSavedStatus,'String',Text);
+            set(self.guiHandles.roiSavedStatus,'BackgroundColor',Color);
+        
+        end
+
         function ChangePatchMode(self)
         
             if self.model.EditCheckbox

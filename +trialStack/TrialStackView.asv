@@ -83,12 +83,15 @@ classdef TrialStackView < BaseClasses.Base_trial_view
 
         end
 
+        function Roi
+
         function ChangePatchMode(self)
         
             if self.model.EditCheckbox
                 self.deleteAllRoiAsOnePatch();
                 self.redrawAllRoiPatch();
             else
+                self.model.SaveCurrentRoiArrayInRoiArrays();
                 self.model.unselectAllRoi();
                 self.deleteAllRoiPatch();
                 self.redrawAllRoiAsOnePatch();
