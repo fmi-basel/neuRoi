@@ -15,7 +15,7 @@ Required MATLAB packages:
 
 ## Documentation & Wiki
 
-Wiki page of this tool box can be found here[wiki page](https://github.com/aloejhb/neuRoi/wiki).
+Wiki page of this tool box can be found here [wiki page](https://github.com/aloejhb/neuRoi/wiki).
 
 ## Demos
 Demos can be found in the /demos folder.
