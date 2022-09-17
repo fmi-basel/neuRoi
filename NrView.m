@@ -143,6 +143,9 @@ classdef NrView < handle
             set(self.guiHandles.BUnwarpJSIFTPara,'Callback',...
             @(s,e)self.controller.BUnwarpJSIFTPara_Callback(s,e));
 
+            set(self.guiHandles.RoiIdentfierText,'Callback',...
+            @(s,e)self.controller.RoiIdentfierText_Callback(s,e));
+
             %Callbacks for SetupC tab
           
             set(self.guiHandles.SetupCaddResponseMapButton,'Callback',...

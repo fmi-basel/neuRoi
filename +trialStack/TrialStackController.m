@@ -46,6 +46,11 @@ classdef TrialStackController < handle
             end
         end
 
+
+        function RoiFileIdentifierEdit_Callback(self,src,evnt)
+            self.model.roiFileIdentifier=src.String;
+        end
+
         function deleteSelectedRoi(self,src,evnt)
 %             currentRoiPatch = self.view.selectedRoiPatchArray{1};
 %             tagString=currentRoiPatch.Tag;

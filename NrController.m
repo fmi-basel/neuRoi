@@ -408,6 +408,10 @@ classdef NrController < handle
                 self.model.UseCLAHEForBUnwarpJ = 0;
             end
         end
+
+        function RoiIdentfierText_Callback(self,src,evnt)
+            self.model.roiFileIdentifier=src.String;
+        end
         
 
     end

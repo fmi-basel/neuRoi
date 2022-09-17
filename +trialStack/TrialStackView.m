@@ -55,6 +55,9 @@ classdef TrialStackView < BaseClasses.Base_trial_view
                         @self.updateTimeTraceDisplay);
             addlistener(self.model,'roiSelectionCleared',...
                         @self.updateTimeTraceDisplay);
+            addlistener(self.model,'NewRoiFileIdentifier',...
+                        @self.UpdateRoiFileIdentifier);
+            
         end
         
         function assignCallbacks(self)
@@ -79,8 +82,13 @@ classdef TrialStackView < BaseClasses.Base_trial_view
                               @(s,e)self.controller.SaveRoiNormal_Callback(s,e));
             set(self.guiHandles.ExportRois,'Callback',...
                               @(s,e)self.controller.ExportRois_Callback(s,e));
+            set(self.guiHandles.RoiFileIdentifierEdit,'Callback',...
+                              @(s,e)self.controller.RoiFileIdentifierEdit_Callback(s,e));
 
+        end
 
+        function UpdateRoiFileIdentifier(self,src,evnt)
+            set(self.guiHandles.RoiFileIdentifierEdit,'String',self.model.roiFileIdentifier);
         end
 
         function RoiSaveStatus(self, Text, Color)

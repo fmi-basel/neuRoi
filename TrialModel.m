@@ -876,7 +876,7 @@ classdef TrialModel < handle
             ind = self.findRoiByTag(tag);
             self.unselectRoi(tag);
             self.roiArray(ind) = [];
-            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent([tag]));loadRoiArray
+            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent([tag]));
         end
         
         function roiArray = getRoiArray(self)

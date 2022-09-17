@@ -16,6 +16,7 @@ classdef TrialStackModel < handle
 
         transformationParameter
         transformationName
+        containsRawFileList
 
         EditCheckbox
         previousTrialIdx
@@ -25,6 +26,7 @@ classdef TrialStackModel < handle
         planeString
         TransformationFiles
 
+        roiFileIdentifier
         roiSavedStatus
 
     end
@@ -50,11 +52,13 @@ classdef TrialStackModel < handle
 
         roiNewAlpha
         roiNewAlphaAll
+
+        NewRoiFileIdentifier
     end
     
     methods
         function self = TrialStackModel(rawFileList, anatomyArray,...
-                                        responseArray,roiArrays,transformationParameter,transformationName,resultDir,planeString,TransformationFiles)
+                                        responseArray,roiArrays,transformationParameter,transformationName,resultDir,planeString,TransformationFiles,roiFileIdentifier)
             % TODO check sizes of all arrays
             self.rawFileList = rawFileList;
             self.TransformationFiles=TransformationFiles;
@@ -77,7 +81,7 @@ classdef TrialStackModel < handle
             else
                 self.roiArrays=roiArrays;
                 self.roiProvided=true;
-                roiSize=size(roiArrays);
+                roiSize=length(roiArrays);
                 if roiSize(1)==1
                     self.SingleRoi=true;
                     self.roiArray=roiArrays;
@@ -93,6 +97,12 @@ classdef TrialStackModel < handle
              end
             if exist('transformationParameter','var')
                 self.transformationParameter=transformationParameter;
+                if isfield(self.transformationParameter,"Rawfile_List")
+                    self.containsRawFileList=true;
+                else
+                    self.containsRawFileList=false;
+                end
+                self.roiFileIdentifier=self.transformationParameter.RoiFileIdentifier;
             else
                 self.transformationParameter=string();
             end
@@ -101,6 +111,7 @@ classdef TrialStackModel < handle
             end
 
             self.roiSavedStatus=true;
+            
         end
         
         function deleteRoiCurrent(self)
@@ -238,21 +249,36 @@ classdef TrialStackModel < handle
       end
       
       function ExportRois(self)
+          %pretty simple check if roi files exist; since first trial could
+          %be added after the first export-but should be almost always
+          %sufficient
+          trialName=split(self.rawFileList{1},'.');
+          trialName=trialName{1};
+          filename=fullfile(self.resultDir,"roi",self.planeString,self.transformationName,strcat(trialName,self.roiFileIdentifier,".mat"));
+          if isfile(filename)
+              NewName=inputdlg("Please enter a new RoiFileIdentifier","Roi files with this identifier already exists");
+              self.roiFileIdentifier=NewName;
+              
+          end
+          mkdir(fullfile(self.resultDir,"roi",self.planeString,self.transformationName));
           for i=1:length(self.roiArrays)
             roiArray=self.roiArrays{i};
             trialName=split(self.rawFileList{i},'.');
             trialName=trialName{1};
-            filename=fullfile(self.resultDir,"roi",self.planeString,strcat(trialName,"_RoiArray.mat"));
-            if i==self.transformationParameter.Reference_idx
-                continue
-            end
+            
+            filename=fullfile(self.resultDir,"roi",self.planeString,self.transformationName,strcat(trialName,self.roiFileIdentifier,".mat"));
+            %Not needed since transformation has individual folder
+%             if i==self.transformationParameter.Reference_idx 
+%             
+%                 continue
+%             end
             if isfile(filename)
                 answer=questdlg(strcat('File ',trialName,' already exists',{newline},'Replace or rename(_2) the file to save?'),'File already exists','Replace','Rename','modal');
                 switch answer
                     case 'Replace'
                         
                     case 'Rename'
-                        filename=fullfile(self.resultDir,"roi",self.planeString,strcat(trialName,"_2_RoiArray.mat"));
+                        filename=fullfile(self.resultDir,"roi",self.planeString,strcat(trialName,"_2",self.roiFileIdentifier,".mat"));
 
                 end
                 
