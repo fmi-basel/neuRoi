@@ -102,7 +102,11 @@ classdef TrialStackModel < handle
                 else
                     self.containsRawFileList=false;
                 end
-                self.roiFileIdentifier=self.transformationParameter.RoiFileIdentifier;
+                if isfield(self.transformationParameter,"RoiFileIdentifier")
+                    self.roiFileIdentifier=self.transformationParameter.RoiFileIdentifier;
+                else
+                    self.roiFileIdentifier="_RoiArray";
+                end
             else
                 self.transformationParameter=string();
             end
@@ -239,13 +243,18 @@ classdef TrialStackModel < handle
       end
 
       function SaveRoiNormal(self)
+        RoiPath=fullfile(self.resultDir,"BUnwarpJ",self.transformationName,"Rois.mat");
+        OriginalPath=fullfile(self.resultDir,"BUnwarpJ",self.transformationName,"Rois-original.mat");
+        if ~isfile(OriginalPath)
+            copyfile(RoiPath,OriginalPath);
+        end
         for i=1:length(self.roiArrays)
             RoiArray(i).roi=self.roiArrays{i};
             trialName=split(self.TransformationFiles{i},'.');
             trialName=trialName{1};
             RoiArray(i).trial=trialName;
         end
-        save(fullfile(self.resultDir,"BUnwarpJ",self.transformationName,"Rois.mat"),"RoiArray");
+        save(RoiPath,"RoiArray");
       end
       
       function ExportRois(self)

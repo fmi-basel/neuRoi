@@ -1254,7 +1254,18 @@ classdef NrModel < handle
                 
                 %Load rois
                 CalculatedTransformationName= self.CalculatedTransformationsList(self.CalculatedTransformationsIdx);
-                RoisStruc= load(fullfile(self.resultDir,"BUnwarpJ",CalculatedTransformationName,"Rois.mat"));
+                OriginalPath=fullfile(self.resultDir,"BUnwarpJ",CalculatedTransformationName,"Rois-original.mat");
+                if isfile(OriginalPath)
+                    answer=questdlg("Do you want to load the original rois or modified one?","Original rois found","Original","Modified","Original");
+                    if strcmp(answer,"Original")
+                        RoisStruc= load(OriginalPath);
+                    else
+                        RoisStruc= load(fullfile(self.resultDir,"BUnwarpJ",CalculatedTransformationName,"Rois.mat"));
+                    end
+                else
+                    RoisStruc= load(fullfile(self.resultDir,"BUnwarpJ",CalculatedTransformationName,"Rois.mat"));
+                end
+                %RoisStruc= load(fullfile(self.resultDir,"BUnwarpJ",CalculatedTransformationName,"Rois.mat"));
                 TempCellArray=struct2cell(RoisStruc.RoiArray);
                 self.BUnwarpJRoiCellarray=squeeze(TempCellArray(1,:,:));
                 %Rois=load(fullfile(self.roiDir,strcat("plane0",string(self.planeNum)),"20210902_JH18_Dp_s3_o4arg_001__RoiArray.mat"));

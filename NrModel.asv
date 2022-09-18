@@ -164,7 +164,7 @@ classdef NrModel < handle
             
             defaultRoiFileIdentifier ="_RoiArray";
             
-            addParameter(pa, 'RoiFileIdentifier',defaultRoiFileIdentifier, @isstring);
+            addParameter(pa, 'roiFileIdentifier',defaultRoiFileIdentifier, @isstring);
 
             parse(pa,varargin{:})
             pr = pa.Results;
@@ -1105,8 +1105,8 @@ classdef NrModel < handle
                 TempBUnwarpJParameters=self.BUnwarpJParameter;
                 TempCLAHEParameters = self.CLAHEParameter;
                 TempSIFTParameters=self.SIFTParameter;
-                TransformationParameters= struct("Reference_trial",self.rawFileList(self.ReferenceTrialIdx),"Reference_idx",self.ReferenceTrialIdx,"Rawfile_List",{self.rawFileList},"Plane",self.getPlaneString(self.planeNum),...
-                                        "SIFT",self.UseSFITForBUnwarpJ,"SIFTParameters",TempSIFTParameters,"Histogram_equalization",self.UseHistEqualForBUnwarpJ,"CLAHE",self.UseCLAHEForBUnwarpJ,"CLAHE_Parameters",TempCLAHEParameters,"BunwarpJ_Parameters",TempBUnwarpJParameters);
+                TransformationParameters= struct("Reference_trial",self.rawFileList(self.ReferenceTrialIdx),"Reference_idx",self.ReferenceTrialIdx,"Plane",self.getPlaneString(self.planeNum),...
+                                        "SIFT",self.UseSFITForBUnwarpJ,"SIFTParameters",TempSIFTParameters,"Histogram_equalization",self.UseHistEqualForBUnwarpJ,"CLAHE",self.UseCLAHEForBUnwarpJ,"CLAHE_Parameters",TempCLAHEParameters,"BunwarpJ_Parameters",TempBUnwarpJParameters,"Rawfile_List",{self.rawFileList},'RoiFileIdentifier',self.roiFileIdentifier);
 
                 %helper.unfold(TransformationParameters) %for debugging-shows the TransformationParameters
                 %ReferenceIdx=self.ReferenceTrialIdx; %obsolete
@@ -1124,18 +1124,20 @@ classdef NrModel < handle
                 TransformName=self.TransformationName;
                 FilesWORef= arrayfun(@(x) fullfile(self.resultDir,self.anatomyDir,TransformationParameters.Plane,strcat("anatomy_",x)), FilesWORef);
                 BUnwarpJFolder= fullfile(self.resultDir,"BUnwarpJ",TransformName,TransformationParameters.Plane);
-                mkdir(BUnwarpJFolder);
+                
     
                 ReferenceFile = self.rawFileList(TransformationParameters.Reference_idx);
                 ReferenceFile=ReferenceFile{1};
                 RoiFilePrefix=ReferenceFile(1:end-4);
                 %Rois=load(fullfile(self.roiDir,strcat("plane0",string(self.planeNum)),"20210902_JH18_Dp_s3_o4arg_001__RoiArray.mat"));
-                Rois=fullfile(self.roiDir,TransformationParameters.Plane,strcat(RoiFilePrefix,"_RoiArray.mat"));
+                Rois=fullfile(self.roiDir,TransformationParameters.Plane,strcat(RoiFilePrefix,self.roiFileIdentifier,".mat"));
                 if ~isfile(Rois)
                     waitfor(msgbox("Cannot find rois for selected reference trial. Please select a different trial","modal"));
                     return
                 else
                 end
+
+                mkdir(BUnwarpJFolder);
 
                 if (TransformationParameters.Histogram_equalization) ||  (TransformationParameters.CLAHE)
                     FilesWORef=self.NormTrialsForBUnwarpJ(FilesWORef,BUnwarpJFolder,TransformationParameters.Reference_idx,TransformationParameters.CLAHE,TransformationParameters.CLAHE_Parameters);
@@ -1252,6 +1254,11 @@ classdef NrModel < handle
                 
                 %Load rois
                 CalculatedTransformationName= self.CalculatedTransformationsList(self.CalculatedTransformationsIdx);
+                OriginalPath=fullfile(self.resultDir,"BUnwarpJ",CalculatedTransformationName,"Rois-original.mat");
+                if ~isfile(OriginalPath)
+                    answer=questdlg()
+                    save(OriginalPath,"RoiArray");
+                end
                 RoisStruc= load(fullfile(self.resultDir,"BUnwarpJ",CalculatedTransformationName,"Rois.mat"));
                 TempCellArray=struct2cell(RoisStruc.RoiArray);
                 self.BUnwarpJRoiCellarray=squeeze(TempCellArray(1,:,:));
@@ -1331,7 +1338,7 @@ classdef NrModel < handle
                                         TransformationAntatomyArray,...
                                         TransformationAntatomyArray,BUnwarpJRoiCellarrayNew',...
                                         transformationParameter,string(CalculatedTransformationName),...
-                                        self.resultDir,planeString,squeeze(TempCellArray(2,:,:)));
+                                        self.resultDir,planeString,squeeze(TempCellArray(2,:,:)),self.roiFileIdentifier);
                 stackCtrl = trialStack.TrialStackController(stackModel);
                 stackModel.contrastForAllTrial = true;  
             

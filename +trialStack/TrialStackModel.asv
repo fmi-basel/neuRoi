@@ -102,7 +102,11 @@ classdef TrialStackModel < handle
                 else
                     self.containsRawFileList=false;
                 end
-                self.roiFileIdentifier=self.transformationParameter.RoiFileIdentifier;
+                if isfield(self.transformationParameter,"RoiFileIdentifier")
+                    self.roiFileIdentifier=self.transformationParameter.RoiFileIdentifier;
+                else
+                    self.roiFileIdentifier="_RoiArray";
+                end
             else
                 self.transformationParameter=string();
             end
@@ -239,13 +243,18 @@ classdef TrialStackModel < handle
       end
 
       function SaveRoiNormal(self)
+        RoiPath=fullfile(self.resultDir,"BUnwarpJ",self.transformationName,"Rois.mat");
+        OriginalPath=fullfile(self.resultDir,"BUnwarpJ",self.transformationName,"Rois-original.mat");
+        if ~isfile(OriginalPath)
+            copyfile(RoiPath,OriginalPath);
+        end
         for i=1:length(self.roiArrays)
             RoiArray(i).roi=self.roiArrays{i};
             trialName=split(self.TransformationFiles{i},'.');
             trialName=trialName{1};
             RoiArray(i).trial=trialName;
         end
-        save(fullfile(self.resultDir,"BUnwarpJ",self.transformationName,"Rois.mat"),"RoiArray");
+        save(RoiPath,"RoiArray");
       end
       
       function ExportRois(self)
@@ -260,13 +269,13 @@ classdef TrialStackModel < handle
               self.roiFileIdentifier=NewName;
               
           end
-
+          mkdir(fullfile(self.resultDir,"roi",self.planeString,self.transformationName));
           for i=1:length(self.roiArrays)
             roiArray=self.roiArrays{i};
             trialName=split(self.rawFileList{i},'.');
             trialName=trialName{1};
-            mkdir(fullfile(self.resultDir,"roi",self.transformationName));
-            filename=fullfile(self.resultDir,"roi",self.transformationName,self.planeString,strcat(trialName,self.roiFileIdentifier,".mat"));
+            
+            filename=fullfile(self.resultDir,"roi",self.planeString,self.transformationName,strcat(trialName,self.roiFileIdentifier,".mat"));
             %Not needed since transformation has individual folder
 %             if i==self.transformationParameter.Reference_idx 
 %             
