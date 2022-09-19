@@ -2,6 +2,8 @@ classdef TrialStackController < handle
     properties
         model
         view
+
+        enableFreehandShortcut
     end
     
     methods
@@ -38,6 +40,8 @@ classdef TrialStackController < handle
                     self.model.selectMapType(1)
                   case 'w'
                     self.model.selectMapType(2)
+                  case 'x'
+                    self.replaceRoiByDrawing();
                   case 'v'
                     self.enterMoveRoiMode();
                   case {'d','delete','backspace'}
@@ -46,6 +50,32 @@ classdef TrialStackController < handle
             end
         end
 
+        function replaceRoiByDrawing(self)
+            if length(self.model.selectedRoiTagArray) == 1
+                % TODO at least dislay the edge!!
+                self.view.changeRoiPatchColor('none','selected');
+                roiTag = self.model.selectedRoiTagArray(1);
+                figure(self.view.guiHandles.mainFig);
+                self.enableFreehandShortcut = false;
+                rawRoi = imfreehand;
+                if ~isempty(rawRoi)
+                    position = rawRoi.getPosition();
+                    mapAxes = self.view.guiHandles.mapAxes;
+                    if ~isempty(position)
+                        self.model.updateRoi(roiTag,mapAxes,position);
+                        self.model.selectSingleRoi(roiTag);
+                    else
+                        disp('Empty ROI. No replacement.')
+                    end
+                    delete(rawRoi)
+                end
+                self.enableFreehandShortcut = true;
+                self.view.changeRoiPatchColor('default','selected');
+            else
+                error(['Exactly one ROI should be selected for ' ...
+                       'replacing!']);
+            end
+        end
 
         function RoiFileIdentifierEdit_Callback(self,src,evnt)
             self.model.roiFileIdentifier=src.String;
