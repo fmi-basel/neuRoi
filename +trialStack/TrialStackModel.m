@@ -64,6 +64,11 @@ classdef TrialStackModel < handle
             self.TransformationFiles=TransformationFiles;
             self.resultDir=resultDir;
             self.planeString=planeString;
+            %apply CLAHE
+            for i=1:size(anatomyArray,3)
+                anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
+            end
+            
             self.anatomyArray = anatomyArray;
             self.responseArray = responseArray;
             self.mapSize = size(anatomyArray(:,:,1));
