@@ -32,6 +32,7 @@ classdef NrController < handle
                 model.trialArray = TrialModel.empty;
                 self.model = model;
                 self.view.model = self.model;
+                self.model.LoadCalculatedTransformation();
                 self.view.refreshView();
             else
                 error('Invalid experiment file!')
@@ -280,6 +281,70 @@ classdef NrController < handle
                 delete(self.view)
             end
         end
+
+        % Callbacks for BUnwaprJ
+        function BUnwarpJReferencetrial_Callback(self,src,evnt)
+            self.model.ReferenceTrialIdx=src.Value;
+        end
+
+        function BUnwarpJCalculateButton_Callback(self,src,evnt)
+            self.model.CalculateBUnwarpJ();
+            self.view.refreshView();
+        end
+
+        function BUnwarpJPara_Callback(self,src,evnt)
+            TempParameter=StructDlg(self.model.BUnwarpJParameter,'BUnwarpJ parameter');
+            self.model.BUnwarpJParameter=TempParameter;
+        end
+
+        function BUnwarpJCLAHEPara_Callback(self,src,evnt)
+            TempParameter=StructDlg(self.model.CLAHEParameter,'CLAHE parameter');
+            self.model.CLAHEParameter=TempParameter;
+        end
+
+        function BUnwarpJUseSIFT_Callback(self,src,evnt)
+            self.model.UseSFITForBUnwarpJ= src.Value;
+        end
+
+        function BUnwarpJSIFTPara_Callback(self,src,evnt)
+            TempParameter=StructDlg(self.model.SIFTParameter,'SIFT parameter');
+            self.model.SIFTParameter=TempParameter;
+        end
+        %obsolete since CKAHE added
+%         function BUnwarpJUseHistNorm_Callback(self,src,evnt) 
+%             self.model.UseHistEqualForBUnwarpJ= src.Value;
+%         end
+
+        function BUnwarpJInspectTrialsButton_Callback(self,src,evnt)
+            self.model.InspectBUnwarpJ();
+        end
+
+        function BUnwarpJTransformationName_Callback(self,src,evnt)
+            self.model.TransformationName=src.String;
+        end
+        
+        function BUnwarpJCalculatedTransformations_Callback(self,src,evnt)
+            self.model.CalculatedTransformationsIdx=src.Value;
+            self.model.UpdateTransformationTooltipValue();
+            self.view.updateTransformationTooltip();
+        end
+        
+        function BUnwarpJNormTypeGroup_Callback(self,src,evnt)
+            button = evnt.NewValue;
+            tag = button.Tag;
+            if strcmp(tag,'Norm_HistoEqu_radiobutton')
+                self.model.UseHistEqualForBUnwarpJ = 1;
+                self.model.UseCLAHEForBUnwarpJ = 0;
+            elseif strcmp(tag,'Norm_CLAHE_radiobutton')
+                self.model.UseHistEqualForBUnwarpJ = 0;
+                self.model.UseCLAHEForBUnwarpJ = 1;     
+            else
+                self.model.UseHistEqualForBUnwarpJ = 0;
+                self.model.UseCLAHEForBUnwarpJ = 0;
+            end
+        end
+        
+
     end
     
     methods (Static)
