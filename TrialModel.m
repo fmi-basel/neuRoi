@@ -812,7 +812,7 @@ classdef TrialModel < handle
         function tagArray = getAllRoiTag(self)
         % TODO remove uniform false
         % Debug tag data type (uint16 or double)
-            tagArray = arrayfun(@(x) x.tag, self.roiArray);
+            tagArray = arrayfun(@(x) uint16(x.tag), self.roiArray);
         end
         
         function selectAllRoi(self)
