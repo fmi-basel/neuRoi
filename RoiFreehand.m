@@ -5,6 +5,7 @@ classdef RoiFreehand
         offsetYx
         posErr
         type
+        AlphaValue =0.5
     end
     
     methods
@@ -31,6 +32,7 @@ classdef RoiFreehand
                 error('Invalid Position!')
             end
             self.position = position;
+            self.AlphaValue=0.5;
         end
         
         function mask = createMask(self,imageSize)
@@ -73,10 +75,23 @@ classdef RoiFreehand
             pixelPosition = self.position;
             axesPosition = getAxesPosition(parentAxes,pixelPosition);
             roiPatch = patch(axesPosition(:,1),axesPosition(:,2),ptcolor,'Parent',parent);
-            set(roiPatch,'FaceAlpha',0.5)
+            set(roiPatch,'FaceAlpha',self.AlphaValue);
             set(roiPatch,'LineStyle','none');
             ptTag = RoiFreehand.getPatchTag(self.tag);
             set(roiPatch,'Tag',ptTag);
+        end
+
+        function UpdateRoiPatchAlpha(self,roiPatch)
+            if (0<=self.AlphaValue)&&(self.AlphaValue<=1)
+                set(roiPatch,'FaceAlpha',self.AlphaValue);
+            end   
+        end
+
+        function ChangeRoiPatchAlpha(self,roiPatch,NewAlpha) %Maybe not needed
+            if (0<NewAlpha)&&(NewAlpha<1)
+                self.AlphaValue = NewAlpha;
+                set(roiPatch,'FaceAlpha',self.AlphaValue);
+            end   
         end
         
         function updateRoiPatchPos(self,roiPatch)
@@ -153,10 +168,12 @@ classdef RoiFreehand
     methods (Static)
         function result = isaRoiPatch(hobj)
             result = false;
-            if ishandle(hobj) && isvalid(hobj) && isprop(hobj,'Tag')
-                tag = get(hobj,'Tag');
-                if strfind(tag,'roi_')
-                    result = true;
+            if ~isempty(hobj)
+                if ishandle(hobj) && isvalid(hobj) && isprop(hobj,'Tag')
+                    tag = get(hobj,'Tag');
+                    if strfind(tag,'roi_')
+                        result = true;
+                    end
                 end
             end
         end
