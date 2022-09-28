@@ -1396,7 +1396,12 @@ classdef NrModel < handle
                 obj = NrModel();
                 
                 for fn = fieldnames(s)'
-                    obj.(fn{1}) = s.(fn{1});
+                    fName = fn{1};
+                    if isprop(obj, fName)
+                        obj.(fName) = s.(fName);
+                    else
+                        warning(sprintf("Property %s is not in NrModel.", fName));
+                    end
                 end
                 
                 if isstruct(obj.alignResult)

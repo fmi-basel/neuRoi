@@ -65,9 +65,10 @@ classdef TrialModel < handle
     end
     
     methods
-        function self = TrialModel(filePath,varargin)
+        function self = TrialModel(varargin)
             pa = inputParser;
-            addRequired(pa,'filePath',@ischar);
+            addParameter(pa,'filePath','', @ischar);
+            addParameter(pa,'mockMovie',struct([]), @isstruct);
             addParameter(pa,'zrange',[1 inf], @ismatrix);
             addParameter(pa,'nFramePerStep',1)
             addParameter(pa,'process',false);
@@ -87,9 +88,7 @@ classdef TrialModel < handle
             addParameter(pa,'loadMapFromFile',false);
             addParameter(pa,'loadedMapsize',false);
             
-
-            
-            parse(pa,filePath,varargin{:})
+            parse(pa,varargin{:})
             pr = pa.Results;
             
             self.filePath = pr.filePath;
@@ -104,17 +103,19 @@ classdef TrialModel < handle
                                            'motionCorrDir',pr.motionCorrDir,...
                                            'nFramePerStep',pr.mcNFramePerStep);
             
-            if ~exist(self.filePath,'file')
-                error(sprintf('The movie file %s does not exist!',self.filePath))
-                % [~,self.fileBaseName,~] = fileparts(filePath);
-                % self.name = self.fileBaseName;
-                % self.meta = struct('width',12,...
-                %                    'height',10,...
-                %                    'totalNFrame',5);
-                % self.rawMovie = rand(self.meta.height,...
-                %                      self.meta.width,...
-                %                      self.meta.totalNFrame);
+            if isempty(self.filePath)
+                if ~isempty(pr.mockMovie)
+                    self.name = pr.mockMovie.name;
+                    self.meta = pr.mockMovie.meta;
+                    self.rawMovie = pr.mockMovie.rawMovie;
+                else
+                    error('Please provide a valid mock movie.')
+                end
             else
+                if ~exist(self.filePath,'file')
+                    msg = sprintf('The movie file %s does not exist!',self.filePath)
+                    error(msg)
+                end
                 [~,self.fileBaseName,fileExtension] = fileparts(self.filePath);
                
                 %Check if file is Tiff(SetupA) or .mat(SetupC)
