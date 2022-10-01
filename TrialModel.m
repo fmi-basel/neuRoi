@@ -211,7 +211,7 @@ classdef TrialModel < handle
             
             % Initialize ROI array
             self.roiVisible = true;
-            mapSize = getMapSize(self);
+            mapSize = self.getMapSize();
             self.roiArray = RoiFreehand.empty();
             self.roiTagMax = 0;
             

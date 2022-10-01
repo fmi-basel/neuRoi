@@ -87,6 +87,7 @@ classdef NrModel < handle
             addParameter(pa,'precalculatedMapDir','',@ischar);    
             defaultExpInfo.frameRate = 1;
             defaultExpInfo.nPlane = 1;
+            defaultExpInfo.mapSize = [512, 512];
             addParameter(pa,'expInfo',defaultExpInfo,@isstruct);
             % addParameter(pa,'alignFilePath','',@ischar)
             addParameter(pa,'roiDir','',@ischar);
@@ -408,7 +409,7 @@ classdef NrModel < handle
             end
             
             trialOptionCell = helper.structToNameValPair(trialOption);
-            trial = TrialModel(filePath,trialOptionCell{:});
+            trial = TrialModel('filePath',filePath,trialOptionCell{:});
             trial.tag = tag;
             self.trialArray(end+1) = trial;
         end
@@ -919,7 +920,6 @@ classdef NrModel < handle
             
             trial.loadRoiArray(roiFilePath,'replace');
             [timeTraceMat,roiArray] = trial.extractTimeTraceMat();
-            % TODO extract only raw trace
             
             dataFileBaseName = trial.name;
             resFileName = [dataFileBaseName '_traceResult.mat'];
@@ -1151,7 +1151,8 @@ classdef NrModel < handle
     
                 
                 %Calculate and apply BUnwarpJ
-                NewRoiArray=BUnwarpJ.CalcAndApplyBUnwarpJ(ReferenceFile,FilesWORef,Rois,[1,1,1],2,true,TransformationParameters.SIFT,TransformationParameters.SIFTParameters,BUnwarpJFolder,TransformationParameters.BunwarpJ_Parameters,512,256);
+                mapSize = self.getMapSize();
+                NewRoiArray=BUnwarpJ.CalcAndApplyBUnwarpJ(ReferenceFile,FilesWORef,Rois,[1,1,1],2,true,TransformationParameters.SIFT,TransformationParameters.SIFTParameters,BUnwarpJFolder,TransformationParameters.BunwarpJ_Parameters,mapSize);
                 
                 %incooperate reference rois
                 referenceRoi= struct("roi",load(Rois).roiArray,"trial",strcat(self.anatomyDir,"_",RoiFilePrefix));
@@ -1385,6 +1386,21 @@ classdef NrModel < handle
                 self.TransformationTooltip = helper.deconvoluteStruct(parameterStruc);
             else
                 self.TransformationTooltip=struct("No_parameters_file_found","NoData");
+            end
+        end
+        
+        function mapSize = getMapSize(self)
+            if isfield(self.expInfo, 'mapSize')
+                mapSize = self.expInfo.mapSize
+            else
+                disp('Loading 1st trial to determine mapSize')
+                fileIdx = 1;
+                fileType = 'raw';
+                planeNum = 1;
+                trial = self.loadTrialFromList(fileIdx,fileType,planeNum);
+                mapSize = trial.getMapSize();
+                self.trialArray(end) = []; % delete the temporarily loaded trial
+                self.expInfo.mapSize = mapSize;
             end
         end
 

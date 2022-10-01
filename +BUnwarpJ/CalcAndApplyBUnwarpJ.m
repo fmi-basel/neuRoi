@@ -1,6 +1,9 @@
 %%%%% Jan Eckhardt/FMI/AG Friedrich/Basel/Switzerland 08.2021
 
-function [TransformedMasks]= CalcAndApplyBUnwarpJ(ReferenceImage, TrialImages, ReferenceMask, PathInput,ROIType,OutputFreehandROI,UseSIFT,SIFTParameters, SaveFolder, BUnwarpJParameters,width, height )
+function [TransformedMasks]= CalcAndApplyBUnwarpJ(ReferenceImage, TrialImages, ReferenceMask,...
+                                                  PathInput, ROIType, OutputFreehandROI,...
+                                                  UseSIFT,SIFTParameters, SaveFolder,...
+                                                  BUnwarpJParameters, mapSize)
 
 %Path are supposed to be tiff for images
 %PathInput optional: Default is true
@@ -15,6 +18,8 @@ function [TransformedMasks]= CalcAndApplyBUnwarpJ(ReferenceImage, TrialImages, R
 
 %TODO: Console progress!! almost done
 
+width = mapSize(2);
+height =  mapSize(1);
 
 SaveMatricesAsTifs = false;
 ApplyTransformWithBUnwaprJ = false;
@@ -83,8 +88,10 @@ elseif strcmp(getenv('COMPUTERNAME'),'VCW1050')
     javaaddpath('C:\fiji-win64\Fiji.app\plugins\mpicbg_-1.4.1.jar');%for SIFT
     javaaddpath('C:\fiji-win64\Fiji.app\jars\mpicbg-1.4.1.jar');%for SIFT
 else
-    disp('Your computername is not in the list. Please modify the code or ask the devloper');
-    return
+    imagejPaths = BUnwarpJ.getImagejPaths();
+    for k=1:length(imagejPaths)
+        javaaddpath(imagejPaths{k})
+    end
 end
 
 
