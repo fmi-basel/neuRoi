@@ -6,30 +6,55 @@ classdef BUnwaprJTest < matlab.unittest.TestCase
         timeTraceMat
     end
        
-    methods(TestClassSetup)
-        function addBankAccountClassToPath(testCase)
-            p = path;
-            testCase.addTeardown(@path,p)
-            addpath(fullfile(matlabroot,'help','techdoc','matlab_oop', ...
-                'examples'))
-        end
-    end
-
     methods(TestMethodSetup)
-        function createXXXX(testCase)
-            xxxx createTestExperiment
-            testCase.addTeardown(@delete, testCase.exp)
-            rmDirectory(tmpExpDir)
+        function createData(testCase)
+            tmpDir = 'tmp'
+            if ~exist(tmpDir, 'dir')
+                mkdir(tmpDir)
+            end
+            transformDir = 'Transformations';
+            rawTransformDir = 'TransformationsRaw';
+            
+            if ~exist(transformDir, 'dir')
+                    mkdir(transformDir)
+            end
+            
+            if ~exist(rawTransformDir, 'dir')
+                mkdir(transformDir)
+            end
+            
+            testDirs.tmpDir = tmpDir;
+            testDirs.transformDir = transformDir;
+            testDirs.rawTransformDir = rawTransformDir;
+            testCase.dirs = testDirs;
+            testCase.addTeardown(@delete, testCase.dirs);
+
+            testCase.movieStructList = createTestMovies(tmpDir);
+            testCase.addTeardown(@delete, testCase.movieStructList)
+
+            testCase.anatomyFileList = saveTestAnatomy(testCase.movieStructList);
+            testCase.addTeardown(@delete, testCase.anatomyFileList)
+            
+            testCase.addTeardown(@rmdir, tmpDir)
         end
     end
 
     methods(Test)
-        function testCalcAnatomy (testCase)
-            [mapData, mapOption] = testCase.trial.calcAnatomy();
-            testCase.verifyEqual(mapData, testCase.anatomy);
+        function testComputeTransformation(testCase)
+            trialImages = arrayfun(@(x) fullfile(testCase.dirs.tmpDir, x),...
+                                   testCase.anatomyFileList,...
+                                   'UniformOutput', false);
+            referenceImage = fullfile(testCase.dirs.tmpDir, testCase.anatomyFileList{1});
+            useSift = false;
+            computeTransformation(trialImages, referenceImage,...
+                                  testCase.dirs.transformDir,...
+                                  testCase.dirs.rawTransformationFolder,...
+                                  useSift);
+            % TODO verify results
+            % testCase.verifyEqual(mapData, testCase.anatomy);
         end
         
-        function testExtraceTimeTrace(testCase)
+        function testTransformMask(testCase)
             position = [3,3; 3,5; 5,3; 5,5];
             freshRoi = RoiFreehand(position);
             testCase.trial.addRoi(freshRoi);

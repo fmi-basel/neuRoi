@@ -6,15 +6,6 @@ classdef TrialModelTest < matlab.unittest.TestCase
         timeTraceMat
     end
        
-    methods(TestClassSetup)
-        function addBankAccountClassToPath(testCase)
-            p = path;
-            testCase.addTeardown(@path,p)
-            addpath(fullfile(matlabroot,'help','techdoc','matlab_oop', ...
-                'examples'))
-        end
-    end
-
     methods(TestMethodSetup)
         function createTrial(testCase)
             movieSize = [12, 10, 20];

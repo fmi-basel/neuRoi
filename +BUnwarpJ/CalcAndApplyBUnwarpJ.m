@@ -242,82 +242,10 @@ end
         
 
 if ~SkipTransformationCalc
-
-    for i=1:length(TrialImages)
-        %TempTrial= read(TrialImages(i));
-        TempTrial=ImageJ_LoaderEngine.openImage(TrialImages(i));
-
-        [filepath,name,ext] = fileparts(TrialImages(i));
-        
-        if UseSIFT==true %https://imagej.net/plugins/feature-extraction
-            Reference=ImageJ_LoaderEngine.openImage(ReferenceImage);
-            TempTrial.show();
-            Reference.show();
-            SIFTObject= SIFT_ExtractPointRoi();
-            %SIFTObject.exec(TempTrial,Reference,1.6,3,32,512,4,8,0.8,50,0.05,1);
-            SIFTObject.exec(TempTrial,Reference, SIFTParameters.Initial_Gaussion_Blur,...
-                                           SIFTParameters.steps_per_scale_octave,...
-                                           SIFTParameters.minimum_image_size,...
-                                           SIFTParameters.maximum_image_size,...
-                                           SIFTParameters.feature_descriptor_size,...
-                                           SIFTParameters.feature_descriptor_orientation_bins,...
-                                           SIFTParameters.closest_next_closest_ratio,...
-                                           SIFTParameters.maximal_alignment_error,...
-                                           SIFTParameters.minimal_inlier_ratio,...
-                                           SIFTParameters.expected_transformation);
-            LandmarksWeights=1;
-            ImageWeigths=0;
-        else
-            LandmarksWeights=0;
-            ImageWeigths=1;
-            
-        end
-            
-        tempString= strcat("Start calculating transformation at ",datestr(now,'HH:MM:SS.FFF'));
-        disp(tempString);
-        %calculate Transformation
-        transf=bunwarpj.bUnwarpJ_.computeTransformationBatch(...
-        TempTrial,... %reference target image
-        Reference,... %warped source image
-        TempTrial.getMask,...
-        Reference.getMask,...
-        1,... %accuracy mode (0 - Fast, 1 - Accurate, 2 - Mono)
-        0,... %image subsampling factor (from 0 to 7, representing 2^0=1 to 2^7 = 128)
-        TransformationGridStart,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine)
-        TransformationGridEnd,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine, 4 - Super Fine)
-        0,... %divergence weight
-        0,... %curl weight
-        LandmarksWeights,... %landmark weight
-        ImageWeigths,... %image similarity weight
-        10,... %consistency weight
-        0.01); %stopping threshold
-
-        %Save Transformation
-        transf.saveDirectTransformation(fullfile(TransformationFolder,strcat(name,"_transformation.txt")));
-        transf.saveInverseTransformation(fullfile(TransformationFolder,strcat(name,"_transformationInverse.txt")));
-
-        
-
-        %Transform to raw transformation
-        TempTrial.show();
-        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(TransformationFolder,strcat(name,"_transformation.txt")),fullfile(RawTransformationFolder,strcat(name,"_transformationRaw.txt")),strcat(name,ext));
-        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(TransformationFolder,strcat(name,"_transformationInverse.txt")),fullfile(RawTransformationFolder,strcat(name,"_transformationInverseRaw.txt")),strcat(name,ext));
-        
-        if UseSIFT==true
-            TempTrial.close();
-            Reference.close();
-        else
-            TempTrial.close();
-        end
-
-        tempString= strcat(int2str(i), " of ",int2str(length(TrialImages)), " transformation calculated at ",datestr(now,'HH:MM:SS.FFF'));
-        disp(tempString);
-
-    end
-
+    BUnwarpJ.computeTransformation(trialImages, referenceImage, useSift,...
+                                   transfromationFolder, rawTransformationFolder)
 end
 
-Reference.close();
 
 %%Save reference Mask as tiff for debugging 
 if SaveMatricesAsTifs
@@ -399,34 +327,6 @@ if OutputFreehandROI
 else
 
     TransformedMasks=zeros(length(TrialImages),512,512);
-% 
-%                 roiArray = convertFromImageJRoi(jroiArray);
-% 
-%                 nRoi = length(roiArray);
-%                 RoiMap = zeros(512, 'uint16');
-% 
-%                 for i=1:nRoi
-%                     newroi=roiArray(i);
-%                     %newroi.imageSize=[512,512];
-%                     nPositions=length(newroi.position);
-%                     binaryImage =newroi.tag* newroi.createMask([512,512]);
-%                     RoiMap= min(RoiMap+ uint16(binaryImage),newroi.tag);
-%                 end
-
-%                 if SaveMatricesAsTifs
-%                     imwrite(uint16(RoiMap),strcat("C:\Data\eckhjan\Matlab_stuff\TestMatlab\anatomy\trials\mask0.tif"));
-%                 end
-%                 if ApplyTransformWithBUnwaprJ
-%                     if SaveMatricesAsTifs
-%                         MaskToTranf=ImageJ_LoaderEngine.openImage(strcat("C:\Data\eckhjan\Matlab_stuff\TestMatlab\anatomy\trials\mask0.tif"));
-%                         TransfMask =MaskToTranf.duplicate(); 
-%                     else
-%                         imwrite(uint16(RoiMap),strcat("C:\Data\eckhjan\Matlab_stuff\TestMatlab\anatomy\trials\mask0.tif"));
-%                         MaskToTranf=ImageJ_LoaderEngine.openImage(strcat("C:\Data\eckhjan\Matlab_stuff\TestMatlab\anatomy\trials\mask0.tif"));
-%                         TransfMask =MaskToTranf.duplicate();
-%                     end
-%                 end
-
     for i=1:length(TrialImages)
 
         [filepath,name,ext] = fileparts(TrialImages(i));
@@ -491,10 +391,6 @@ if ApplyTransformWithBUnwaprJ
      MaskToTranf.close();
      TransfMask.close();
 end
-
-
-    
-
 end
 
 

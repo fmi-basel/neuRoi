@@ -1,5 +1,5 @@
 # Temporary test files
-/tests/tmpExp/
+/tests/tmp/
 # Move it
 moveit2.m
 # Scrach in demo
