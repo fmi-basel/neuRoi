@@ -1,12 +1,8 @@
 # Temporary test files
-/test
+/tests/tmpExp/
 # Move it
 moveit2.m
 # Scrach in demo
 /demos/scratch.m
 # Matlab autosave files
 *.asv
-# Users' config files
-config/*
-# except the default config file
-!config/default.ini
