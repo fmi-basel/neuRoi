@@ -1108,28 +1108,19 @@ classdef NrModel < handle
                 TransformationParameters= struct("Reference_trial",self.rawFileList(self.ReferenceTrialIdx),"Reference_idx",self.ReferenceTrialIdx,"Plane",self.getPlaneString(self.planeNum),...
                                         "SIFT",self.UseSFITForBUnwarpJ,"SIFTParameters",TempSIFTParameters,"Histogram_equalization",self.UseHistEqualForBUnwarpJ,"CLAHE",self.UseCLAHEForBUnwarpJ,"CLAHE_Parameters",TempCLAHEParameters,"BunwarpJ_Parameters",TempBUnwarpJParameters,"Rawfile_List",{self.rawFileList},'RoiFileIdentifier',self.roiFileIdentifier);
 
-                %helper.unfold(TransformationParameters) %for debugging-shows the TransformationParameters
-                %ReferenceIdx=self.ReferenceTrialIdx; %obsolete
                 FilesWORef = self.rawFileList;
                 for i =1:length(FilesWORef)
                     [filepath,name,ext]=fileparts(FilesWORef{i});
                     FilesWORef(i)={strcat(name,'.tif')};
                 end
-%                 [filepath,name,ext]=fileparts(FilesWORef);
-%                 if ext=='tif'
-%                     FilesWORef=arrayfun(@(x) strcat(x,'.tif'),filepath);
-%                 else
-%                 end
 
                 TransformName=self.TransformationName;
                 FilesWORef= arrayfun(@(x) fullfile(self.resultDir,self.anatomyDir,TransformationParameters.Plane,strcat("anatomy_",x)), FilesWORef);
                 BUnwarpJFolder= fullfile(self.resultDir,"BUnwarpJ",TransformName,TransformationParameters.Plane);
-                
     
                 ReferenceFile = self.rawFileList(TransformationParameters.Reference_idx);
                 ReferenceFile=ReferenceFile{1};
                 RoiFilePrefix=ReferenceFile(1:end-4);
-                %Rois=load(fullfile(self.roiDir,strcat("plane0",string(self.planeNum)),"20210902_JH18_Dp_s3_o4arg_001__RoiArray.mat"));
                 Rois=fullfile(self.roiDir,TransformationParameters.Plane,strcat(RoiFilePrefix,self.roiFileIdentifier,".mat"));
                 if ~isfile(Rois)
                     waitfor(msgbox("Cannot find rois for selected reference trial. Please select a different trial","modal"));
@@ -1145,11 +1136,7 @@ classdef NrModel < handle
     
                 ReferenceFile = FilesWORef(TransformationParameters.Reference_idx);
                 FilesWORef(TransformationParameters.Reference_idx) = [];
-                
 
-                %ReferenceFile=fullfile(self.resultDir,self.anatomyDir,strcat("plane0",string(self.planeNum)),strcat("anatomy_",ReferenceFile));
-    
-                
                 %Calculate and apply BUnwarpJ
                 mapSize = self.getMapSize();
                 NewRoiArray=BUnwarpJ.CalcAndApplyBUnwarpJ(ReferenceFile,FilesWORef,Rois,[1,1,1],2,true,TransformationParameters.SIFT,TransformationParameters.SIFTParameters,BUnwarpJFolder,TransformationParameters.BunwarpJ_Parameters,mapSize);
@@ -1170,10 +1157,6 @@ classdef NrModel < handle
                 save(fullfile(self.resultDir,"BUnwarpJ",TransformName,"Rois.mat"),"RoiArray");
                 save(fullfile(self.resultDir,"BUnwarpJ",TransformName,"TransformationParameters.mat"),"TransformationParameters");
                 self.BUnwarpJCalculated= true;
-                clear NewRoiArray;
-                clear TempCellArray;
-                clear Rois;
-                clear RoiArray;
             end
         end
         
