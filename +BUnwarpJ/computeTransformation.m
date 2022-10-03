@@ -1,5 +1,13 @@
 function computeTransformation(trialImages, referenceImage, useSift,...
                                transformFolder, rawTransformFolder)
+    imagejPaths = BUnwarpJ.getImagejPaths();
+    for k=1:length(imagejPaths)
+        javaaddpath(imagejPaths{k})
+    end
+
+    %ImageJ Loader
+    ImageJ_LoaderEngine=ij.io.Opener();
+
     for i=1:length(trialImages)
         tempTrial=ImageJ_LoaderEngine.openImage(trialImages(i));
 
@@ -26,10 +34,13 @@ function computeTransformation(trialImages, referenceImage, useSift,...
             LandmarksWeights=0;
             ImageWeigths=1;
         end
-        
+
+        reference=ImageJ_LoaderEngine.openImage(referenceImage);
         tempString= strcat("Start calculating transformation at ",datestr(now,'HH:MM:SS.FFF'));
         disp(tempString);
         %calculate Transformation
+        transformationGridStart =0;
+        transformationGridEnd =2;
         transf=bunwarpj.bUnwarpJ_.computeTransformationBatch(...
             tempTrial,... %reference target image
             reference,... %warped source image
@@ -37,8 +48,8 @@ function computeTransformation(trialImages, referenceImage, useSift,...
             reference.getMask,...
             1,... %accuracy mode (0 - Fast, 1 - Accurate, 2 - Mono)
             0,... %image subsampling factor (from 0 to 7, representing 2^0=1 to 2^7 = 128)
-            TransformationGridStart,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine)
-            TransformationGridEnd,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine, 4 - Super Fine)
+            transformationGridStart,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine)
+            transformationGridEnd,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine, 4 - Super Fine)
             0,... %divergence weight
             0,... %curl weight
             LandmarksWeights,... %landmark weight
