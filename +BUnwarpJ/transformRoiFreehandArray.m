@@ -1,4 +1,4 @@
-function roiArrayStack = transfromRoiFreehandArray(function roiArrayStack = transformRoiArray(templateRoiArray,roiType,mapSize,rawFileList,transformDir)
+function roiArrayStack = transformRoiFreehandArray(templateRoiArray,roiType,mapSize,rawFileList,transformDir)
 RoiMap = roiFunc.convertRoiArrayToMask(templateRoiArray.roiArray,mapSize);
 
     % Dilate the RoiMap for 1 pixel, so to prevent the resulted ROIs from being shrinked

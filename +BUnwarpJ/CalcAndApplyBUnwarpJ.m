@@ -1,9 +1,9 @@
 %%%%% Jan Eckhardt/FMI/AG Friedrich/Basel/Switzerland 08.2021
 
-function [TransformedMasks]= CalcAndApplyBUnwarpJ(ReferenceImage, TrialImages, ReferenceMask,...
-                                                  PathInput, ROIType, OutputFreehandROI,...
-                                                  UseSIFT,SIFTParameters, SaveFolder,...
-                                                  BUnwarpJParameters, mapSize)
+function [varargout]= CalcAndApplyBUnwarpJ(ReferenceImage, TrialImages, ReferenceMask,...
+                                           PathInput, ROIType, OutputFreehandROI,...
+                                           UseSIFT,SIFTParameters, SaveFolder,...
+                                           BUnwarpJParameters, mapSize)
 
 %Path are supposed to be tiff for images
 %PathInput optional: Default is true
@@ -265,79 +265,24 @@ end
 tempString= strcat("Apply transformations to Referencemask at ",datestr(now,'HH:MM:SS.FFF'));
 disp(tempString);
 %%select output format (FreehandROI or Matrix) 
+rawTransformList = arrayfun(@(x) fullfile(RawTransformationFolder, strrep(x, ".tif", "_transformationRaw.txt")), TrialImages);
+transformedMasks = transformMasks(RoiMap, rawTransformList);    
+
+if SaveMatricesAsTifs
+    for k=1:size(transformedMasks, 1)
+        imwrite(uint16(transformedMasks(k, :, :)),...
+                fullfile(TiffFolder,sprintf("mask.tif", k)));
+    end
+end
+
 if OutputFreehandROI
-
-    %nRoi = length(jroiArray);
-    %tempMatrix= zeros(length(TrialImages),nRoi);
-    %TransformedMasks=RoiFreehand.empty(length(TrialImages),nRoi,0);
-
-
-%                 RoiMap=createROIMaskFromImageJRoi(jroiArray,512, 512);
-%                 tempString= strcat("Apply transformations to Referencemask at ",datestr(now,'HH:MM:SS.FFF'));
-%                 disp(tempString);
-    for i=1:length(TrialImages) 
-
-        [filepath,name,ext] = fileparts(TrialImages(i));
-        OutputMask= BUnwarpJ.fcn_ApplyRawTransformation(RoiMap , fullfile(RawTransformationFolder,strcat(name,"_transformationRaw.txt")));
-
-        %create FreehandRois from tranformed roi masks
-        roiArray = RoiFreehand.empty();
-        for j=1:max(max(OutputMask))
-            [col,row]=find(OutputMask==j); %not needed anymore
-            if ~isempty(row)
-                %from TrialModel
-                 poly = roiFunc.mask2polyNew(OutputMask==j);
-                 if length(poly) > 1
-                     % TODO If the mask corresponds multiple polygon,
-                     % for simplicity,
-                     % take the largest polygon
-                     warning(sprintf('ROI %d has multiple components, only taking the largest one.',j))
-                     pidx = find([poly.Length] == max([poly.Length]));
-                     poly = poly(pidx);
-                 end
-                 xposition=poly.X;
-                 yposition=poly.Y;
-                 position = [xposition,yposition];
-                 newroi = RoiFreehand(position);
-
-                 %newroi = RoiFreehand([row,col]); old and wrong- need
-                 %contour of roi, not all pixel values
-                 newroi.tag = j;
-                 roiArray(end+1) = newroi;
-                 %TransformedMasks(i,j+1)=newroi;
-            else
-                 tempString=strcat("lost roi detected: roi number: " ,int2str(j)," in trial: ", int2str(i));
-                 disp(tempString);
-            end
-        end
-        TransformedMasks(i).roi=roiArray;
-        TransformedMasks(i).trial=name;
-        tempString= strcat(int2str(i), " of ",int2str(length(TrialImages)), " transformation done at ",datestr(now,'HH:MM:SS.FFF'));
-        disp(tempString);
-        if SaveMatricesAsTifs
-            imwrite(uint16(OutputMask),fullfile(TiffFolder,strcat("mask",int2str(i),".tif")));
-        end
-
+    for k=1:size(transformedMasks, 1)
+        [filepath,name,ext] = fileparts(TrialImages(k));
+        roiArray = convertMaskToRoiArray(mask)
+        roiArrayList(k).roi=roiArray;
+        roiArrayList(k).trial=name;
     end
-
-
-
-else
-
-    TransformedMasks=zeros(length(TrialImages),512,512);
-    for i=1:length(TrialImages)
-
-        [filepath,name,ext] = fileparts(TrialImages(i));
-        OutputMask= fcn_ApplyRawTransformation(RoiMap , fullfile(RawTransformationFolder,strcat(name,"_transformationRaw.txt")));
-        TransformedMasks(i,:,:)=OutputMask;
-        tempString= strcat(int2str(i), " of ",int2str(length(TrialImages)), " transformation done at ",datestr(now,'HH:MM:SS.FFF'));
-        disp(tempString); 
-        if SaveMatricesAsTifs
-            imwrite(uint16(OutputMask),fullfile(TiffFolder,strcat("mask",int2str(i),".tif")));
-        end
-
-    end
-
+    varargout{1} = roiArrayList;
 end
 
 %%use BunwarpJ to transform reference mask and save it as tiff

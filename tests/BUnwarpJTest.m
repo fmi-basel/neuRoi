@@ -6,43 +6,39 @@ classdef BUnwarpJTest < matlab.unittest.TestCase
         anatomyFileList
     end
        
-    methods(TestMethodSetup)
+    methods(TestClassSetup)
         function createData(testCase)
             tmpDir = 'tmp';
             if ~exist(tmpDir, 'dir')
                 mkdir(tmpDir)
             end
-            transformDir = 'Transformations';
-            rawTransformDir = 'TransformationsRaw';
+            transformDir = fullfile(tmpDir, 'Transformations');
+            rawTransformDir = fullfile(tmpDir, 'TransformationsRaw');
             
             if ~exist(transformDir, 'dir')
-                    mkdir(transformDir)
+                mkdir(transformDir)
             end
             
             if ~exist(rawTransformDir, 'dir')
-                mkdir(transformDir)
+                mkdir(rawTransformDir)
             end
             
             testDirs.tmpDir = tmpDir;
             testDirs.transformDir = transformDir;
             testDirs.rawTransformDir = rawTransformDir;
             testCase.dirs = testDirs;
-            testCase.addTeardown(@delete, testCase.dirs);
-
-            testCase.movieStructList = createTestMovies();
-            testCase.addTeardown(@delete, testCase.movieStructList)
-
-            testCase.anatomyFileList = saveTestAnatomy(tmpDir, testCase.movieStructList);
-            testCase.addTeardown(@delete, testCase.anatomyFileList)
             
-            testCase.addTeardown(@rmdir, tmpDir)
+            testCase.movieStructList = createTestMovies();
+            testCase.anatomyFileList = saveTestAnatomy(tmpDir, testCase.movieStructList);
+            
+            % testCase.addTeardown(@rmdir, tmpDir, 's')
         end
     end
 
     methods(Test)
-        function testComputeTransformation(testCase)
+        function testBUnwarpJ(testCase)
             trialImages = cellfun(@(x) fullfile(testCase.dirs.tmpDir, x),...
-                                   testCase.anatomyFileList,...
+                                   testCase.anatomyFileList(2:end),...
                                    'UniformOutput', false);
             referenceImage = fullfile(testCase.dirs.tmpDir, testCase.anatomyFileList{1});
             useSift = false;
@@ -52,17 +48,30 @@ classdef BUnwarpJTest < matlab.unittest.TestCase
                                   useSift);
             % TODO verify results
             % testCase.verifyEqual(mapData, testCase.anatomy);
+            tFileList = cellfun(@(x) fullfile(testCase.dirs.transformDir,...
+                                              strrep(x, '.tif', '_transformation.txt')),...
+                                testCase.anatomyFileList(2:end),...
+                                'UniformOutput', false);
+            rtFileList = cellfun(@(x) fullfile(testCase.dirs.rawTransformDir,...
+                                               strrep(x, '.tif', '_transformationRaw.txt')),...
+                                 testCase.anatomyFileList(2:end),...
+                                 'UniformOutput', false);
+            filesExist = cellfun(@(x) exist(x, 'file'), [tFileList, rtFileList]);
+            testCase.verifyTrue(all(filesExist));
+            
+            templateMask = testCase.movieStructList{1}.templateMask;
+            masks = transformMasks(templateMask, rawTransformList)
         end
-        
-        % function testTransformMask(testCase)
-        %     position = [3,3; 3,5; 5,3; 5,5];
-        %     freshRoi = RoiFreehand(position);
-        %     testCase.trial.addRoi(freshRoi);
-        %     [timeTraceMat, roiArray] = testCase.trial.extractTimeTraceMat();
-        %     roiIdx = 1;
-        %     timeTrace = timeTraceMat(roiIdx, :);
-        %     testCase.verifyEqual(timeTrace, testCase.timeTraceMat(roiIdx, :));
-        % end
     end
 
+end
+
+
+function movieStructList = createTestMovies()
+    movieStructList = {};
+    movieStructList{1} = createMovie();
+    affineMat2 = [1 0 0; 0 1 0; -3 2 1];
+    movieStructList{2}= createMovie('ampList', [2, 2, 3], 'affineMat', affineMat2);
+    affineMat3 = [1.2 0 0; 0.33 1 0; 2 3 1];
+    movieStructList{3}= createMovie('ampList', [2, 2, 3], 'affineMat', affineMat3);
 end

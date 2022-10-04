@@ -1,4 +1,4 @@
-function movieStruct = createTestMovie(varargin)
+function movieStruct = createMovie(varargin)
 pa = inputParser;
 addParameter(pa, 'startList', [6, 4, 8], @ismatrix);
 addParameter(pa, 'durList', [3, 4, 4], @ismatrix);
@@ -19,6 +19,7 @@ roiList = {[3,3;3,4;3,5;4,3;4,4;4,5;5,3;5,4;5,5] + 4
            [9,6;9,7;10,6;10,7;11,6] + 4
           };
 
+templateMask = zeros(movieSize(:2));
 timeTraceMat = zeros(length(roiList), movieSize(3));
 for k=1:length(roiList)
     roi=roiList{k};
@@ -28,8 +29,11 @@ for k=1:length(roiList)
     amp = pr.ampList(k);
     mask=zeros(movieSize(1:2));
     mask(sub2ind(movieSize(1:2),roi(:,1), roi(:,2))) = 1;
+    
     dynamic = computeDynamic(mask, start, dur, base, amp, movieSize);
     rawMovie = rawMovie + dynamic;
+    
+    templateMask = templateMask + k * mask;
     timeTrace = computeTimeTrace(start, dur, base, amp, movieSize(3));
     timeTraceMat(k, :) = timeTrace;
 end
