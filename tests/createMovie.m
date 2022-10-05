@@ -43,6 +43,7 @@ movieStruct.rawMovie = rawMovie;
 movieStruct.anatomy = mean(rawMovie, 3);
 movieStruct.timeTraceMat = timeTraceMat;
 movieStruct.templateMask = templateMask;
+movieStruct.mask = warpMovie(templateMask, pr.affineMat);
 end
 
 

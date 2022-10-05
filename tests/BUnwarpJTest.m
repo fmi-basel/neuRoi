@@ -46,8 +46,6 @@ classdef BUnwarpJTest < matlab.unittest.TestCase
                                   testCase.dirs.transformDir,...
                                   testCase.dirs.rawTransformDir,...
                                   useSift);
-            % TODO verify results
-            % testCase.verifyEqual(mapData, testCase.anatomy);
             tFileList = cellfun(@(x) fullfile(testCase.dirs.transformDir,...
                                               strrep(x, '.tif', '_transformation.txt')),...
                                 testCase.anatomyFileList(2:end),...
@@ -61,6 +59,13 @@ classdef BUnwarpJTest < matlab.unittest.TestCase
             
             templateMask = testCase.movieStructList{1}.templateMask;
             masks = BUnwarpJ.transformMasks(templateMask, rtFileList);
+            
+            for k=1:2
+                tmask = squeeze(masks(k, :, :));
+                maskSize = size(tmask);
+                err = mean(mean(abs(tmask - testCase.movieStructList{k+1}.mask)));
+                testCase.verifyLessThanOrEqual(err, 0.05)
+            end
         end
     end
 
