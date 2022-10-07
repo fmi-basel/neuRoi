@@ -43,7 +43,7 @@ classdef BUnwarpJTest < matlab.unittest.TestCase
             testCase.templateMaskFile = fullfile(tmpDir, 'template_mask.tif');
             movieFunc.saveTiff(uint16(testCase.templateMask), testCase.templateMaskFile);
 
-            % testCase.addTeardown(@rmdir, tmpDir, 's')
+            testCase.addTeardown(@rmdir, tmpDir, 's')
         end
     end
 
