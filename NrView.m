@@ -23,6 +23,7 @@ classdef NrView < handle
             self.updateFileListBox();
             self.displayResponseOption();
             self.displayResponseMaxOption();
+           % self.displaySetupCOption();
             self.displayExpInfo();
             self.updateCalculatedTransformationsListBox();
         end
@@ -142,6 +143,44 @@ classdef NrView < handle
             set(self.guiHandles.BUnwarpJSIFTPara,'Callback',...
             @(s,e)self.controller.BUnwarpJSIFTPara_Callback(s,e));
 
+            set(self.guiHandles.RoiIdentfierText,'Callback',...
+            @(s,e)self.controller.RoiIdentfierText_Callback(s,e));
+
+            %Callbacks for SetupC tab
+          
+            set(self.guiHandles.SetupCaddResponseMapButton,'Callback',...
+            @(s,e) self.controller.addMapButton_Callback(s,e));
+
+            set(self.guiHandles.SetupCupdateResponseMapButton,'Callback',...
+            @(s,e) self.controller.updateMapButton_Callback(s,e));
+
+            set(self.guiHandles.SetupCaddMaxResponseMapButton,'Callback',...
+            @(s,e) self.controller.addMapButton_Callback(s,e));
+
+            set(self.guiHandles.SetupCMaxupdateResponseMapButton,'Callback',...
+            @(s,e) self.controller.updateMapButton_Callback(s,e));
+
+            set(self.guiHandles.SetupCaddCorrMapButton,'Callback',...
+            @(s,e) self.controller.addMapButton_Callback(s,e));
+
+            set(self.guiHandles.SetupCupdateCorrMapButton,'Callback',...
+            @(s,e) self.controller.updateMapButton_Callback(s,e));
+
+            set(self.guiHandles.SetupCPercentileText,'Callback',...
+                @(s,e)self.controller.SetupCPercentileText_Callback(s,e));
+
+            set(self.guiHandles.SetupCSkippingText,'Callback',...
+                @(s,e)self.controller.SetupCSkippingText_Callback(s,e));
+            
+            set(self.guiHandles.SetupCoffsetText,'Callback',...
+                @(s,e)self.controller.SetupCoffsetText_Callback(s,e));
+
+            set(self.guiHandles.rmaxSlidingWindowSetupCText,'Callback',...
+                @(s,e)self.controller.rmaxSlidingWindowSetupCText_Callback(s,e));
+            
+            set(self.guiHandles.SetupCExtractTracesDfoverfButton,'Callback',...
+                @(s,e)self.controller.SetupCExtractTracesDfoverfButton_Callback(s,e));
+            
 
         end
         
@@ -251,6 +290,18 @@ classdef NrView < handle
             self.guiHandles.rmaxSlidingWindowText.String = ...
             num2str(self.model.responseMaxOption.slidingWindowSize);
         end
+
+        function displaySetupCOption(self)
+            self.guiHandles.SetupCOffsetText.String = ...
+                num2str(self.model.SetupCOption.offset);
+            self.guiHandles.SetupCPercentileText.String = ...
+                num2str(self.model.responseMaxOption);
+            self.guiHandles.SetupCSkippingText.String = ...
+                num2str(self.model.responseMaxOption);
+%             self.guiHandles.rmaxSlidingWindowText.String = ...
+%             num2str(self.model.responseMaxOption.slidingWindowSize);
+        end
+
 
         
         function toggleLoadRangeText(self,state)

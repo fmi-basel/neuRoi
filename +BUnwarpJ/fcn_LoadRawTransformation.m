@@ -14,7 +14,7 @@ function [xcorr, ycorr, height, width]= fcn_LoadRawTransformation(transformation
     
     %create xcorr
     xcorr=zeros(width,height);
-    for i=1:width
+    for i=1:height
         temprow= str2double(split(tempcell(i+3)));
         temprow= temprow(~isnan(temprow));
         xcorr(:,i)= temprow+1;    
@@ -23,10 +23,10 @@ function [xcorr, ycorr, height, width]= fcn_LoadRawTransformation(transformation
     %create ycorr
     ycorr=zeros(width,height);
     for i=1:height
-        temprow= str2double(split(tempcell(i+3+513)));
+        temprow= str2double(split(tempcell(i+3+height+1)));
         %cell2mat(§
         temprow= temprow(~isnan(temprow));
         ycorr(:,i)= temprow+1; 
     end
     
-end 
+end

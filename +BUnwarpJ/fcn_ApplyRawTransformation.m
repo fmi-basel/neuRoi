@@ -9,14 +9,15 @@ function [Outputimage]= fcn_ApplyRawTransformation(Image , transformationPath)
     
     %clipping max min values. rethink about this...this will messup the last
     %and first pixel. Does NAN helps?
-    xcorr(xcorr>512)=512;
+    xcorr(xcorr>width)=width;
     xcorr(xcorr<1)=1;
     
-    ycorr(ycorr>512)=512;
+    ycorr(ycorr>height)=height;
     ycorr(ycorr<1)=1;
     
-    Outputimage = zeros(height, width);
-    Outputimage= Image(sub2ind(size(Image),uint16(permute(ycorr,[2 1])),uint16(permute(xcorr,[2 1]))));
+    Outputimage = zeros(width,height);
+    Imagesize=size(Image);
+    Outputimage= Image(sub2ind([Imagesize(1) Imagesize(2)],uint16(permute(ycorr,[2 1])),uint16(permute(xcorr,[2 1]))));
     
 
 end

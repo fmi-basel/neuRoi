@@ -94,8 +94,8 @@ classdef TrialView < handle
             set(self.guiHandles.contrastMaxSlider,'Callback',...
                @(s,e)self.controller.contrastSlider_Callback(s,e));
             
-            % set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
-            %     @(s,e)self.controller.selectRoi_Callback(s,e));
+%             set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
+%                 @(s,e)self.controller.selectRoi_Callback(s,e));
 
             set(self.guiHandles.roiMenuEntry1,'Callback',...
                 @(~,~)self.controller.enterMoveRoiMode())
@@ -114,6 +114,8 @@ classdef TrialView < handle
 
             set(self.guiHandles.importMapMenu,'Callback',...
                 @(~,~)self.controller.importMapCallback());
+            set(self.guiHandles.removeOverlapRoiMenu,'Callback',...
+                @(~,~)self.controller.removeOverlapRoiMenuCallback());
 
             set(self.guiHandles.traceFig,'WindowKeyPressFcn',...
                 @(s,e)self.controller.keyPressCallback(s,e));
@@ -137,6 +139,17 @@ classdef TrialView < handle
             meta = self.model.meta;
             metaStr = TrialView.convertOptionToString(meta);
             set(self.guiHandles.metaText,'String',metaStr);
+        end
+
+        %Mehtod for setup parameters when loading maps from file
+        function SetupParaAfterMapsLoaded(self, NewMapsize)
+            self.mapSize = NewMapsize;
+            self.guiHandles.mapAxes.YLim=[0 NewMapsize(1)];
+            self.guiHandles.mapAxes.XLim=[0 NewMapsize(2)];
+            self.zoom.origXLim = self.guiHandles.mapAxes.XLim;
+            self.zoom.origYLim = self.guiHandles.mapAxes.YLim;
+            self.zoom.maxZoomScrollCount = 30;
+            self.zoom.scrollCount = 0;
         end
         
         % Methods for displaying maps
@@ -177,9 +190,12 @@ classdef TrialView < handle
             
         function displayCurrentMap(self)
             map = self.model.getCurrentMap();
+            %needed in case current map is empty
+            if ~isempty(map)
             self.showMapOption(map);
             self.plotMap(map);
             self.controller.updateContrastForCurrentMap();
+            end
         end
         
         function showMapOption(self,map)
@@ -194,6 +210,14 @@ classdef TrialView < handle
             cmap = self.mapColorMap;
             switch map.type
               case 'anatomy'
+                if false
+                    tempimage=(map.data-min(min(map.data)))/(max(max(map.data))-min(min(map.data)));
+                    tempimage=adapthisteq(tempimage,'NumTiles',[16 16]);
+                    tempimage=ind2rgb(uint8(tempimage*255),gray(256));
+                    set(mapImage,'CData',tempimage);
+                else
+                    
+                end
                 colormap(mapAxes,gray);
               case 'response'
                 colormap(mapAxes,cmap);
@@ -204,7 +228,8 @@ classdef TrialView < handle
               case 'import'
                 colormap(mapAxes,gray);
               otherwise
-                colormap(mapAxes,'default');
+                %colormap(mapAxes,'default');
+                colormap(mapAxes,cmap);
             end
         end
         

@@ -29,7 +29,10 @@ function output = deconvoluteStruct2Str(input,parentStruct,parentName)
                     end
                 end
                 value=outputString;
-            end
+           end
+           if isempty(value)
+           value="";
+           end
             if UseParentStruct
                 output(i)=sprintf('%s_%s:%s',parentName,name,value);
             else

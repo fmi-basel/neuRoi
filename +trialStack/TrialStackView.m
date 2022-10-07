@@ -12,6 +12,8 @@ classdef TrialStackView < BaseClasses.BaseTrialView
         function self = TrialStackView(mymodel,mycontroller,mytransformationParameter)
             self.model = mymodel;
             self.controller = mycontroller;
+            %self.previousTrialIdx=self.model.currentTrialIdx;
+            self.mapSize = self.model.mapSize;
             self.guiHandles = trialStack.trialStackGui(self.model.mapSize);
             [funcDir, ~, ~]= fileparts(mfilename('fullpath'));
             neuRoiDir = fullfile(funcDir,'..');
@@ -38,6 +40,15 @@ classdef TrialStackView < BaseClasses.BaseTrialView
             self.assignCallbacks();
             self.setRoiAlphaSlider(0.5);
             self.roiVisible = true;
+            % Save original settings for zoom
+            self.zoom.origXLim = self.guiHandles.mapAxes.XLim;
+            self.zoom.origYLim = self.guiHandles.mapAxes.YLim;
+            self.zoom.maxZoomScrollCount = 30;
+            self.zoom.scrollCount = 0;
+            
+            
+            helper.imgzoompan(self.guiHandles.mapAxes,...
+                   'ButtonDownFcn',@(s,e)self.controller.selectRoi_Callback(s,e),'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
 
         end
         
@@ -46,6 +57,17 @@ classdef TrialStackView < BaseClasses.BaseTrialView
             addlistener(self.model,'currentTrialIdx','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'mapType','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'loadNewRois',@(~,~)self.redrawAllRoiPatch());
+            addlistener(self.model,'roiUpdated',...
+                        @self.updateRoiPatchPosition);
+            addlistener(self.model,'roiSelected',...
+                        @self.updateTimeTraceDisplay);
+            addlistener(self.model,'roiUnSelected',...
+                        @self.updateTimeTraceDisplay);
+            addlistener(self.model,'roiSelectionCleared',...
+                        @self.updateTimeTraceDisplay);
+            addlistener(self.model,'NewRoiFileIdentifier',...
+                        @self.UpdateRoiFileIdentifier);
+            
         end
         
         function assignCallbacks(self)
@@ -62,11 +84,97 @@ classdef TrialStackView < BaseClasses.BaseTrialView
                               @(s,e)self.controller.RoiAlphaSlider_Callback(s,e));
             set(self.guiHandles.TrialNumberSlider,'Callback',...
                               @(s,e)self.controller.TrialNumberSlider_Callback(s,e));
-             
+            set(self.guiHandles.roiMenuEntry1,'Callback',...
+                @(~,~)self.controller.enterMoveRoiMode())
+            set(self.guiHandles.EditCheckbox,'Callback',...
+                              @(s,e)self.controller.EditCheckbox_Callback(s,e));
+            set(self.guiHandles.SaveRoiNormal,'Callback',...
+                              @(s,e)self.controller.SaveRoiNormal_Callback(s,e));
+            set(self.guiHandles.ExportRois,'Callback',...
+                              @(s,e)self.controller.ExportRois_Callback(s,e));
+            set(self.guiHandles.RoiFileIdentifierEdit,'Callback',...
+                              @(s,e)self.controller.RoiFileIdentifierEdit_Callback(s,e));
 
         end
+        
+        function UpdateRoiFileIdentifier(self,src,evnt)
+            set(self.guiHandles.RoiFileIdentifierEdit,'String',self.model.roiFileIdentifier);
+        end
 
+        function RoiSaveStatus(self, Text, Color)
+            set(self.guiHandles.roiSavedStatus,'String',Text);
+            set(self.guiHandles.roiSavedStatus,'BackgroundColor',Color);
+        
+        end
+
+        function ChangePatchMode(self)
+        
+            if self.model.EditCheckbox
+                self.deleteAllRoiAsOnePatch();
+                self.redrawAllRoiPatch();
+            else
+                self.model.SaveCurrentRoiArrayInRoiArrays();
+                self.model.unselectAllRoi();
+                self.deleteAllRoiPatch();
+                self.redrawAllRoiAsOnePatch();
+            end
+        
+        end
+        
+        function changeRoiPatchColor(self,ptcolor,varargin)
+            if nargin == 3
+                if strcmp(ptcolor,'default')
+                    ptcolor = self.DEFAULT_PATCH_COLOR;
+                end
+                for k=1:length(self.selectedRoiPatchArray)
+                    roiPatch = self.selectedRoiPatchArray{k};
+                    set(roiPatch,'Facecolor',ptcolor);
+                end
+            end
+        end
+       
+        function updateRoiPatchSelection(self,src,evnt)
+            newTagArray = evnt.AffectedObject.selectedRoiTagArray;
+            for k=1:length(self.selectedRoiPatchArray)
+                roiPatch = self.selectedRoiPatchArray{k};
+                roiPatch.Selected = 'off';
+                roiTag = helper.convertTagToInd(roiPatch.Tag,'roi');
+                self.removeRoiTagText(roiTag);
+            end
+            self.selectedRoiPatchArray = {};
+            for k=1:length(newTagArray)
+                tag = newTagArray(k);
+                roiPatch = self.findRoiPatchByTag(tag);
+                roiPatch.Selected = 'on';
+                self.displayRoiTag(roiPatch);
+                uistack(roiPatch,'top') % bring the selected roi
+                                        % patch to front of the
+                                        % image and number tag
+                self.selectedRoiPatchArray{k} = roiPatch;
+            end
+        end
+
+       function roiPatch = findRoiPatchByTag(self,tag)
+            ptTag = RoiFreehand.getPatchTag(tag);
+            roiPatch = findobj(self.guiHandles.roiGroup,...
+                               'Type','patch',...
+                               'tag',ptTag);
+            if isempty(roiPatch)
+                error(sprintf('ROI #%d not found!',tag))
+            end
+        end
+
+        function updateRoiPatchPosition(self,src,evnt)
+            updRoiArray = evnt.roiArray;
+            for k=1:length(updRoiArray)
+                roi = updRoiArray(k);
+                roiPatch = self.findRoiPatchByTag(roi.tag);
+                roi.updateRoiPatchPos(roiPatch);
+            end
+        end
+        
         function selectAndDisplayMap(self,src,evnt)
+
             self.displayCurrentMap();
         end
         
@@ -76,6 +184,13 @@ classdef TrialStackView < BaseClasses.BaseTrialView
             self.displayMeta(map.meta);
             self.controller.updateContrastForCurrentMap();
             self.drawAllRoisOverlay();
+            if self.model.EditCheckbox
+                self.model.SaveRoiArrayInRoiArrays();
+                self.model.unselectAllRoi();
+                self.redrawAllRoiPatch();
+            else
+                self.redrawAllRoiAsOnePatch();
+            end
         end
         
         function displayMeta(self,meta)
@@ -124,6 +239,23 @@ classdef TrialStackView < BaseClasses.BaseTrialView
             end
         end
         
+        function displayError(self,errorStruct)
+            self.guiHandles.errorDlg = errordlg(errorStruct.message,'TrialController');
+        end
+
+        function raiseFigures(self)
+            mainFig = self.guiHandles.mainFig;
+            % traceFig = self.guiHandles.traceFig;
+            figure(mainFig)
+        end
+        
+        function deleteFigures(self)
+            mainFig = self.guiHandles.mainFig;
+            traceFig = self.guiHandles.traceFig;
+            delete(mainFig);
+            delete(traceFig);
+        end
+
         %JE-Methods for changing Alpha values
         
         function setRoiImgAlpha(self,newAlpha)

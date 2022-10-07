@@ -59,6 +59,10 @@ classdef TrialController < handle
                 end
             end
         end
+
+        function removeOverlapRoiMenuCallback(self)
+            self.model.removeRoiOverlap();
+        end
                         
         function selectMap(self,ind)
             self.model.selectMap(ind);

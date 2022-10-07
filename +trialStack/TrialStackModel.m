@@ -17,6 +17,18 @@ classdef TrialStackModel < handle
         transformationParameter
         transformationName
         transformDir
+        containsRawFileList
+
+        EditCheckbox
+        previousTrialIdx
+        previousroiArray
+        roiArrayNotOriginal
+        resultDir
+        planeString
+        TransformationFiles
+
+        roiFileIdentifier
+        roiSavedStatus
     end
     
     properties (SetObservable)
@@ -40,51 +52,103 @@ classdef TrialStackModel < handle
 
         roiNewAlpha
         roiNewAlphaAll
+
+        NewRoiFileIdentifier
     end
     
     methods
-        function self = TrialStackModel(rawFileList,templateRoiArray,...
-                                        anatomyArray,...
-                                        responseArray,...
+        function self = TrialStackModel(rawFileList, anatomyArray,...
+                                        responseArray, roiArrays,...
                                         transformationParameter,transformationName,...
-                                        transformDir,...
-                                        roiArrayStack)
+                                        resultDir,planeString,...
+                                        TransformationFiles,roiFileIdentifier)
+        % TODO templateRoiArray
             % TODO check sizes of all arrays
             self.rawFileList = rawFileList;
+            self.TransformationFiles=TransformationFiles;
+            self.resultDir=resultDir;
+            self.planeString=planeString;
+            %apply CLAHE
+            for i=1:size(anatomyArray,3)
+                anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
+            end
+            
             self.anatomyArray = anatomyArray;
             self.responseArray = responseArray;
             self.mapSize = size(anatomyArray(:,:,1));
             self.mapType = 'anatomy';
             self.nTrial = length(rawFileList);
+            self.currentTrialIdx = 1;
+            self.EditCheckbox=0;
+            self.roiArrayNotOriginal=0;
             self.mapTypeList = {'anatomy','response'};
             self.contrastLimArray = cell(length(self.mapTypeList),...
                                          self.nTrial);
             self.contrastForAllTrial = false;
-            
-            self.templateRoiArray = templateRoiArray;
-            self.transformDir = transformDir;
-            
-            if exist('roiArrayStack','var')
-                self.roiArrayStack=roiArrayStack;
+            if ~exist('roiArrays','var')
+                self.roiProvided= false;
             else
-                self.transformTemplateRoiArray();
-            end
-            
+                self.roiArrays=roiArrays;
+                self.roiProvided=true;
+                roiSize=length(roiArrays);
+                if roiSize(1)==1
+                    self.SingleRoi=true;
+                    self.roiArray=roiArrays;
+                else
+                    self.SingleRoi=false;
+                    if roiSize(1)~=self.nTrial
+                        self.roiArrays= [];
+                        self.roiProvided=false;
+                    else
+                        self.roiArray=roiArrays{1};
+                    end
+                end
+             end
             if exist('transformationParameter','var')
                 self.transformationParameter=transformationParameter;
+                if isfield(self.transformationParameter,"Rawfile_List")
+                    self.containsRawFileList=true;
+                else
+                    self.containsRawFileList=false;
+                end
+                if isfield(self.transformationParameter,"RoiFileIdentifier")
+                    self.roiFileIdentifier=self.transformationParameter.RoiFileIdentifier;
+                else
+                    self.roiFileIdentifier="_RoiArray";
+                end
             else
                 self.transformationParameter=string();
             end
             if exist('transformationName','var')
                 self.transformationName=transformationName;
             end
-            
             self.currentTrialIdx = 1;
+            % self.roiSavedStatus=true;
         end
         
         function transformTemplateRoiArray(self)
             self.roiArrayStack = BUnwarpJ.transformRoiArray(self.templateRoiArray,self.mapSize,...
                                                             self.rawFileList, self.transformDir);
+        end
+        
+        function deleteRoiCurrent(self)
+            tagArray = self.selectedRoiTagArray;
+            self.unselectAllRoi();
+            indArray = self.findRoiByTagArray(tagArray);
+            self.roiArray(indArray) = [];
+            self.roiArrays{ self.currentTrialIdx}=self.roiArray;
+            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
+        end
+
+        function deleteRoiAll(self)
+            tagArray = self.selectedRoiTagArray;
+            self.unselectAllRoi();
+            indArray = self.findRoiByTagArray(tagArray);
+            self.roiArray(indArray) = [];
+            for i=1:numel(self.roiArrays)
+                self.roiArrays{i}(indArray)=[];
+            end
+            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
         end
         
         function data = getMapData(self,mapType,trialIdx)
@@ -135,6 +199,8 @@ classdef TrialStackModel < handle
         end
         
         function set.currentTrialIdx(self,idx)
+            self.previousTrialIdx=self.currentTrialIdx;
+            self.previousroiArray=self.roiArray;
             newIdx = min(max(idx,1),length(self.rawFileList));
             self.currentTrialIdx = newIdx;
             self.roiArray= self.getCurrentRoiArray();
@@ -151,6 +217,70 @@ classdef TrialStackModel < handle
                 roiArray=[];
             end
         end
+        
+        function SaveRoiArrayInRoiArrays(self)       
+            self.roiArrays{ self.previousTrialIdx}= self.previousroiArray;
+        end
+
+        function SaveCurrentRoiArrayInRoiArrays(self)
+            self.roiArrays{ self.currentTrialIdx}= self.roiArray;
+        end
+
+      function mapSize = getMapSize(self)
+           
+                mapSize = size(self.anatomyArray(:,:,1));
+
+      end
+
+      function SaveRoiNormal(self)
+        RoiPath=fullfile(self.resultDir,"BUnwarpJ",self.transformationName,"Rois.mat");
+        OriginalPath=fullfile(self.resultDir,"BUnwarpJ",self.transformationName,"Rois-original.mat");
+        if ~isfile(OriginalPath)
+            copyfile(RoiPath,OriginalPath);
+        end
+        for i=1:length(self.roiArrays)
+            RoiArray(i).roi=self.roiArrays{i};
+            trialName=split(self.TransformationFiles{i},'.');
+            trialName=trialName{1};
+            RoiArray(i).trial=trialName;
+        end
+        save(RoiPath,"RoiArray");
+      end
+      
+      function ExportRois(self)
+          %pretty simple check if roi files exist; since first trial could
+          %be added after the first export-but should be almost always
+          %sufficient
+          trialName=split(self.rawFileList{1},'.');
+          trialName=trialName{1};
+          filename=fullfile(self.resultDir,"roi",self.planeString,self.transformationName,strcat(trialName,self.roiFileIdentifier,".mat"));
+          if isfile(filename)
+              NewName=inputdlg("Please enter a new RoiFileIdentifier","Roi files with this identifier already exists");
+              self.roiFileIdentifier=NewName;
+              
+          end
+          mkdir(fullfile(self.resultDir,"roi",self.planeString,self.transformationName));
+          for i=1:length(self.roiArrays)
+            roiArray=self.roiArrays{i};
+            trialName=split(self.rawFileList{i},'.');
+            trialName=trialName{1};
+            
+            filename=fullfile(self.resultDir,"roi",self.planeString,self.transformationName,strcat(trialName,self.roiFileIdentifier,".mat"));
+            if isfile(filename)
+                answer=questdlg(strcat('File ',trialName,' already exists',{newline},'Replace or rename(_2) the file to save?'),'File already exists','Replace','Rename','modal');
+                switch answer
+                    case 'Replace'
+                        
+                    case 'Rename'
+                        filename=fullfile(self.resultDir,"roi",self.planeString,strcat(trialName,"_2",self.roiFileIdentifier,".mat"));
+
+                end
+                
+            end
+            save(filename,"roiArray");
+          end
+      end
+
      % Methods for ROI-based processing
         % TODO set roiArray to private
         function addRoi(self,varargin)

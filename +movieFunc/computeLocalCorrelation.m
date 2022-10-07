@@ -4,7 +4,7 @@ function resCorrMap = computeLocalCorrelation(rawMovie,tileSize)
 %            computes localcorrelation for rawMovie with the size
 %            of movie defined by tileSize.
 
-    mask=computeTileMask(tileSize);
+    mask=computeTileMask(tileSize); %256*256
     corrMap1 = tilingAndComputeCorrelation(rawMovie,tileSize,mask,0);
     corrMap2 = tilingAndComputeCorrelation(rawMovie,tileSize,mask,tileSize/2);
     resCorrMap = corrMap1 + corrMap2;
@@ -27,15 +27,15 @@ end
 
 
 function corrMap = tilingAndComputeCorrelation(rawMovie,tileSize,mask,tileShift)
-    corrMap = zeros(size(rawMovie(:,:,1)));
-    nTile1 = floor((size(rawMovie,1)-tileShift)/tileSize);
-    nTile2 = floor((size(rawMovie,2)-tileShift)/tileSize);
+    corrMap = zeros(size(rawMovie(:,:,1))); %256*512
+    nTile1 = floor((size(rawMovie,1)-tileShift)/tileSize); %16
+    nTile2 = floor((size(rawMovie,2)-tileShift)/tileSize); %32
     for i = 1:nTile1
         disp([num2str(i),' strip out of ',num2str(nTile1)]);
         for j = 1:nTile2
             tind=getTileIndices(i,j,tileSize,tileShift);
-            tileMovie = rawMovie(tind{1},tind{2},:);
-            tileCorrMat = computeCorrelationSingleTile(tileMovie,mask);
+            tileMovie = rawMovie(tind{1},tind{2},:); %16*16*30600
+            tileCorrMat = computeCorrelationSingleTile(tileMovie,mask); %16*16
             corrMap(tind{1},tind{2}) =  tileCorrMat;
         end
     end

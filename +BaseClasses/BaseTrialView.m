@@ -62,6 +62,12 @@ classdef BaseTrialView < handle
             self.addRoiPatch(roi);
         end
 
+        function deleteAllRoiAsOnePatch(self)
+            mapAxes = self.guiHandles.roiGroup;
+            children = mapAxes.Children;
+            delete(children);
+        end
+
         function redrawAllRoiAsOnePatch(self)
             mapAxes = self.guiHandles.roiGroup;
             children = mapAxes.Children;
