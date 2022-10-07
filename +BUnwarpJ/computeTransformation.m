@@ -1,6 +1,7 @@
 function computeTransformation(trialImages, referenceImage,...
                                transformFolder, rawTransformFolder,...
-                               useSift)
+                               useSift, transformationGridStart, ...
+                               transformationGridEnd)
     imagejPaths = BUnwarpJ.getImagejPaths();
     for k=1:length(imagejPaths)
         javaaddpath(imagejPaths{k})
@@ -8,7 +9,9 @@ function computeTransformation(trialImages, referenceImage,...
 
     %ImageJ Loader
     ImageJ_LoaderEngine=ij.io.Opener();
-
+    if ~useSift
+        reference=ImageJ_LoaderEngine.openImage(referenceImage);
+    end    
     for i=1:length(trialImages)
         tempTrial=ImageJ_LoaderEngine.openImage(trialImages(i));
 
@@ -36,12 +39,12 @@ function computeTransformation(trialImages, referenceImage,...
             ImageWeigths=1;
         end
 
-        reference=ImageJ_LoaderEngine.openImage(referenceImage);
+        if useSift
+            reference=ImageJ_LoaderEngine.openImage(referenceImage);
+        end
         tempString= strcat("Start calculating transformation at ",datestr(now,'HH:MM:SS.FFF'));
         disp(tempString);
         %calculate Transformation
-        transformationGridStart =0;
-        transformationGridEnd =2;
         transf=bunwarpj.bUnwarpJ_.computeTransformationBatch(...
             tempTrial,... %reference target image
             reference,... %warped source image
@@ -78,6 +81,5 @@ function computeTransformation(trialImages, referenceImage,...
         disp(tempString);
 
     end
-    reference.close();
 end
 

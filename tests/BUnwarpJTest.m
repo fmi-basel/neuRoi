@@ -4,6 +4,10 @@ classdef BUnwarpJTest < matlab.unittest.TestCase
         dirs
         movieStructList
         anatomyFileList
+        referenceImage
+        trialImages
+        templateMask
+        templateMaskFile
     end
        
     methods(TestClassSetup)
@@ -31,21 +35,36 @@ classdef BUnwarpJTest < matlab.unittest.TestCase
             testCase.movieStructList = createTestMovies();
             testCase.anatomyFileList = saveTestAnatomy(tmpDir, testCase.movieStructList);
             
+            testCase.trialImages = cellfun(@(x) fullfile(testCase.dirs.tmpDir, x),...
+                                  testCase.anatomyFileList(2:end),...
+                                  'UniformOutput', false);
+            testCase.referenceImage = fullfile(testCase.dirs.tmpDir, testCase.anatomyFileList{1});
+            testCase.templateMask = testCase.movieStructList{1}.templateMask;
+            testCase.templateMaskFile = fullfile(tmpDir, 'template_mask.tif');
+            movieFunc.saveTiff(uint16(testCase.templateMask), testCase.templateMaskFile);
+
             % testCase.addTeardown(@rmdir, tmpDir, 's')
         end
     end
 
     methods(Test)
-        function testBUnwarpJ(testCase)
-            trialImages = cellfun(@(x) fullfile(testCase.dirs.tmpDir, x),...
-                                   testCase.anatomyFileList(2:end),...
-                                   'UniformOutput', false);
-            referenceImage = fullfile(testCase.dirs.tmpDir, testCase.anatomyFileList{1});
+        function testCalcAndApplyBUnwarpJMask(testCase)
+            pathInput = [1, 1, 1];
+            roiType = 0;
+            outputFreehandRoi = false;
             useSift = false;
-            BUnwarpJ.computeTransformation(trialImages, referenceImage,...
-                                  testCase.dirs.transformDir,...
-                                  testCase.dirs.rawTransformDir,...
-                                  useSift);
+            siftParameters = [];
+            bUnwarpJParameters.transformationGridStart =0;
+            bUnwarpJParameters.transformationGridEnd =2;
+            mapSize = size(testCase.templateMask);
+            masks = BUnwarpJ.CalcAndApplyBUnwarpJ(testCase.referenceImage,...
+                                                  testCase.trialImages,...
+                                                  testCase.templateMaskFile,...
+                                                  pathInput, roiType, outputFreehandRoi,...
+                                                  useSift, siftParameters,...
+                                                  testCase.dirs.tmpDir,...
+                                                  bUnwarpJParameters, mapSize);
+            
             tFileList = cellfun(@(x) fullfile(testCase.dirs.transformDir,...
                                               strrep(x, '.tif', '_transformation.txt')),...
                                 testCase.anatomyFileList(2:end),...
@@ -57,9 +76,6 @@ classdef BUnwarpJTest < matlab.unittest.TestCase
             filesExist = cellfun(@(x) exist(x, 'file'), [tFileList, rtFileList]);
             testCase.verifyTrue(all(filesExist));
             
-            templateMask = testCase.movieStructList{1}.templateMask;
-            masks = BUnwarpJ.transformMasks(templateMask, rtFileList);
-            
             for k=1:2
                 tmask = squeeze(masks(k, :, :));
                 maskSize = size(tmask);
@@ -68,7 +84,6 @@ classdef BUnwarpJTest < matlab.unittest.TestCase
             end
         end
     end
-
 end
 
 
