@@ -1,7 +1,13 @@
-function computeTransformation(trialImages, referenceImage,...
-                               transformFolder, rawTransformFolder,...
-                               useSift, transformationGridStart, ...
-                               transformationGridEnd)
+function computeTransformation(trialImages, referenceImage, saveDir, transformParam)
+    rawTransformDir = fullfile(saveDir, 'TransformationsRaw');
+    transformDir = fullfile(saveDir, 'Transformations');
+    for folder={rawTransformDir, transformDir}
+        if ~exist(folder{1}, 'dir')
+            mkdir(folder{1})
+        end
+    end
+    
+    
     imagejPaths = BUnwarpJ.getImagejPaths();
     for k=1:length(imagejPaths)
         javaaddpath(imagejPaths{k})
@@ -9,7 +15,7 @@ function computeTransformation(trialImages, referenceImage,...
 
     %ImageJ Loader
     ImageJ_LoaderEngine=ij.io.Opener();
-    if ~useSift
+    if ~transformParam.useSift
         reference=ImageJ_LoaderEngine.openImage(referenceImage);
     end    
     for i=1:length(trialImages)
@@ -17,7 +23,8 @@ function computeTransformation(trialImages, referenceImage,...
 
         [filepath,name,ext] = fileparts(trialImages(i));
         
-        if useSift==true %https://imagej.net/plugins/feature-extraction
+        if transformParam.useSift==true %https://imagej.net/plugins/feature-extraction
+            SIFTParameters = transformParam.SIFTParameters;
             reference=ImageJ_LoaderEngine.openImage(referenceImage);
             tempTrial.show();
             reference.show();
@@ -39,7 +46,7 @@ function computeTransformation(trialImages, referenceImage,...
             ImageWeigths=1;
         end
 
-        if useSift
+        if transformParam.useSift
             reference=ImageJ_LoaderEngine.openImage(referenceImage);
         end
         tempString= strcat("Start calculating transformation at ",datestr(now,'HH:MM:SS.FFF'));
@@ -52,8 +59,8 @@ function computeTransformation(trialImages, referenceImage,...
             reference.getMask,...
             1,... %accuracy mode (0 - Fast, 1 - Accurate, 2 - Mono)
             0,... %image subsampling factor (from 0 to 7, representing 2^0=1 to 2^7 = 128)
-            transformationGridStart,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine)
-            transformationGridEnd,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine, 4 - Super Fine)
+            transformParam.BUnwarpJParameters.transformationGridStart,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine)
+            transformParam.BUnwarpJParameters.transformationGridEnd,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine, 4 - Super Fine)
             0,... %divergence weight
             0,... %curl weight
             LandmarksWeights,... %landmark weight
@@ -62,15 +69,15 @@ function computeTransformation(trialImages, referenceImage,...
             0.01); %stopping threshold
 
         %Save Transformation
-        transf.saveDirectTransformation(fullfile(transformFolder,strcat(name,"_transformation.txt")));
-        transf.saveInverseTransformation(fullfile(transformFolder,strcat(name,"_transformationInverse.txt")));
+        transf.saveDirectTransformation(fullfile(transformDir,strcat(name,"_transformation.txt")));
+        transf.saveInverseTransformation(fullfile(transformDir,strcat(name,"_transformationInverse.txt")));
 
         %Transform to raw transformation
         tempTrial.show();
-        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformFolder,strcat(name,"_transformation.txt")),fullfile(rawTransformFolder,strcat(name,"_transformationRaw.txt")),strcat(name,ext));
-        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformFolder,strcat(name,"_transformationInverse.txt")),fullfile(rawTransformFolder,strcat(name,"_transformationInverseRaw.txt")),strcat(name,ext));
+        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir,strcat(name,"_transformation.txt")),fullfile(rawTransformDir,strcat(name,"_transformationRaw.txt")),strcat(name,ext));
+        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir,strcat(name,"_transformationInverse.txt")),fullfile(rawTransformDir,strcat(name,"_transformationInverseRaw.txt")),strcat(name,ext));
         
-        if useSift==true
+        if transformParam.useSift==true
             tempTrial.close();
             reference.close();
         else

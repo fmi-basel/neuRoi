@@ -11,6 +11,13 @@ for k = 1:size(template,1)/2
     template(2*k-1,:) = template_odd;
     template(2*k,:) = template_even;
 end
+dataType = class(rawMovie);
 
-subMovie = rawMovie - uint16(template);
+if strcmp(dataType, 'uint8')
+    template = uint8(template);
+elseif strcmp(dataType, 'unit16')
+    template = unit16(template);
+end
+
+subMovie = rawMovie - template;
 end

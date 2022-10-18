@@ -53,14 +53,27 @@ classdef NrModelTest < matlab.unittest.TestCase
     methods(Test)
         function testCalculateBUnwarpJ(testCase)
             myexp = testCase.myexp;
-            myexp.processRawData()
+            myexp.processRawData();
             
             myexp.ReferenceTrialIdx = 1;
             myexp.TransformationName = 'transf';
             
-            myexp.
-            
-            
+            myexp.computeBUnwarpJ();
+
+            prefix = 'anatomy_';
+            bunwarpjDir = fullfile(testCase.dirs.resultDir, 'bunwarpj', 'transf');
+            tFileList = cellfun(@(x) fullfile(bunwarpjDir, 'Transformations',...
+                                              iopath.modifyFileName(x,prefix,'_transformation','txt')),...
+                                myexp.rawFileList(2:end),...
+                                'UniformOutput', false);
+            disp(tFileList{1})
+            rtFileList = cellfun(@(x) fullfile(bunwarpjDir, 'TransformationsRaw',...
+                                               iopath.modifyFileName(x,prefix,'_transformationRaw','txt')),...
+                                 myexp.rawFileList(2:end),...
+                                 'UniformOutput', false);
+            filesExist = cellfun(@(x) exist(x, 'file'), [tFileList, rtFileList]);
+            testCase.verifyTrue(all(filesExist));
+
         end
     end
 end

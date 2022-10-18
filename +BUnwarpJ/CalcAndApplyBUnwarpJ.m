@@ -291,6 +291,7 @@ if OutputFreehandROI
         roiArray = convertMaskToRoiArray(mask)
         roiArrayList(k).roi=roiArray;
         roiArrayList(k).trial=name;
+>>>>>>> bo-test-kimexp
     end
     varargout{1} = roiArrayList;
 else
