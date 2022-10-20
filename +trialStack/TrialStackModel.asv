@@ -66,7 +66,7 @@ classdef TrialStackModel < handle
             self.planeString=planeString;
             %apply CLAHE
             for i=1:size(anatomyArray,3)
-                anatomyArray(:,:,i)=
+                anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
             end
             
             self.anatomyArray = anatomyArray;
@@ -154,7 +154,8 @@ classdef TrialStackModel < handle
 %             wantedRoi= cellfun(@(x) x.tag==RoiTag,currentRoiArray);
 %             wantedRoiIndex=find(wantedRoi);
             for i=1:numel(self.roiArrays)
-                self.roiArrays{i}(indArray)=[];
+                wantedRoi= find(cellfun(@(x) x.tag==tagArray,self.roiArrays{i}));
+                self.roiArrays{i}(wantedRoi)=[];
             end
             notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
         end

@@ -10,12 +10,10 @@ function handles = trialGui(varargin)
     end
     
     screensize=get(0,'screensize');
-    if screensize(3)<=(600 + 750 + 50) && screensize(2)<=(300 + 650 + 75)
-        handles.mainFig = figure('Position',[10,10,750,650],'ToolBar', 'none');
-    else
-        handles.mainFig = figure('Position',[600,300,750,650]);
-    end
+    if screensize(3)<= 
 
+
+    handles.mainFig = figure('Position',[600,300,750,650]);
     deleteDefaultFigureMenu(handles.mainFig);
     
     handles.fileMenu = uimenu(handles.mainFig,'Text','File');

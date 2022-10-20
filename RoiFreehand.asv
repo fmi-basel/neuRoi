@@ -34,7 +34,6 @@ classdef RoiFreehand
             end
             self.position = position;
             self.AlphaValue=0.5;
-            self.roiGroup="default";
         end
         
         function mask = createMask(self,imageSize)
