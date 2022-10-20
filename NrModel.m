@@ -56,12 +56,12 @@ classdef NrModel < handle
         roiFileIdentifier    
        
 
-        ReferenceTrialIdx
+        referenceTrialIdx
         UseSFITForBUnwarpJ =false
         UseHistEqualForBUnwarpJ= false
         UseCLAHEForBUnwarpJ= false
         BUnwarpJCalculated
-        TransformationName
+        transformationName
         CalculatedTransformationsIdx
         CalculatedTransformationsList
         BUnwarpJParameter
@@ -1097,9 +1097,17 @@ classdef NrModel < handle
             end
         end
 
+        function fileList = getSelectedFileList(self)
+            if self.selectedFileIdx
+                fileList = self.rawFileList(self.selectedFileIdx);
+            else
+                fileList = self.rawFileList;
+            end
+        end
+        
         %BUnwarpJ
-        function computeBUnwarpJ(self, varargin)
-            if self.CheckBunwarpJName
+        function computeBunwarpj(self, varargin)
+            if self.CheckBunwarpJName()
                 self.BUnwarpJCalculated= false;
 
                 transformParam= struct("useSift",self.UseSFITForBUnwarpJ,...
@@ -1109,79 +1117,83 @@ classdef NrModel < handle
                                        "CLAHE",self.UseCLAHEForBUnwarpJ,...
                                        "CLAHE_Parameters",self.CLAHEParameter,...
                                        "BUnwarpJParameters",self.BUnwarpJParameter,...
-                                       "Reference_idx",self.ReferenceTrialIdx);
+                                       "Reference_idx",self.referenceTrialIdx);
 
-                if self.selectedFileIdx
-                    filesWoRef = self.rawFileList(self.selectedFileIdx);
-                    if ~ismember(self.ReferenceTrialIdx, self.selectedFileIdx)
-                        error(sprintf('Reference trial # %d  %s not in selected file list!',...
-                                      self.ReferenceTrialIdx, self.rawFileList{transformParam.Reference_idx}))
-                    end
-                else
-                    filesWoRef = self.rawFileList;
-                end
-
-                for i =1:length(filesWoRef)
-                    [filepath,name,ext]=fileparts(filesWoRef{i});
-                    filesWoRef(i)={strcat(name,'.tif')};
-                end
-
+                fileList = self.getSelectedFileList();
                 anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'));
-                filesWoRef = arrayfun(@(x) fullfile(anatomyDir, strcat("anatomy_",x)), filesWoRef);
-                bunwarpjDir = self.appendPlaneDir(fullfile(self.getDefaultDir('bunwarpj'),...
-                                                           self.TransformationName));
+                anatomyList = arrayfun(@(x) fullfile(anatomyDir, strcat("anatomy_",x)), fileList);
     
+                % TODO 
                 referenceFile = self.rawFileList(transformParam.Reference_idx);
-                referenceFile=referenceFile{1};
-
+                referenceAnatomy = fullfile(anatomyDir, strcat("anatomy_", referenceFile));
+                
+                rIdx = find(strcmp(anatomyList, referenceAnatomy));
+                if rIdx
+                    anatomyList(rIdx) = [];
+                end
+                    
+                bunwarpjDir = self.getBunwarpjDir();
                 mkdir(bunwarpjDir);
 
                 if (transformParam.Histogram_equalization) ||  (transformParam.CLAHE)
-                    filesWoRef=self.NormTrialsForBUnwarpJ(filesWoRef,BUnwarpJFolder,transformParam.Reference_idx,transformParam.CLAHE,transformParam.CLAHE_Parameters);
+                    filesWoRef=self.NormTrialsForBUnwarpJ(anatomyList,BUnwarpJFolder,transformParam.Reference_idx,transformParam.CLAHE,transformParam.CLAHE_Parameters);
                 end
     
-                referenceFile = filesWoRef(transformParam.Reference_idx);
-                filesWoRef(transformParam.Reference_idx) = [];
 
                 %Calculate and apply BUnwarpJ
-                mapSize = self.getMapSize();
+                BUnwarpJ.computeTransformation(anatomyList, referenceAnatomy,...
+                                               bunwarpjDir, transformParam);
                 
-                BUnwarpJ.computeTransformation(filesWoRef, referenceFile, bunwarpjDir, transformParam);
+                % TODO save transformation parameters
+                if isempty(self.CalculatedTransformationsList)
+                    self.CalculatedTransformationsIdx=1;
+                end
                 
-                %Rois,[1,1,1],2,true,transformParam.SIFT,transformParam.SIFTParameters,BUnwarpJFolder,transformParam.BunwarpJ_Parameters,mapSize);
-
+                self.CalculatedTransformationsList{end+1} = self.transformationName;
+                self.BUnwarpJCalculated= true;
             end 
         end
             
             
-            
+        function bunwarpjDir = getBunwarpjDir(self)
+            bunwarpjDir = self.appendPlaneDir(fullfile(self.getDefaultDir('bunwarpj'),...
+                                                       self.transformationName));
+        end
+
             %incooperate reference rois
                 % referenceRoi= struct("roi",load(Rois).roiArray,"trial",strcat(self.anatomyDir,"_",RoiFilePrefix));
                 
                 %add Trasnformationname to list;sve calculated rois to load
 % <<<<<<< HEAD
 %                 self.CalculatedTransformationsList{length(self.CalculatedTransformationsList)+1}=TransformName;
+%Rois,[1,1,1],2,true,transformParam.SIFT,transformParam.SIFTParameters,BUnwarpJFolder,transformParam.BunwarpJ_Parameters,mapSize);
 % ======
-            %     function applyBUnwarpJ(self)
-            %         RoiFilePrefix=referenctFile(1:end-4);
-            %         Rois=fullfile(self.roiDir,TransformationParameters.Plane,strcat(RoiFilePrefix,self.roiFileIdentifier,".mat"));
-            %         if ~isfile(Rois)
-            %             waitfor(msgbox("Cannot find rois for selected reference trial. Please select a different trial","modal"));
-            %             return
-            %         else
-            %         end
-            %     %them later; clear variables
-            %     if isempty(self.CalculatedTransformationsList)
-            %         self.CalculatedTransformationsIdx=1;
-            %     end
-            %     self.CalculatedTransformationsList(length(self.CalculatedTransformationsList)+1)={TransformName};
-            %     save(fullfile(self.resultDir,"BUnwarpJ",TransformName,"Rois.mat"),"RoiArray");
-            %     save(fullfile(self.resultDir,"BUnwarpJ",TransformName,"TransformationParameters.mat"),"TransformationParameters");
-            %     self.BUnwarpJCalculated= true;
-            % end
+                
+                
+       function roiArrayStack = applyBunwarpj(self)
+       % TODO read transformParam from transformDir
+            referenceFile = self.rawFileList{transformParam.Reference_idx};
+            
+            roiDir = self.appendPlaneDir(self.getDefaultDir('roi'));
+            roiFile = fullfile(roiDir, iopath.modifyFileName(referenceFile,'',...
+                                                             self.roiFileIdentifier,"mat"));
+            
+            if ~isfile(roiFile)
+                error(sprintf("Cannot find roi file for selected reference trial. %s", roiFile));
+                return
+            end
+            foo = load(roiFile);
+            templateRoiArray = foo.roiArray;
+            
+            rawFileList = self.getSelectedFileList();
+            roiArrayStack = BUnwarpJ.transformRoiArray(templateRoiArray, rawFileList, transformDir);
+            
+            bunwarpjDir = self.getBunwarpjDir();
+            save(fullfile(bunwarpjDir,"Rois.mat"),"RoiArray");
+        end
         
         function NameOK=CheckBunwarpJName(self)
-            if isempty(self.TransformationName) ||  strcmp(self.TransformationName,'Change transformation name')
+            if isempty(self.transformationName) ||  strcmp(self.transformationName,'Change transformation name')
                 msgbox("Transformationname is empty. Please enter a valid name","modal");
                 NameOK= false;
                 return
@@ -1190,7 +1202,7 @@ classdef NrModel < handle
                 dirFlags = [files.isdir];
                 subFolders = files(dirFlags);
                 subFolderNames = {subFolders(3:end).name};
-                DoesTransforExist = ismember(subFolderNames,self.TransformationName);
+                DoesTransforExist = ismember(subFolderNames,self.transformationName);
                 if sum(DoesTransforExist)==0
                     NameOK=true;
                     return
@@ -1418,9 +1430,9 @@ classdef NrModel < handle
                                              'fileIdx',fileIdx);
         end
         
-        function NewParameter= CreateRawFileListInParameter(self, OldParameter, TransformationName)
+        function NewParameter= CreateRawFileListInParameter(self, OldParameter, transformationName)
             NewParameter=OldParameter;
-            TifFolder= fullfile(self.resultDir,"BUnwarpJ",TransformationName,OldParameter.Plane,"*.tif");
+            TifFolder= fullfile(self.resultDir,"BUnwarpJ",transformationName,OldParameter.Plane,"*.tif");
             TifFiles=dir(TifFolder);
             TifFilesCell=struct2cell(TifFiles);
             FileParts=cellfun(@(x) strsplit(x, "_"),TifFilesCell(1,:),'UniformOutput',false);

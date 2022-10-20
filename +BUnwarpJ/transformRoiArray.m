@@ -1,4 +1,4 @@
-function roiArrayStack = transformRoiArray(templateRoiArray,roiType,rawFileList,transformDir)
+function roiArrayStack = transformRoiArray(templateRoiArray,rawFileList,transformDir)
 roiMap = templateRoiArray.convertToMask();
 
     for i=1:length(rawFileList)
@@ -12,7 +12,4 @@ roiMap = templateRoiArray.convertToMask();
         tempString= strcat(int2str(i), " of ",int2str(length(rawFileList)), " transformation done at ",datestr(now,'HH:MM:SS.FFF'));
         disp(tempString);
     end
-
-    
 end
-

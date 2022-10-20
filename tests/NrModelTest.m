@@ -17,9 +17,6 @@ classdef NrModelTest < matlab.unittest.TestCase
             if ~exist(resultDir, 'dir')
                 mkdir(resultDir)
             end
-
-            testDirs.tmpDir = tmpDir;
-            testDirs.resultDir = resultDir;
             
             movieStructList = createTestMovies();
             rawFileList = saveTestMovies(tmpDir, movieStructList);
@@ -42,6 +39,15 @@ classdef NrModelTest < matlab.unittest.TestCase
             templateMaskFile = fullfile(maskDir, 'template_mask.tif');
             movieFunc.saveTiff(uint16(templateMask), templateMaskFile);
             
+            % Convert template mask to RoiArray
+            roiDir = myexp.getDefaultDir('roi');
+            roiFile = fullfile(roiDir, iopath.modifyFileName(rawFileList{1}, '', '_RoiArray', 'mat'));
+            roiArray = roiFunc.RoiArray('maskImg', templateMask);
+            save(roiFile, 'roiArray')
+
+            testDirs.tmpDir = tmpDir;
+            testDirs.resultDir = resultDir;
+            
             testCase.dirs = testDirs;
             testCase.movieStructList = movieStructList;
             testCase.myexp = myexp;
@@ -51,14 +57,14 @@ classdef NrModelTest < matlab.unittest.TestCase
     end
 
     methods(Test)
-        function testCalculateBUnwarpJ(testCase)
+        function testBunwarpj(testCase)
             myexp = testCase.myexp;
             myexp.processRawData();
             
-            myexp.ReferenceTrialIdx = 1;
-            myexp.TransformationName = 'transf';
+            myexp.referenceTrialIdx = 1;
+            myexp.transformationName = 'transf';
             
-            myexp.computeBUnwarpJ();
+            myexp.computeBunwarpj();
 
             prefix = 'anatomy_';
             bunwarpjDir = fullfile(testCase.dirs.resultDir, 'bunwarpj', 'transf');
@@ -73,7 +79,14 @@ classdef NrModelTest < matlab.unittest.TestCase
                                  'UniformOutput', false);
             filesExist = cellfun(@(x) exist(x, 'file'), [tFileList, rtFileList]);
             testCase.verifyTrue(all(filesExist));
-
+            
+            % TODO separate template roi from a specific trial in terms of file name
+            
+            myexp.applyBunwarpj();
+            % Verify ROIs
+            
+            myexp.inspectBunwarpj();
+            % Verify trialStack
         end
     end
 end
