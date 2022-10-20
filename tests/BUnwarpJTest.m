@@ -50,6 +50,7 @@ classdef BUnwarpJTest < matlab.unittest.TestCase
     methods(Test)
         function testCalcAndApplyBUnwarpJMask(testCase)
         % TODO update this test
+        % TODO test normalize images
             pathInput = [1, 1, 1];
             roiType = 0;
             outputFreehandRoi = false;

@@ -88,6 +88,8 @@ classdef NrModelTest < matlab.unittest.TestCase
             myexp.inspectBunwarpj();
             % Verify trialStack
         end
+        
+        % TODO test setting bunwarpj parameters via gui
     end
 end
 

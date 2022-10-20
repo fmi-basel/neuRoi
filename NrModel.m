@@ -56,17 +56,12 @@ classdef NrModel < handle
         roiFileIdentifier    
        
 
+        transformParam
         referenceTrialIdx
-        UseSFITForBUnwarpJ =false
-        UseHistEqualForBUnwarpJ= false
-        UseCLAHEForBUnwarpJ= false
         BUnwarpJCalculated
         transformationName
         CalculatedTransformationsIdx
         CalculatedTransformationsList
-        BUnwarpJParameter
-        CLAHEParameter
-        SIFTParameter
         TransformationTooltip
         
         stackModel
@@ -145,12 +140,6 @@ classdef NrModel < handle
             defaultSetupModeParameter = 1;
             addParameter(pa, 'SetupMode',defaultSetupModeParameter, @isinteger);
             
-            [dfBUnwarpJParameter, dfCLAHEParameter, dfSIFTParameter] = BUnwarpJ.getBUnwarpJParameters();
-           
-            addParameter(pa, 'BUnwarpJParameter',dfBUnwarpJParameter, @isstruct);
-            addParameter(pa, 'CLAHEParameter',dfCLAHEParameter, @isstruct);
-            addParameter(pa, 'SIFTParameter',dfSIFTParameter, @isstruct);
-            
             defaultRoiFileIdentifier ="_RoiArray";
             
             addParameter(pa, 'roiFileIdentifier',defaultRoiFileIdentifier, @isstring);
@@ -158,14 +147,13 @@ classdef NrModel < handle
             parse(pa,varargin{:})
             pr = pa.Results;
             
-            self.BUnwarpJParameter=pr.BUnwarpJParameter;
-            self.CLAHEParameter=pr.CLAHEParameter;
-            self.SIFTParameter=pr.SIFTParameter;
+            self.transformParam = BUnwarpJ.TransformParam();
             self.TransformationTooltip=struct();
+            
+            
             self.trialArray = TrialModel.empty;
             
-            self.expInfo = pr.expInfo; % expInfo.nPlane is the total
-                                    % number of planes in the data
+            self.expInfo = pr.expInfo; % expInfo.nPlane is the total number of planes in the data
 
             self.setupMode=pr.SetupMode;
             
@@ -204,7 +192,6 @@ classdef NrModel < handle
             self.roiTemplateFilePath = '';
             
             self.planeNum = 1; % The plane number for loading file
-            
         end
         
         function importRawData(self,expInfo,rawDataDir,rawFileList,resultDir)
@@ -1110,21 +1097,11 @@ classdef NrModel < handle
             if self.CheckBunwarpJName()
                 self.BUnwarpJCalculated= false;
 
-                transformParam= struct("useSift",self.UseSFITForBUnwarpJ,...
-                                       "SIFTParameters",self.SIFTParameter,...
-                                       "Histogram_equalization",...
-                                       self.UseHistEqualForBUnwarpJ,...
-                                       "CLAHE",self.UseCLAHEForBUnwarpJ,...
-                                       "CLAHE_Parameters",self.CLAHEParameter,...
-                                       "BUnwarpJParameters",self.BUnwarpJParameter,...
-                                       "Reference_idx",self.referenceTrialIdx);
-
                 fileList = self.getSelectedFileList();
                 anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'));
                 anatomyList = arrayfun(@(x) fullfile(anatomyDir, strcat("anatomy_",x)), fileList);
     
-                % TODO 
-                referenceFile = self.rawFileList(transformParam.Reference_idx);
+                referenceFile = self.rawFileList{self.referenceTrialIdx};
                 referenceAnatomy = fullfile(anatomyDir, strcat("anatomy_", referenceFile));
                 
                 rIdx = find(strcmp(anatomyList, referenceAnatomy));
@@ -1133,18 +1110,17 @@ classdef NrModel < handle
                 end
                     
                 bunwarpjDir = self.getBunwarpjDir();
-                mkdir(bunwarpjDir);
-
-                if (transformParam.Histogram_equalization) ||  (transformParam.CLAHE)
-                    filesWoRef=self.NormTrialsForBUnwarpJ(anatomyList,BUnwarpJFolder,transformParam.Reference_idx,transformParam.CLAHE,transformParam.CLAHE_Parameters);
+                if ~exist(bunwarpjDir, 'dir')
+                    mkdir(bunwarpjDir);
                 end
-    
 
-                %Calculate and apply BUnwarpJ
-                BUnwarpJ.computeTransformation(anatomyList, referenceAnatomy,...
-                                               bunwarpjDir, transformParam);
+                BUnwarpJ.computeBunwarpj(anatomyList, referenceAnatomy,...
+                                         bunwarpjDir, self.transformParam);
                 
-                % TODO save transformation parameters
+                transformMeta.transformParam = self.transformParam;
+                transformMeta.referenceFile = referenceFile;
+                save(fullfile(bunwarpjDir, 'transformMeta.mat'), '-struct','transformMeta')
+
                 if isempty(self.CalculatedTransformationsList)
                     self.CalculatedTransformationsIdx=1;
                 end
@@ -1154,30 +1130,20 @@ classdef NrModel < handle
             end 
         end
             
-            
+        
         function bunwarpjDir = getBunwarpjDir(self)
             bunwarpjDir = self.appendPlaneDir(fullfile(self.getDefaultDir('bunwarpj'),...
                                                        self.transformationName));
         end
-
-            %incooperate reference rois
-                % referenceRoi= struct("roi",load(Rois).roiArray,"trial",strcat(self.anatomyDir,"_",RoiFilePrefix));
-                
-                %add Trasnformationname to list;sve calculated rois to load
-% <<<<<<< HEAD
-%                 self.CalculatedTransformationsList{length(self.CalculatedTransformationsList)+1}=TransformName;
-%Rois,[1,1,1],2,true,transformParam.SIFT,transformParam.SIFTParameters,BUnwarpJFolder,transformParam.BunwarpJ_Parameters,mapSize);
-% ======
-                
-                
-       function roiArrayStack = applyBunwarpj(self)
-       % TODO read transformParam from transformDir
-            referenceFile = self.rawFileList{transformParam.Reference_idx};
+        
+        function roiArrayStack = applyBunwarpj(self)
+            bunwarpjDir = self.getBunwarpjDir();
+            transformMeta = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
+            referenceFile = transformMeta.referenceFile;
             
             roiDir = self.appendPlaneDir(self.getDefaultDir('roi'));
             roiFile = fullfile(roiDir, iopath.modifyFileName(referenceFile,'',...
                                                              self.roiFileIdentifier,"mat"));
-            
             if ~isfile(roiFile)
                 error(sprintf("Cannot find roi file for selected reference trial. %s", roiFile));
                 return
@@ -1186,10 +1152,9 @@ classdef NrModel < handle
             templateRoiArray = foo.roiArray;
             
             rawFileList = self.getSelectedFileList();
-            roiArrayStack = BUnwarpJ.transformRoiArray(templateRoiArray, rawFileList, transformDir);
-            
-            bunwarpjDir = self.getBunwarpjDir();
-            save(fullfile(bunwarpjDir,"Rois.mat"),"RoiArray");
+            roiArrayStack = BUnwarpJ.transformRoiArray(templateRoiArray, rawFileList,...
+                                                       referenceFile, bunwarpjDir);
+            save(fullfile(bunwarpjDir,"Rois.mat"),"RoiArrayStack");
         end
         
         function NameOK=CheckBunwarpJName(self)

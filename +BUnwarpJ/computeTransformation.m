@@ -59,8 +59,8 @@ function computeTransformation(trialImages, referenceImage, saveDir, transformPa
             reference.getMask,...
             1,... %accuracy mode (0 - Fast, 1 - Accurate, 2 - Mono)
             0,... %image subsampling factor (from 0 to 7, representing 2^0=1 to 2^7 = 128)
-            transformParam.BUnwarpJParameters.transformationGridStart,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine)
-            transformParam.BUnwarpJParameters.transformationGridEnd,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine, 4 - Super Fine)
+            transformParam.bunwarpjParam.transformationGridStart,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine)
+            transformParam.bunwarpjParam.transformationGridEnd,... %(0 - Very Coarse, 1 - Coarse, 2 - Fine, 3 - Very Fine, 4 - Super Fine)
             0,... %divergence weight
             0,... %curl weight
             LandmarksWeights,... %landmark weight
