@@ -1,4 +1,6 @@
-function computeTransformation(trialImages, referenceImage, saveDir, transformParam)
+function computeTransformation(trialImages, referenceImage,...
+                               trialNameList, refTrialName,...
+                               saveDir, transformParam)
     rawTransformDir = fullfile(saveDir, 'TransformationsRaw');
     transformDir = fullfile(saveDir, 'Transformations');
     for folder={rawTransformDir, transformDir}
@@ -19,9 +21,8 @@ function computeTransformation(trialImages, referenceImage, saveDir, transformPa
         reference=ImageJ_LoaderEngine.openImage(referenceImage);
     end    
     for i=1:length(trialImages)
-        tempTrial=ImageJ_LoaderEngine.openImage(trialImages(i));
-
-        [filepath,name,ext] = fileparts(trialImages(i));
+        trialName = trialNameList{i};
+        tempTrial = ImageJ_LoaderEngine.openImage(trialImages(i));
         
         if transformParam.useSift==true %https://imagej.net/plugins/feature-extraction
             SIFTParameters = transformParam.SIFTParameters;
@@ -68,14 +69,15 @@ function computeTransformation(trialImages, referenceImage, saveDir, transformPa
             10,... %consistency weight
             0.01); %stopping threshold
 
+        
         %Save Transformation
-        transf.saveDirectTransformation(fullfile(transformDir,strcat(name,"_transformation.txt")));
-        transf.saveInverseTransformation(fullfile(transformDir,strcat(name,"_transformationInverse.txt")));
+        transf.saveDirectTransformation(fullfile(transformDir,strcat(trialName,"_transformation.txt")));
+        transf.saveInverseTransformation(fullfile(transformDir,strcat(trialName,"_transformationInverse.txt")));
 
         %Transform to raw transformation
         tempTrial.show();
-        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir,strcat(name,"_transformation.txt")),fullfile(rawTransformDir,strcat(name,"_transformationRaw.txt")),strcat(name,ext));
-        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir,strcat(name,"_transformationInverse.txt")),fullfile(rawTransformDir,strcat(name,"_transformationInverseRaw.txt")),strcat(name,ext));
+        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir,strcat(trialName,"_transformation.txt")),fullfile(rawTransformDir,strcat(trialName,"_transformationRaw.txt")),strcat(trialName,ext));
+        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir,strcat(trialName,"_transformationInverse.txt")),fullfile(rawTransformDir,strcat(trialName,"_transformationInverseRaw.txt")),strcat(trialName,ext));
         
         if transformParam.useSift==true
             tempTrial.close();
