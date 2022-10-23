@@ -80,7 +80,6 @@ classdef BUnwarpJTest < matlab.unittest.TestCase
             
             for k=1:2
                 tmask = squeeze(masks(k, :, :));
-                maskSize = size(tmask);
                 err = mean(mean(abs(tmask - testCase.movieStructList{k+1}.mask)));
                 testCase.verifyLessThanOrEqual(err, 0.05)
             end

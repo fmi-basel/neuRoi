@@ -3,7 +3,8 @@ function computeTransformation(trialImages, referenceImage,...
                                saveDir, transformParam)
     rawTransformDir = fullfile(saveDir, 'TransformationsRaw');
     transformDir = fullfile(saveDir, 'Transformations');
-    for folder={rawTransformDir, transformDir}
+    matDir = fullfile(saveDir, 'TransformationsMat');
+    for folder={rawTransformDir, transformDir, matDir}
         if ~exist(folder{1}, 'dir')
             mkdir(folder{1})
         end
@@ -70,23 +71,27 @@ function computeTransformation(trialImages, referenceImage,...
             0.01); %stopping threshold
 
         
-        %Save Transformation
+        % Save transformation
         elasticTransFile = strcat(trialName,"_transformation.txt");
         elasticTransInvFile = strcat(trialName,"_transformationInverse.txt");
         transf.saveDirectTransformation(fullfile(transformDir, elasticTransFile));
         transf.saveInverseTransformation(fullfile(transformDir, elasticTransInvFile));
 
-        %Transform to raw transformation
+        % Convert to raw transformation
         tempTrial.show();
         targetTitile = tempTrial.getTitle();
+        rawTransFile = fullfile(rawTransformDir,strcat(trialName,...
+                                                       "_transformationRaw.txt"));
+        rawTransInvFile = fullfile(rawTransformDir,strcat(trialName,...
+                                                          "_transformationInverseRaw.txt"));
         bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir, elasticTransFile),...
-                                        fullfile(rawTransformDir,strcat(trialName,...
-                                                          "_transformationRaw.txt")),...
-                                        targetTitile);
+                                        rawTransFile, targetTitile);
         bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir, elasticTransInvFile),...
-                                        fullfile(rawTransformDir,strcat(trialName,...
-                                                          "_transformationInverseRaw.txt")),...
-                                        targetTitile);
+                                        rawTransInvFile, targetTitile);
+        
+        % Convert raw transformation to mat
+        BUnwarpJ.convertRawToMat(rawTransFile, fullfile(matDir,strcat(trialName, ".mat")));
+        BUnwarpJ.convertRawToMat(rawTransInvFile, fullfile(matDir,strcat(trialName, "_inverse.mat")));
         
         if transformParam.useSift==true
             tempTrial.close();

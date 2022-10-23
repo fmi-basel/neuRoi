@@ -23,11 +23,6 @@ classdef TrialStackModel < handle
         previousTrialIdx
         previousroiArray
         roiArrayNotOriginal
-        resultDir
-        planeString
-        TransformationFiles
-
-        roiFileIdentifier
         roiSavedStatus
     end
     
@@ -57,17 +52,16 @@ classdef TrialStackModel < handle
     end
     
     methods
-        function self = TrialStackModel(rawFileList, anatomyArray,...
-                                        responseArray, roiArrays,...
-                                        transformationParameter,transformationName,...
-                                        resultDir,planeString,...
-                                        TransformationFiles,roiFileIdentifier)
+        function self = TrialStackModel(rawFileList,...
+                                        anatomyArray,...
+                                        responseArray,...
+                                        templateRoiArr,...
+                                        roiArrStack,...
+                                        transformDir)
         % TODO templateRoiArray
             % TODO check sizes of all arrays
             self.rawFileList = rawFileList;
-            self.TransformationFiles=TransformationFiles;
-            self.resultDir=resultDir;
-            self.planeString=planeString;
+
             %apply CLAHE
             for i=1:size(anatomyArray,3)
                 anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);

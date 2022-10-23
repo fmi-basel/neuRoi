@@ -56,7 +56,7 @@ classdef NrModelTest < matlab.unittest.TestCase
             testCase.movieStructList = movieStructList;
             testCase.myexp = myexp;
             
-            % testCase.addTeardown(@rmdir, tmpDir, 's')
+            testCase.addTeardown(@rmdir, tmpDir, 's')
         end
     end
 
@@ -83,12 +83,15 @@ classdef NrModelTest < matlab.unittest.TestCase
             filesExist = cellfun(@(x) exist(x, 'file'), [tFileList, rtFileList]);
             testCase.verifyTrue(all(filesExist));
             
-            % TODO separate template roi from a specific trial in terms of file name
-            
             myexp.applyBunwarpj();
-            % Verify ROIs
-            
-            myexp.inspectBunwarpj();
+            foo = load(fullfile(bunwarpjDir,"roiArrayStack.mat"));
+            roiArrayStack = foo.roiArrayStack;
+            for k=1:3
+                err = mean(mean(abs(roiArrayStack(k).convertToMask()-testCase.movieStructList{k}.mask)));
+                testCase.verifyLessThanOrEqual(err, 0.05)
+            end
+
+            myexp.inspectStack();
             % Verify trialStack
         end
         

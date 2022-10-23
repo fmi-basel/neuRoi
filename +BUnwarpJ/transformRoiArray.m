@@ -5,8 +5,8 @@ roiMap = templateRoiArray.convertToMask();
         if strcmp(trialName, refTrialName)
             roiArr = templateRoiArray;
         else
-            transformName = iopath.modifyFileName(trialName,'','_transformationRaw','txt');
-            outputMask= BUnwarpJ.fcn_ApplyRawTransformation(roiMap,fullfile(transformDir,'TransformationsRaw',transformName));
+            transformName = strcat(trialName,'.mat');
+            outputMask= BUnwarpJ.applyTransformation(roiMap,fullfile(transformDir,'TransformationsMat',transformName));
             % convert outputMask to RoiArray
             roiArr = roiFunc.RoiArray('maskImg',outputMask);
         end
