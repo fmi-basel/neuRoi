@@ -43,6 +43,10 @@ classdef NrModelTest < matlab.unittest.TestCase
             roiDir = myexp.getDefaultDir('roi');
             roiFile = fullfile(roiDir, iopath.modifyFileName(rawFileList{1}, '', '_RoiArray', 'mat'));
             roiArray = roiFunc.RoiArray('maskImg', templateMask);
+            roiDir = myexp.getDefaultDir('roi');
+            if ~exist(roiDir, 'dir')
+                mkdir(roiDir)
+            end
             save(roiFile, 'roiArray')
 
             testDirs.tmpDir = tmpDir;
@@ -66,13 +70,12 @@ classdef NrModelTest < matlab.unittest.TestCase
             
             myexp.computeBunwarpj();
 
-            prefix = 'anatomy_';
+            prefix = '';
             bunwarpjDir = fullfile(testCase.dirs.resultDir, 'bunwarpj', 'transf');
             tFileList = cellfun(@(x) fullfile(bunwarpjDir, 'Transformations',...
                                               iopath.modifyFileName(x,prefix,'_transformation','txt')),...
                                 myexp.rawFileList(2:end),...
                                 'UniformOutput', false);
-            disp(tFileList{1})
             rtFileList = cellfun(@(x) fullfile(bunwarpjDir, 'TransformationsRaw',...
                                                iopath.modifyFileName(x,prefix,'_transformationRaw','txt')),...
                                  myexp.rawFileList(2:end),...

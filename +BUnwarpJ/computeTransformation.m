@@ -71,13 +71,22 @@ function computeTransformation(trialImages, referenceImage,...
 
         
         %Save Transformation
-        transf.saveDirectTransformation(fullfile(transformDir,strcat(trialName,"_transformation.txt")));
-        transf.saveInverseTransformation(fullfile(transformDir,strcat(trialName,"_transformationInverse.txt")));
+        elasticTransFile = strcat(trialName,"_transformation.txt");
+        elasticTransInvFile = strcat(trialName,"_transformationInverse.txt");
+        transf.saveDirectTransformation(fullfile(transformDir, elasticTransFile));
+        transf.saveInverseTransformation(fullfile(transformDir, elasticTransInvFile));
 
         %Transform to raw transformation
         tempTrial.show();
-        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir,strcat(trialName,"_transformation.txt")),fullfile(rawTransformDir,strcat(trialName,"_transformationRaw.txt")),strcat(trialName,ext));
-        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir,strcat(trialName,"_transformationInverse.txt")),fullfile(rawTransformDir,strcat(trialName,"_transformationInverseRaw.txt")),strcat(trialName,ext));
+        targetTitile = tempTrial.getTitle();
+        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir, elasticTransFile),...
+                                        fullfile(rawTransformDir,strcat(trialName,...
+                                                          "_transformationRaw.txt")),...
+                                        targetTitile);
+        bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir, elasticTransInvFile),...
+                                        fullfile(rawTransformDir,strcat(trialName,...
+                                                          "_transformationInverseRaw.txt")),...
+                                        targetTitile);
         
         if transformParam.useSift==true
             tempTrial.close();

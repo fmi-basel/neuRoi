@@ -1121,7 +1121,7 @@ classdef NrModel < handle
                 refAnatomyFile = fullfile(anatomyDir, refAnatomyFile);
                
                 [trialNameList, ~] = NrModel.removeReferenceFromList(trialNameList, refTrialName);
-                [anatomyList, ~] = NrModel.removeReferenceFromList(anatomyList, referenceAnatomy);
+                [anatomyFileList, ~] = NrModel.removeReferenceFromList(anatomyFileList, refAnatomyFile);
                     
                 bunwarpjDir = self.getBunwarpjDir();
                 if ~exist(bunwarpjDir, 'dir')
@@ -1148,10 +1148,12 @@ classdef NrModel < handle
         
         function roiArrayStack = applyBunwarpj(self)
             bunwarpjDir = self.getBunwarpjDir();
-            transformMeta = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
+            foo = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
+            transformMeta = foo.transformMeta;
+            refTrialName = transformMeta.refTrialName;
             
             roiDir = self.appendPlaneDir(self.getDefaultDir('roi'));
-            roiFile = fullfile(roiDir, iopath.modifyFileName(referenceFile,'',...
+            roiFile = fullfile(roiDir, iopath.modifyFileName(refTrialName,'',...
                                                              self.roiFileIdentifier,"mat"));
             if ~isfile(roiFile)
                 error(sprintf("Cannot find roi file for selected reference trial. %s", roiFile));
@@ -1161,8 +1163,9 @@ classdef NrModel < handle
             templateRoiArray = foo.roiArray;
             
             trialNameList = self.getSelectedFileList('trial');
-            roiArrayStack = BUnwarpJ.transformRoiArray(templateRoiArray, anatomyList, bunwarpjDir);
-            save(fullfile(bunwarpjDir,"Rois.mat"),"RoiArrayStack");
+            roiArrayStack = BUnwarpJ.transformRoiArray(templateRoiArray, trialNameList,...
+                                                       refTrialName, bunwarpjDir);
+            save(fullfile(bunwarpjDir,"Rois.mat"),"roiArrayStack");
         end
         
         function NameOK=CheckBunwarpJName(self)
