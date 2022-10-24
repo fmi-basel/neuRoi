@@ -8,7 +8,7 @@ addParameter(pa, 'affineMat', [1, 0, 0; 0, 1, 0; 0, 0, 1], @ismatrix);
 parse(pa,varargin{:})
 pr = pa.Results;
 
-movieSize = [128, 128, 22];
+movieSize = [128, 144, 22];
 mockMovie.name = 'mock_movie';
 mockMovie.meta = struct('width', movieSize(1),...
                         'height', movieSize(2),...
