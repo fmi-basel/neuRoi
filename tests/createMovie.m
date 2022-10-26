@@ -29,7 +29,7 @@ for k=1:length(roiList)
     base = pr.baseList(k);
     amp = pr.ampList(k);
     mask=zeros(movieSize(1:2));
-    mask(roi(1,1):roi(1,2), roi(2,1):roi(2,2)) = 1;
+    mask(roi(1,1):roi(1,2), roi(2,1):roi(2,2)) = k;
     
     dynamic = computeDynamic(mask, start, dur, base, amp, movieSize);
     rawMovie = rawMovie + dynamic;
