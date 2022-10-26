@@ -83,7 +83,8 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             % trial 3
             % has roi 1, 3, 4, 6
             % updated roi 1
-            % TODO set unique tag when adding ROIs in different trials            
+            % TODO set unique tag when adding ROIs in different trials    
+            % TODO then gui should be built for a group a roiArr, 1 for common and 1 for diff
         end
         
         % add/update/delete ROI in current trial

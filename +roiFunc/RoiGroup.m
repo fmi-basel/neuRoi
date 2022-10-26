@@ -1,14 +1,26 @@
 classdef RoiGroup
     properties
-        imageSize
-        roiArray
+        roiArrList
+        currentIdx
     end
 
     methods
-        function self = RoiGroup(imageSize)
-            self.imageSize = imageSize;
-            self.roiArray = RoiFreehand.empty();
+        function self = RoiGroup(roiArrList, nameList)
+            self.roiArrList = roiArrList;
+            self.nameList = nameList;
         end
+        
+        function addRoi(self)
+            self.roiArrList{currentIdx};.addRoi();
+        end
+        
+        function updateRoi(self, tag, roi)
+        end
+        
+        function deleteRoi(self, tag)
+        end
+        
+        
 
     end
 end

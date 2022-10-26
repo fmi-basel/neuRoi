@@ -11,7 +11,7 @@ classdef TrialStackModel < handle
         mapTypeList
 
         templateRoiArr
-        roiArrStack
+        roiGroupStack
         
         transformStack
     end
@@ -26,9 +26,8 @@ classdef TrialStackModel < handle
         function self = TrialStackModel(trialNameList,...
                                         anatomyStack,...
                                         responseStack,...
-                                        templateRoiArr,...
                                         roiArrStack,...
-                                        modRoiArrStack,...
+                                        commonRoiIds,...                                            
                                         transformStack,...
                                         templateIdx)
         % TODO templateRoiArray
@@ -96,15 +95,6 @@ classdef TrialStackModel < handle
         function transformTemplateRoiArray(self)
             self.roiArrayStack = BUnwarpJ.transformRoiArray(self.templateRoiArray,self.mapSize,...
                                                             self.rawFileList, self.transformDir);
-        end
-        
-        function deleteRoiCurrent(self)
-            tagArray = self.selectedRoiTagArray;
-            self.unselectAllRoi();
-            indArray = self.findRoiByTagArray(tagArray);
-            self.roiArray(indArray) = [];
-            self.roiArrays{ self.currentTrialIdx}=self.roiArray;
-            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
         end
 
         function data = getMapData(self,mapType,trialIdx)
