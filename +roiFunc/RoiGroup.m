@@ -1,7 +1,8 @@
 classdef RoiGroup
     properties
         roiArrList
-        currentIdx
+        nameList
+        currentArrIdx
     end
 
     methods
@@ -10,17 +11,17 @@ classdef RoiGroup
             self.nameList = nameList;
         end
         
-        function addRoi(self)
-            self.roiArrList{currentIdx};.addRoi();
+        function addRoi(self, roi)
+            self.roiArrList{currentIdx}.addRoi(roi);
         end
         
         function updateRoi(self, tag, roi)
+            self.roiArrList{currentIdx}.addRoi(tag, roi);
         end
         
         function deleteRoi(self, tag)
+            self.roiArrList{currentIdx}.deleteRoi(tag, roi);
         end
-        
-        
 
     end
 end

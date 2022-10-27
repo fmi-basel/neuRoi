@@ -1,8 +1,12 @@
 classdef RoiArray < handle
     properties
         imageSize
-        roiList
         meta
+    end
+    
+    properties (Access = private)
+        roiList
+        tagList
     end
 
     methods
@@ -15,6 +19,7 @@ classdef RoiArray < handle
             parse(pa,varargin{:})
             pr = pa.Results;
             self.roiList = roiFunc.RoiM.empty();
+            self.tagList = [];
             
             if length(pr.maskImg)
                 self.importFromMaskImg(pr.maskImg);
@@ -24,6 +29,27 @@ classdef RoiArray < handle
             elseif length(pr.roiList)
                 self.imageSize = pr.imageSize;
                 self.roiList = pr.roiList;
+                self.tagList = arrayfun(@(x) x.tag, roiList)
+            end
+        end
+        
+        function addRoi(self, roi)
+            self.roiList(end+1) = roi;
+            self.tagList(end+1) = roi.tag;
+        end
+        
+        function tagList = getTagList(self)
+            tagList = self.tagList;
+        end
+        
+        function rois = getRoisByTags(self, tags)
+            [~, idxs] = ismember(tags, self.tagList);
+            rois = roiFunc.RoiM.empty();
+            for k = 1:length(tags)
+                idx = idxs(k);
+                if idx
+                    rois(k) = self.roiList(idx);
+                end
             end
         end
         
@@ -37,16 +63,9 @@ classdef RoiArray < handle
                 [mposY,mposX] = find(mask);
                 position = [mposX,mposY];
                 roi = roiFunc.RoiM(position,'tag',double(tag));
-                self.roiList(end+1) = roi;
+                self.addRoi(roi);
             end
         end
-
-        % function transformRois(tform)
-        %     for k=1:length(self.roiList)
-        %         roi = self.roiList(k);
-        %         roi.transformPosition(tform)
-        %     end
-        % end
     
         function maskImg = convertToMask(self)
             maskImg = zeros(self.imageSize);

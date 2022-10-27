@@ -1222,6 +1222,11 @@ classdef NrModel < handle
                 % TODO 2022-10-23 Bo Hu
                 % sort out all arguments for TrialStackModel
 
+                %apply CLAHE
+                for i=1:size(anatomyArray,3)
+                    anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
+                end
+                
                 stackModel = trialStack.TrialStackModel(trialNameList,...
                                                         anatomyArray,...
                                                         responseArray,...

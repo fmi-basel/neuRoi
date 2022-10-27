@@ -3,17 +3,20 @@ classdef TrialStackModel < handle
         trialNameList
         anatomyStack
         responseStack
-        mapSize
         nTrial
         
         contrastLimArray
         contrastForAllTrial
         mapTypeList
+        mapSize
 
-        templateRoiArr
         roiGroupStack
+        commonRoiTags
+        allRoiTags
+        currentRoiGroup
         
         transformStack
+        templateIdx
     end
     
     properties (SetObservable)
@@ -26,77 +29,65 @@ classdef TrialStackModel < handle
         function self = TrialStackModel(trialNameList,...
                                         anatomyStack,...
                                         responseStack,...
-                                        roiArrStack,...
-                                        commonRoiIds,...                                            
-                                        transformStack,...
-                                        templateIdx)
-        % TODO templateRoiArray
-            % TODO check sizes of all arrays
-            self.rawFileList = rawFileList;
-
-            %apply CLAHE
-            for i=1:size(anatomyArray,3)
-                anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
-            end
+                                        varargin)
+            pa = inputParser;
+            addRequired(pa,'trialNameList');
+            addRequired(pa,'anatomyStack');
+            addRequired(pa,'responseStack');
+            addOptional(pa,'roiArrStack', []);
+            addOptional(pa,'transformStack', []);
+            addOptional(pa,'templateIdx', inf);
+            addParameter(pa, 'doSummarizeRoiTags', true)
             
-            self.anatomyArray = anatomyArray;
-            self.responseArray = responseArray;
-            self.mapSize = size(anatomyArray(:,:,1));
-            self.mapType = 'anatomy';
-            self.nTrial = length(rawFileList);
-            self.currentTrialIdx = 1;
-            self.EditCheckbox=0;
-            self.roiArrayNotOriginal=0;
+            parse(pa,trialNameList,...
+                  anatomyStack,...
+                  responseStack,...
+                  varargin{:})
+            pr = pa.Results;
+
+            % TODO check sizes of all arrays
+            self.trialNameList = pr.trialNameList;
+            self.anatomyStack = pr.anatomyStack;
+            self.responseStack = pr.responseStack;
+            self.nTrial = length(trialNameList);
             self.mapTypeList = {'anatomy','response'};
+            self.mapType = 'anatomy';
             self.contrastLimArray = cell(length(self.mapTypeList),...
                                          self.nTrial);
             self.contrastForAllTrial = false;
-            if ~exist('roiArrays','var')
-                self.roiProvided= false;
+            self.mapSize = size(self.anatomyStack(:, :, 1));
+
+            if length(pr.roiArrStack)
+                if pr.doSummarizeRoiTags
+                    [self.commonRoiTags, self.allRoiTags] = self.summarizeRoiTags(pr.roiArrStack);
+                else
+                    self.allRoiTags = roiArrStack{1}.getAllTags();
+                    self.commonRoiTags = self.allRoiTags;
+                end
+                self.roiGroupStack = self.separateCommonRois(pr.roiArrStack,...
+                                                                  self.commonRoiTags);
             else
-                self.roiArrays=roiArrays;
-                self.roiProvided=true;
-                roiSize=length(roiArrays);
-                if roiSize(1)==1
-                    self.SingleRoi=true;
-                    self.roiArray=roiArrays;
-                else
-                    self.SingleRoi=false;
-                    if roiSize(1)~=self.nTrial
-                        self.roiArrays= [];
-                        self.roiProvided=false;
-                    else
-                        self.roiArray=roiArrays{1};
-                    end
-                end
-             end
-            if exist('transformationParameter','var')
-                self.transformationParameter=transformationParameter;
-                if isfield(self.transformationParameter,"Rawfile_List")
-                    self.containsRawFileList=true;
-                else
-                    self.containsRawFileList=false;
-                end
-                if isfield(self.transformationParameter,"RoiFileIdentifier")
-                    self.roiFileIdentifier=self.transformationParameter.RoiFileIdentifier;
-                else
-                    self.roiFileIdentifier="_RoiArray";
-                end
-            else
-                self.transformationParameter=string();
+                self.allRoiTags = [];
+                self.commonRoiTags = [];
+                self.roiGroupStack = self.createEmptyRoiGroupStack(nTrial);
             end
-            if exist('transformationName','var')
-                self.transformationName=transformationName;
-            end
+            
+            self.transformStack = pr.transformStack;
+            self.templateIdx = pr.templateIdx; % templateIdx == inf means template is not in the stack
+            
             self.currentTrialIdx = 1;
-            % self.roiSavedStatus=true;
-        end
-        
-        function transformTemplateRoiArray(self)
-            self.roiArrayStack = BUnwarpJ.transformRoiArray(self.templateRoiArray,self.mapSize,...
-                                                            self.rawFileList, self.transformDir);
         end
 
+        function selectTrial(self, trialIdx)
+            self.currentTrialIdx = trialIdx;
+        end
+        
+        function set.currentTrialIdx(self, idx)
+            self.currentTrialIdx = idx;
+            self.currentRoiGroup = self.roiGroupStack{idx};
+        end
+        
+        
         function data = getMapData(self,mapType,trialIdx)
             switch mapType
               case 'anatomy'
@@ -143,39 +134,82 @@ classdef TrialStackModel < handle
            self.mapType = self.mapTypeList{idx};
         end
         
-
+        function saveTrialStack(self, filePath)
+            save(filePath, 'self')
+        end
+    end
+    
+    methods
         function addRoi(self, roi)
-            roi.tag = xxx % TODO from templateRoiArr
-            self.currentRoiArr.addRoi(roi)
+            roi.tag = self.getNewRoiTag();
+            self.currentRoiGroup.addRoi(roi);
+        end
+        
+        function tag = getNewRoiTag(self)
+            tag = max(self.allRoiTags) + 1 
         end
         
         function updateRoi(self, tag, roi)
-            self.currentRoiArr.updateRoi(tag, roi)
+            self.currentRoiGroup.updateRoi(tag, roi)
         end
         
         function deleteRoi(self,tag)
-            self.currentRoiArr.deleteRoi(tag)
+            self.currentRoiGroup.deleteRoi(tag)
         end
 
-        function deleteRoiAllTrials(self)
+        function deleteRoiAllTrials(self, tag)
+            for k=1:self.nTrial
+                roiArr = roiArrStack{k};
+                roiArr.deleteRoi(tag)
+            end
         end
         
         function addRoisAllTrial(self)
-            rois = self.currentRoiArr.getSelectedAddedRois();
+            rois = self.currentRoiGroup.getSelectedAddedRois();
             self.templateRoiArr.addRois()
             for k=1:self.nTrial
                 transform = self.transformStack{k};
                 trois = transformRois(rois, transform);
                 self.roiArrStack{k}.addRois()
             end
-            self.currentRoiArr.deleteAddedRois(rois);
-        end
-        
-        
-        function saveTrialStack(self)
-            stackFile = fullfile(self.transformDir, 'trial_stack.mat')
-            save(stackFile, 'self')
+            self.currentRoiGroup.deleteAddedRois(rois);
         end
     end
-end
 
+    methods
+        function [commonTags, allTags] = summarizeRoiTags(self, roiArrStack)
+            tagListStack = cellfun(@(x) x.getTagList(), roiArrStack,...
+                                    'UniformOutput', false);
+            commonTags = helper.multiIntersect(tagListStack);
+            allTags = sort(unique(cell2mat(tagListStack)));
+        end
+        
+        function roiGroupStack = separateCommonRois(self, roiArrStack, commonRoiTags)
+            roiGroupStack = {};
+            for k=1:length(roiArrStack)
+                roiGroupStack{k} = self.splitRoiArr(roiArrStack{k}, commonRoiTags);
+            end
+        end
+        
+        function roiGroup = splitRoiArr(self, roiArr, tags)
+            nameList = {'common', 'diff'};
+            roiArrList = {};
+            roiArrList{1} = roiArr.getRoisByTags(tags);
+            allTags = roiArr.getTagList();
+            otherTags = setdiff(allTags, tags);
+            roiArrList{2} = roiArr.getRoisByTags(otherTags);
+            roiGroup = roiFunc.RoiGroup(roiArrList, nameList);
+        end
+        
+        function roiGroupStack = createEmptyRoiGroupStack(self, nTrial)
+            roiGroupStack = {};
+            for k=1:length(roiArrStack)
+                nameList = {'common', 'diff'};
+                roiArrList = {roiFunc.RoiArray('imageSize', self.mapSize),...
+                              roiFunc.RoiArray('imageSize', self.mapSize)};
+                roiGroupStack{k} = roiFunc.RoiGroup(roiArrList, nameList);
+            end
+        end
+        
+    end       
+end
