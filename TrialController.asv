@@ -114,13 +114,11 @@ classdef TrialController < handle
         function roiListboxSelectionGroup_Callback(self,src,evnt)
             tempGroup=self.view.guiHandles.roiListboxSelectionGroup.String{self.view.guiHandles.roiListboxSelectionGroup.Value};
             roiIdx=self.view.guiHandles.roiListbox.Value;
-            for i = roiIdx
-                self.model.roiArray(i).roiGroup=tempGroup;
+            for i = length(roiIdx)
+                self.model.roiArray(roiIdx(i)).roiGroup=tempGroup;
             end
             selectedRois=self.model.roiArray(roiIdx);
-            self.model.unselectAllRoi();
             self.view.redrawMultipleRoiPatch(selectedRois);
-            self.model.selectMultiRoi(arrayfun(@(x) x.tag, selectedRois));
         end
        
 

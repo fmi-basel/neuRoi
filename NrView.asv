@@ -1,4 +1,4 @@
-classdef NrView < handle
+sclassdef NrView < handle
     properties
         model
         controller

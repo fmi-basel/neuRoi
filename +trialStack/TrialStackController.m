@@ -34,6 +34,8 @@ classdef TrialStackController < handle
         function keyPressCallback(self, src, evnt)
             if isempty(evnt.Modifier)
                 switch evnt.Key
+                  case 'r'
+                    self.toggleRoiVisibility();
                   case {'j','k'}
                     self.slideTrialCallback(evnt)
                   case 'q'
@@ -216,6 +218,15 @@ classdef TrialStackController < handle
                     end
                 end
             end
+        end
+
+        function toggleRoiVisibility(self)
+            if self.model.roiVisible
+                self.model.roiVisible = false;
+            else
+                self.model.roiVisible = true;
+            end
+            % self.model.roiVisible = ~self.model.roiVisible;
         end
         
         function moveRoiKeyPressCallback(self,src,evnt)
