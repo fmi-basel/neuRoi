@@ -68,6 +68,10 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             roi = roiFunc.RoiM(position);
             stackModel.addRoi(roi);
             
+            position = [64,43; 64,44; 65,43; 65,44];
+            roi = roiFunc.RoiM(position);
+            stackModel.addRoi(roi);
+            
             position = [40,90; 40,91; 42,90; 42,91];
             freshRoi = roiFunc.RoiM(position);
             stackModel.updateRoi(3, freshRoi);
@@ -79,8 +83,9 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             stackModel.updateRoi(1, freshRoi);
             
             stackModel.selectTrial(2);
-            stackModel.selectRois([2, 6]);
-            stackModel.addRoisAllTrial();
+            % select in arr 2, roi #6 and #7
+            stackModel.selectRois([2, 2], [6, 7]);
+            stackModel.addRoisInStack();
   
             % Verify
             % trial 1

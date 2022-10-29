@@ -1,10 +1,9 @@
 %%%%% Jan Eckhardt/FMI/AG Friedrich/Basel/Switzerland 08.2021
 
-function [Outputimage]= applyTransformation(Image , transformFile)
+function [outImg]= applyTransformation(img , transform)
 
 
 %TO DO compare input size with transformation!
-    transform = load(transformFile);
     xcorr = transform.xcorr;
     ycorr = transform.ycorr;
     height = transform.height;
@@ -19,8 +18,7 @@ function [Outputimage]= applyTransformation(Image , transformFile)
     ycorr(ycorr<1)=1;
     
     Outputimage = zeros(width,height);
-    Imagesize=size(Image);
-    Outputimage= Image(sub2ind([Imagesize(1) Imagesize(2)],uint16(permute(ycorr,[2 1])),uint16(permute(xcorr,[2 1]))));
-    
+    Imagesize=size(img);
+    outImg = img(sub2ind([Imagesize(1) Imagesize(2)],uint16(permute(ycorr,[2 1])),uint16(permute(xcorr,[2 1]))));
 
 end

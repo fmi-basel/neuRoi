@@ -7,14 +7,16 @@ classdef RoiArray < handle
     properties (Access = private)
         roiList
         tagList
+        selectedRois
+        selectedTags
     end
-
+    
     methods
         function self = RoiArray(varargin)
             pa = inputParser;
-            addParameter(pa,'imageSize',@ismatrix);
             addParameter(pa,'maskImg',[],@ismatrix);
             addParameter(pa,'maskImgFile','',@(x) isstring(x)||ischar(x));
+            addParameter(pa,'imageSize',@ismatrix);
             addParameter(pa,'roiList',[]);
             parse(pa,varargin{:})
             pr = pa.Results;
@@ -23,10 +25,12 @@ classdef RoiArray < handle
             
             if length(pr.maskImg)
                 self.importFromMaskImg(pr.maskImg);
+                self.imageSize = size(pr.maskImg);
             elseif length(pr.maskImgFile)
                 maskImg = imread(pr.maskImgFile);
                 self.importFromMaskImg(maskImg);
-            elseif length(pr.roiList)
+                self.imageSize = size(maskImg);
+            else
                 self.imageSize = pr.imageSize;
                 self.roiList = pr.roiList;
                 self.tagList = arrayfun(@(x) x.tag, self.roiList);
@@ -54,7 +58,7 @@ classdef RoiArray < handle
         end
         
         function updateRoi(self, tag, roi)
-            idx = find(self.tagList == tag);
+            idx = self.findRoi(tag);
             if idx
                 self.roiList(idx) = roi;
             else
@@ -63,18 +67,34 @@ classdef RoiArray < handle
         end
         
         function deleteRoi(self, tag)
-            idx = find(self.tagList == tag);
-            if idx
-                self.roiList(idx) = [];
-                self.tagList(idx) = [];
-            else
-                error(sprintf('ROI #%d not found!', tag))
-            end
+            idx = self.findRoi(tag);
+            self.roiList(idx) = [];
+            self.tagList(idx) = [];
         end
         
         function deleteRois(self, tags)
             for k=1:length(tags)
                 self.deleteRoi(tags(k));
+            end
+        end
+        
+        function selectRois(self, tags)
+            self.selectedRois = roiFunc.RoiM.empty();
+            idxs = arrayfun(@(x) self.findRoi(x), tags);
+            self.selectedRois = self.roiList(idxs);
+            self.selectedTags = tags;
+        end
+        
+        function rois = getSelectedRois(self)
+            rois = self.selectedRois;
+        end
+        
+        function idx = findRoi(self, tag)
+            idx = find(self.tagList == tag);
+            if ~length(idx)
+                error(sprintf('ROI #%d not found!', tag))
+            elseif length(idx) > 1
+                error(sprintf('Multiple ROIs found for #%d!', tag))
             end
         end
         

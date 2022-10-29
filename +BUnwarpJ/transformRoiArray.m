@@ -1,6 +1,6 @@
-function roiArrayStack = transformRoiArray(templateRoiArr, transform)
-    roiMap = templateRoiArray.convertToMask();
+function troiArr = transformRoiArray(roiArr, transform)
+    roiMap = roiArr.convertToMask();
     outputMask= BUnwarpJ.applyTransformation(roiMap, transform);
-    roiArr = roiFunc.RoiArray('maskImg',outputMask);
+    troiArr = roiFunc.RoiArray('maskImg',outputMask);
     % TODO handle the situation when a subset of ROIs are not transformed successfully
 end

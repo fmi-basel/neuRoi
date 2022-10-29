@@ -156,10 +156,10 @@ classdef TrialStackModel < handle
         function addRoi(self, roi)
             roi.tag = self.getNewRoiTag();
             self.currentRoiGroup.addRoi(roi, 2);
+            self.allRoiTags(end+1) = roi.tag;
         end
 
         function addRoisInStack(self)
-        % TODO
             roiArr = self.currentRoiGroup.getSelectedRois(2);
             tags = roiArr.getTagList();
             transformInv = self.transformInvStack{self.currentTrialIdx};
@@ -168,30 +168,30 @@ classdef TrialStackModel < handle
             self.commonRoiTags = [self.commonRoiTags, templateTags];
             for k=1:self.nTrial
                 transform = self.transformStack{k};
-                troiArr = BUnwarpJ.transformRois(templateRoiArr, transform);
+                troiArr = BUnwarpJ.transformRoiArr(templateRoiArr, transform);
                 self.roiGroupStack{k}.addRois(trois, 1);
             end
             self.currentRoiGroup.deleteRois(tags, 2);
         end
 
         function updateRoi(self, tag, roi)
-        % TODO specify arrIdx
-            self.currentRoiGroup.updateRoi(tag, roi)
+            arrIdx = self.currentRoiGroup.currentIdx;
+            self.currentRoiGroup.updateRoi(tag, roi, arrIdx)
         end
         
         function deleteRoi(self,tag)
-        % TODO specify arrIdx
-            self.currentRoiGroup.deleteRoi(tag)
+            arrIdx = self.currentRoiGroup.currentIdx;
+            self.currentRoiGroup.deleteRoi(tag, arrIdx)
         end
 
         function deleteRoiInStack(self, tag)
-            cidx = find(self.commonRoiTags == tag)
+            cidx = find(self.commonRoiTags == tag);
             if cidx
                 self.commonRoiTags(cidx) = [];
             else
                 error(sprintf('ROI #%d not found in common ROIs of the stack!', tag))
             end
-            aidx = find(self.allRoiTags == tag)
+            aidx = find(self.allRoiTags == tag);
             self.allRoiTags(aidx) = [];
 
             for k=1:self.nTrial
@@ -200,8 +200,8 @@ classdef TrialStackModel < handle
             end
         end
         
-        function selectRois(tags)
-            self.currentRoiGroup.selectRois(tags)
+        function selectRois(self, arrIdxs, tags)
+            self.currentRoiGroup.selectRois(arrIdxs, tags);
         end
     end
 
@@ -222,16 +222,22 @@ classdef TrialStackModel < handle
         
         function roiGroup = splitRoiArr(self, roiArr, tags)
             nameList = {'common', 'diff'};
-            roiArrList = {};
+            roiArrList = roiFunc.RoiArray.empty();
             commonRois = roiArr.getRoisByTags(tags);
-            roiArrList{1} = roiFunc.RoiArray('imageSize', self.mapSize,...
+            roiArrList(1) = roiFunc.RoiArray('imageSize', self.mapSize,...
                                              'roiList', commonRois);
             
             allTags = roiArr.getTagList();
             diffTags = setdiff(allTags, tags);
-            diffRois = roiArr.getRoisByTags(diffTags);
-            roiArrList{2} = roiFunc.RoiArray('imageSize', self.mapSize,...
-                                             'roiList', diffRois);
+            if length(diffTags)
+                diffRois = roiArr.getRoisByTags(diffTags);
+                roiArrList(2) = roiFunc.RoiArray('imageSize', self.mapSize,...
+                                                 'roiList', diffRois);
+            else
+                roiArrList(2) = roiFunc.RoiArray('imageSize', self.mapSize,...
+                                                 'roiList', roiFunc.RoiM.empty());
+            end
+            
             roiGroup = roiFunc.RoiGroup(roiArrList, nameList);
         end
         
@@ -239,8 +245,8 @@ classdef TrialStackModel < handle
             roiGroupStack = {};
             for k=1:length(roiArrStack)
                 nameList = {'common', 'diff'};
-                roiArrList = {roiFunc.RoiArray('imageSize', self.mapSize),...
-                              roiFunc.RoiArray('imageSize', self.mapSize)};
+                roiArrList(1:2) = [roiFunc.RoiArray('imageSize', self.mapSize),...
+                                   roiFunc.RoiArray('imageSize', self.mapSize)];
                 roiGroupStack{k} = roiFunc.RoiGroup(roiArrList, nameList);
             end
         end
