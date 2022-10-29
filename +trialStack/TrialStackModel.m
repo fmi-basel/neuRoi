@@ -14,8 +14,10 @@ classdef TrialStackModel < handle
         commonRoiTags
         allRoiTags
         currentRoiGroup
-        
+
+        doTransform
         transformStack
+        transformInvStack
         templateIdx
     end
     
@@ -36,6 +38,7 @@ classdef TrialStackModel < handle
             addRequired(pa,'responseStack');
             addOptional(pa,'roiArrStack', []);
             addOptional(pa,'transformStack', []);
+            addOptional(pa,'transformInvStack', []);
             addOptional(pa,'templateIdx', inf);
             addParameter(pa, 'doSummarizeRoiTags', true)
             
@@ -55,7 +58,7 @@ classdef TrialStackModel < handle
             self.contrastLimArray = cell(length(self.mapTypeList),...
                                          self.nTrial);
             self.contrastForAllTrial = false;
-            self.mapSize = size(self.anatomyStack(:, :, 1));
+            self.mapSize = size(self.anatomyStack{1});
 
             if length(pr.roiArrStack)
                 if pr.doSummarizeRoiTags
@@ -65,15 +68,21 @@ classdef TrialStackModel < handle
                     self.commonRoiTags = self.allRoiTags;
                 end
                 self.roiGroupStack = self.separateCommonRois(pr.roiArrStack,...
-                                                                  self.commonRoiTags);
+                                                             self.commonRoiTags);
             else
                 self.allRoiTags = [];
                 self.commonRoiTags = [];
                 self.roiGroupStack = self.createEmptyRoiGroupStack(nTrial);
             end
             
-            self.transformStack = pr.transformStack;
-            self.templateIdx = pr.templateIdx; % templateIdx == inf means template is not in the stack
+            if length(pr.transformStack)
+                self.doTransform = true;
+                self.transformStack = pr.transformStack;
+                self.transformInvStack = pr.transformInvStack;
+                self.templateIdx = pr.templateIdx; % templateIdx == inf means template is not in the stack
+            else
+                self.doTransform = false;
+            end
             
             self.currentTrialIdx = 1;
         end
@@ -140,39 +149,59 @@ classdef TrialStackModel < handle
     end
     
     methods
+        function tag = getNewRoiTag(self)
+            tag = max(self.allRoiTags) + 1;
+        end
+        
         function addRoi(self, roi)
             roi.tag = self.getNewRoiTag();
-            self.currentRoiGroup.addRoi(roi);
+            self.currentRoiGroup.addRoi(roi, 2);
         end
-        
-        function tag = getNewRoiTag(self)
-            tag = max(self.allRoiTags) + 1 
+
+        function addRoisInStack(self)
+        % TODO
+            roiArr = self.currentRoiGroup.getSelectedRois(2);
+            tags = roiArr.getTagList();
+            transformInv = self.transformInvStack{self.currentTrialIdx};
+            templateRoiArr = BUnwarpJ.transformRoiArray(roiArr, transformInv)
+            templateTags = templateRoiArr.getTagList();
+            self.commonRoiTags = [self.commonRoiTags, templateTags];
+            for k=1:self.nTrial
+                transform = self.transformStack{k};
+                troiArr = BUnwarpJ.transformRois(templateRoiArr, transform);
+                self.roiGroupStack{k}.addRois(trois, 1);
+            end
+            self.currentRoiGroup.deleteRois(tags, 2);
         end
-        
+
         function updateRoi(self, tag, roi)
+        % TODO specify arrIdx
             self.currentRoiGroup.updateRoi(tag, roi)
         end
         
         function deleteRoi(self,tag)
+        % TODO specify arrIdx
             self.currentRoiGroup.deleteRoi(tag)
         end
 
-        function deleteRoiAllTrials(self, tag)
+        function deleteRoiInStack(self, tag)
+            cidx = find(self.commonRoiTags == tag)
+            if cidx
+                self.commonRoiTags(cidx) = [];
+            else
+                error(sprintf('ROI #%d not found in common ROIs of the stack!', tag))
+            end
+            aidx = find(self.allRoiTags == tag)
+            self.allRoiTags(aidx) = [];
+
             for k=1:self.nTrial
-                roiArr = roiArrStack{k};
-                roiArr.deleteRoi(tag)
+                roiGroup = self.roiGroupStack{k};
+                roiGroup.deleteRoi(tag, 1);
             end
         end
         
-        function addRoisAllTrial(self)
-            rois = self.currentRoiGroup.getSelectedAddedRois();
-            self.templateRoiArr.addRois()
-            for k=1:self.nTrial
-                transform = self.transformStack{k};
-                trois = transformRois(rois, transform);
-                self.roiArrStack{k}.addRois()
-            end
-            self.currentRoiGroup.deleteAddedRois(rois);
+        function selectRois(tags)
+            self.currentRoiGroup.selectRois(tags)
         end
     end
 
@@ -194,10 +223,15 @@ classdef TrialStackModel < handle
         function roiGroup = splitRoiArr(self, roiArr, tags)
             nameList = {'common', 'diff'};
             roiArrList = {};
-            roiArrList{1} = roiArr.getRoisByTags(tags);
+            commonRois = roiArr.getRoisByTags(tags);
+            roiArrList{1} = roiFunc.RoiArray('imageSize', self.mapSize,...
+                                             'roiList', commonRois);
+            
             allTags = roiArr.getTagList();
-            otherTags = setdiff(allTags, tags);
-            roiArrList{2} = roiArr.getRoisByTags(otherTags);
+            diffTags = setdiff(allTags, tags);
+            diffRois = roiArr.getRoisByTags(diffTags);
+            roiArrList{2} = roiFunc.RoiArray('imageSize', self.mapSize,...
+                                             'roiList', diffRois);
             roiGroup = roiFunc.RoiGroup(roiArrList, nameList);
         end
         

@@ -29,13 +29,8 @@ classdef RoiArray < handle
             elseif length(pr.roiList)
                 self.imageSize = pr.imageSize;
                 self.roiList = pr.roiList;
-                self.tagList = arrayfun(@(x) x.tag, roiList)
+                self.tagList = arrayfun(@(x) x.tag, self.roiList);
             end
-        end
-        
-        function addRoi(self, roi)
-            self.roiList(end+1) = roi;
-            self.tagList(end+1) = roi.tag;
         end
         
         function tagList = getTagList(self)
@@ -50,6 +45,36 @@ classdef RoiArray < handle
                 if idx
                     rois(k) = self.roiList(idx);
                 end
+            end
+        end
+        
+        function addRoi(self, roi)
+            self.roiList(end+1) = roi;
+            self.tagList(end+1) = roi.tag;
+        end
+        
+        function updateRoi(self, tag, roi)
+            idx = find(self.tagList == tag);
+            if idx
+                self.roiList(idx) = roi;
+            else
+                error(sprintf('ROI #%d not found!', tag))
+            end
+        end
+        
+        function deleteRoi(self, tag)
+            idx = find(self.tagList == tag);
+            if idx
+                self.roiList(idx) = [];
+                self.tagList(idx) = [];
+            else
+                error(sprintf('ROI #%d not found!', tag))
+            end
+        end
+        
+        function deleteRois(self, tags)
+            for k=1:length(tags)
+                self.deleteRoi(tags(k));
             end
         end
         

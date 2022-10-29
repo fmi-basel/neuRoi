@@ -2,27 +2,58 @@ classdef RoiGroup
     properties
         roiArrList
         nameList
-        currentArrIdx
+        currentIdx
+        nArr
     end
 
     methods
         function self = RoiGroup(roiArrList, nameList)
+            if length(roiArrList) ~= length(nameList)
+                error('The input roiArr and name lists should have same length!')
+            end
+            
             self.roiArrList = roiArrList;
             self.nameList = nameList;
+            self.nArr = length(roiArrList);
+            self.currentIdx = 1;
         end
         
-        function addRoi(self, roi)
-            self.roiArrList{currentIdx}.addRoi(roi);
+        function addRoi(self, roi, arrIdx)
+            roiArr = self.roiArrList(arrIdx);
+            roiArr.addRoi(roi);
         end
         
-        function updateRoi(self, tag, roi)
-            self.roiArrList{currentIdx}.addRoi(tag, roi);
+        function addRois(self, rois, arrIdx)
+            roiArr = self.roiArrList(arrIdx);
+            roiArr.addRois(rois);
         end
         
-        function deleteRoi(self, tag)
-            self.roiArrList{currentIdx}.deleteRoi(tag, roi);
+        function updateRoi(self, tag, roi, arrIdx)
+            roiArr = self.roiArrList(arrIdx);
+            roiArr.updateRoi(tag, roi);
         end
-
+        
+        function deleteRoi(self, tag, arrIdx)
+            roiArr = self.roiArrList(arrIdx);
+            roiArr.deleteRoi(tag);
+        end
+        
+        function deleteRois(self, tags, arrIdx)
+            roiArr = self.roiArrList(arrIdx);
+            roiArr.deleteRois(tags);
+        end
+        
+        function selectRois(self, tags)
+            for k=1:self.nArr
+                self.roiArrList(k).selectRoi(tags);
+            end
+        end
+        
+        function roiArr = getSelectedRois(self, arrIdx)
+            roiList = self.roiArrList(arrIdx).getSelectedRois();
+            roiArr = roiFunc.RoiArray('imageSize', self.roiArrList(arrIdx).imageSize,...
+                                      'roiList', roiList);
+        end
     end
 end
 

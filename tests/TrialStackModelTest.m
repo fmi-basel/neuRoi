@@ -24,9 +24,6 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             anatomyStack = cellfun(@(x) x.anatomy, movieStructList, 'UniformOutput', false);
             responseStack = anatomyStack;
             
-            templateRoiArr = roiFunc.RoiArray('maskImg',...
-                                              movieStructList{1}.templateMask);
-
             roiArrStack = cellfun(@(x) roiFunc.RoiArray('maskImg', x.mask),...
                                   movieStructList, 'UniformOutput', false);
 
@@ -38,20 +35,26 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             for k=1:2
                 transformStack{k} = createTransform(imageSize, affineMats{k}(3, 1:2));
             end
-            
+
+            transfomrInvStack = {};
+            for k=1:2
+                transformInvStack{k} = createTransform(imageSize, -affineMats{k}(3, 1:2));
+            end
+
             templateIdx = 1;
             testCase.stackModel = trialStack.TrialStackModel(trialNameList,...
                                                              anatomyStack,...
                                                              responseStack,...
                                                              'roiArrStack', roiArrStack,...
                                                              'transformStack', transformStack,...
+                                                             'transformInvStack', transformInvStack,...
                                                              'templateIdx', templateIdx,...
                                                              'doSummarizeRoiTags', true);
         end
     end
 
     methods(Test)
-        function testTrialStackModel(testCase)
+        function testRoi(testCase)
             stackModel = testCase.stackModel;
             
             stackModel.selectTrial(1);
@@ -68,7 +71,7 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             position = [40,90; 40,91; 42,90; 42,91];
             freshRoi = roiFunc.RoiM(position);
             stackModel.updateRoi(3, freshRoi);
-            stackModel.deleteRoiAll(2);
+            stackModel.deleteRoiInStack(2);
             
             stackModel.selectTrial(3);
             position = [55,82; 56,82; 55,83; 56,83];
@@ -76,7 +79,7 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             stackModel.updateRoi(1, freshRoi);
             
             stackModel.selectTrial(2);
-            stackModel.selectModRois([2, 6]);
+            stackModel.selectRois([2, 6]);
             stackModel.addRoisAllTrial();
   
             % Verify
