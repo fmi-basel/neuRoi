@@ -28,5 +28,7 @@ function [xcorr, ycorr, height, width]= fcn_LoadRawTransformation(transformation
         temprow= temprow(~isnan(temprow));
         ycorr(:,i)= temprow+1; 
     end
-    
+
+    xcorr = xcorr';
+    ycorr = ycorr';
 end

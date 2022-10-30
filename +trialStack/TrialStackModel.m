@@ -163,13 +163,13 @@ classdef TrialStackModel < handle
             roiArr = self.currentRoiGroup.getSelectedRois(2);
             tags = roiArr.getTagList();
             transformInv = self.transformInvStack{self.currentTrialIdx};
-            templateRoiArr = BUnwarpJ.transformRoiArray(roiArr, transformInv)
+            templateRoiArr = BUnwarpJ.transformRoiArray(roiArr, transformInv);
             templateTags = templateRoiArr.getTagList();
             self.commonRoiTags = [self.commonRoiTags, templateTags];
             for k=1:self.nTrial
                 transform = self.transformStack{k};
-                troiArr = BUnwarpJ.transformRoiArr(templateRoiArr, transform);
-                self.roiGroupStack{k}.addRois(trois, 1);
+                troiArr = BUnwarpJ.transformRoiArray(templateRoiArr, transform);
+                self.roiGroupStack{k}.addRois(troiArr.getRoiList(), 1);
             end
             self.currentRoiGroup.deleteRois(tags, 2);
         end
@@ -200,8 +200,8 @@ classdef TrialStackModel < handle
             end
         end
         
-        function selectRois(self, arrIdxs, tags)
-            self.currentRoiGroup.selectRois(arrIdxs, tags);
+        function selectRois(self, arrIdxs, tagLists)
+            self.currentRoiGroup.selectRois(arrIdxs, tagLists);
         end
     end
 

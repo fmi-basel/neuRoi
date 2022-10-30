@@ -1,4 +1,4 @@
-classdef TransformParam < handle
+classdef TransformParam
     properties
         useSift
         siftParam
@@ -30,21 +30,3 @@ classdef TransformParam < handle
         end                
     end
 end
-
-
-% UseSFITForBUnwarpJ =false
-% UseHistEqualForBUnwarpJ= false
-% UseCLAHEForBUnwarpJ= false
-% BUnwarpJParameter
-% CLAHEParameter
-% SIFTParameter
-
-
-% = struct("useSift",self.UseSFITForBUnwarpJ,...
-%          "SIFTParameters",self.SIFTParameter,...
-%          "Histogram_equalization",...
-%          self.UseHistEqualForBUnwarpJ,...
-%          "CLAHE",self.UseCLAHEForBUnwarpJ,...
-%          "CLAHE_Parameters",self.CLAHEParameter,...
-%          "BUnwarpJParameters",self.BUnwarpJParameter,...
-%          "Reference_idx",self.referenceTrialIdx);

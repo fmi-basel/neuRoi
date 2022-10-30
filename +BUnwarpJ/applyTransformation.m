@@ -1,24 +1,29 @@
 %%%%% Jan Eckhardt/FMI/AG Friedrich/Basel/Switzerland 08.2021
 
-function [outImg]= applyTransformation(img , transform)
+function [outImg]= applyTransformation(img, transform)
 
 
 %TO DO compare input size with transformation!
-    xcorr = transform.xcorr;
-    ycorr = transform.ycorr;
-    height = transform.height;
-    width = transform.width;
-    
-    %clipping max min values. rethink about this...this will messup the last
-    %and first pixel. Does NAN helps?
-    xcorr(xcorr>width)=width;
-    xcorr(xcorr<1)=1;
-    
-    ycorr(ycorr>height)=height;
-    ycorr(ycorr<1)=1;
-    
-    Outputimage = zeros(width,height);
-    Imagesize=size(img);
-    outImg = img(sub2ind([Imagesize(1) Imagesize(2)],uint16(permute(ycorr,[2 1])),uint16(permute(xcorr,[2 1]))));
+    if strcmp(transform.type, 'identity')
+        outImg = img;
+    elseif strcmp(transform.type, 'bunwarpj')
+        xcorr = transform.xcorr;
+        ycorr = transform.ycorr;
+        height = transform.imageSize(1);
+        width = transform.imageSize(2);
+        
+        %clipping max min values. rethink about this...this will messup the last
+        %and first pixel. Does NAN helps?
+        xcorr(xcorr>width)=width;
+        xcorr(xcorr<1)=1;
+        
+        ycorr(ycorr>height)=height;
+        ycorr(ycorr<1)=1;
+        
+        imageSize = size(img);
+        outImg = img(sub2ind(imageSize, uint16(ycorr), uint16(xcorr)));
+    else
+        error(sprinft('Unknown transformation type %s', transform.type))
+    end
 
 end

@@ -43,10 +43,9 @@ classdef RoiGroup
             roiArr.deleteRois(tags);
         end
         
-        function rois = selectRois(self, arrIdxs, tags)
-            rois = roiFunc.RoiM.empty();
+        function selectRois(self, arrIdxs, tagLists)
             for k=1:length(arrIdxs)
-                self.roiArrList(arrIdxs(k)).selectRois(tags(k));
+                self.roiArrList(arrIdxs(k)).selectRois(tagLists{k});
             end
         end
         

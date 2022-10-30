@@ -31,16 +31,21 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
                                               'UniformOutput', false);
 
             imageSize = size(movieStructList{1}.anatomy);
-            transfomrStack = {};
-            for k=1:2
-                transformStack{k} = createTransform(imageSize, affineMats{k}(3, 1:2));
+            transformStack = {};
+            transformStack{1} = BUnwarpJ.Transformation('identity');
+            for k=2:3
+                transformStack{k} = createTransform(imageSize, affineMats{k-1}(3, 1:2));
             end
 
             transfomrInvStack = {};
-            for k=1:2
-                transformInvStack{k} = createTransform(imageSize, -affineMats{k}(3, 1:2));
+            transformInvStack{1} = BUnwarpJ.Transformation('identity');
+            for k=2:3
+                transformInvStack{k} = createTransform(imageSize, -affineMats{k-1}(3, 1:2));
             end
 
+            % TODO
+            % identity transformation
+            % class for transformation
             templateIdx = 1;
             testCase.stackModel = trialStack.TrialStackModel(trialNameList,...
                                                              anatomyStack,...
@@ -48,7 +53,6 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
                                                              'roiArrStack', roiArrStack,...
                                                              'transformStack', transformStack,...
                                                              'transformInvStack', transformInvStack,...
-                                                             'templateIdx', templateIdx,...
                                                              'doSummarizeRoiTags', true);
         end
     end
@@ -56,21 +60,24 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
     methods(Test)
         function testRoi(testCase)
             stackModel = testCase.stackModel;
-            
+
+            % add/update/delete ROI in current trial
+            % apply ROI add/delete to trial stack
+
             stackModel.selectTrial(1);
             position = [65,45; 65,46; 66,45; 66,46];
             roi = roiFunc.RoiM(position);
-            stackModel.addRoi(roi);
+            stackModel.addRoi(roi); % ROI #5
             stackModel.deleteRoi(3);
             
             stackModel.selectTrial(2);
             position = [61,41; 62,41; 62,42; 63,42];
             roi = roiFunc.RoiM(position);
-            stackModel.addRoi(roi);
+            stackModel.addRoi(roi); % ROI #6
             
             position = [64,43; 64,44; 65,43; 65,44];
             roi = roiFunc.RoiM(position);
-            stackModel.addRoi(roi);
+            stackModel.addRoi(roi); % ROI #7
             
             position = [40,90; 40,91; 42,90; 42,91];
             freshRoi = roiFunc.RoiM(position);
@@ -84,25 +91,36 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             
             stackModel.selectTrial(2);
             % select in arr 2, roi #6 and #7
-            stackModel.selectRois([2, 2], [6, 7]);
+            stackModel.selectRois([2], {[6, 7]});
             stackModel.addRoisInStack();
   
             % Verify
             % trial 1
-            % has roi 1, 4, 5, 6
+            tags = testCase.getTags(1, 1);
+            testCase.verifyEqual(tags, [1, 4, 6, 7]);
+            tags = testCase.getTags(1, 2);
+            testCase.verifyEqual(tags, [5]);
+
             % trial 2
-            % has roi 1, 3, 4, 6
+            tags = testCase.getTags(2, 1);
+            testCase.verifyEqual(tags, [1, 3, 4, 6, 7]);
+            tags = testCase.getTags(2, 2);
+            testCase.verifyEqual(length(tags), 0);
             % updated roi 3
+
             % trial 3
-            % has roi 1, 3, 4, 6
+            tags = testCase.getTags(3, 1);
+            testCase.verifyEqual(tags, [1, 3, 4, 6, 7]);
+            tags = testCase.getTags(3, 2);
+            testCase.verifyEqual(length(tags), 0);
             % updated roi 1
-            % TODO set unique tag when adding ROIs in different trials    
-            % TODO then gui should be built for a group a roiArr, 1 for common and 1 for diff
         end
-        
-        % add/update/delete ROI in current trial
-        % apply ROI add/delete to trial stack
-        
+    end
+    
+    methods
+        function tags = getTags(testCase, trialIdx, roiArrIdx)
+            tags = testCase.stackModel.roiGroupStack{trialIdx}.roiArrList(roiArrIdx).getTagList();
+        end
     end
 end
 
@@ -115,8 +133,7 @@ function movieStructList = createTestMovies(affineMat2, affineMat3)
 end
 
 function transf = createTransform(imageSize, offsetYx)
-    transf.xcorr = repmat((1:imageSize(2)) + offsetYx(1), [imageSize(1), 1]);
-    transf.ycorr = repmat((1:imageSize(1)) + offsetYx(2), [imageSize(2), 1]);
-    transf.width = imageSize(2);
-    transf.height = imageSize(1);
+    xcorr = repmat((1:imageSize(2)) + offsetYx(1), [imageSize(1), 1]);
+    ycorr = repmat((1:imageSize(1)) + offsetYx(2), [imageSize(2), 1]);
+    transf = BUnwarpJ.Transformation('bunwarpj', xcorr, ycorr', imageSize);
 end

@@ -40,7 +40,11 @@ classdef RoiArray < handle
         function tagList = getTagList(self)
             tagList = self.tagList;
         end
-        
+
+        function roiList = getRoiList(self)
+            roiList = self.roiList;
+        end
+
         function rois = getRoisByTags(self, tags)
             [~, idxs] = ismember(tags, self.tagList);
             rois = roiFunc.RoiM.empty();
@@ -53,8 +57,18 @@ classdef RoiArray < handle
         end
         
         function addRoi(self, roi)
+            tag = roi.tag;
+            if ismember(tag, self.tagList)
+                error(sprintf('ROI #%d already in ROI array!', tag))
+            end
             self.roiList(end+1) = roi;
-            self.tagList(end+1) = roi.tag;
+            self.tagList(end+1) = tag;
+        end
+        
+        function addRois(self, rois)
+            for k=1:length(rois)
+                self.addRoi(rois(k))
+            end
         end
         
         function updateRoi(self, tag, roi)
