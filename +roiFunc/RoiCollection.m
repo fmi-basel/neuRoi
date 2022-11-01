@@ -1,4 +1,4 @@
-classdef RoiGroup
+classdef RoiCollection
     properties
         roiArrList
         nameList
@@ -7,7 +7,7 @@ classdef RoiGroup
     end
 
     methods
-        function self = RoiGroup(roiArrList, nameList)
+        function self = RoiCollection(roiArrList, nameList)
             if length(roiArrList) ~= length(nameList)
                 error('The input roiArr and name lists should have same length!')
             end

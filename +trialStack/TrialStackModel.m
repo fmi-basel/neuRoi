@@ -10,10 +10,10 @@ classdef TrialStackModel < handle
         mapTypeList
         mapSize
 
-        roiGroupStack
+        roiCollectStack
         commonRoiTags
         allRoiTags
-        currentRoiGroup
+        currentRoiCollect
 
         doTransform
         transformStack
@@ -67,12 +67,12 @@ classdef TrialStackModel < handle
                     self.allRoiTags = roiArrStack{1}.getAllTags();
                     self.commonRoiTags = self.allRoiTags;
                 end
-                self.roiGroupStack = self.separateCommonRois(pr.roiArrStack,...
+                self.roiCollectStack = self.separateCommonRois(pr.roiArrStack,...
                                                              self.commonRoiTags);
             else
                 self.allRoiTags = [];
                 self.commonRoiTags = [];
-                self.roiGroupStack = self.createEmptyRoiGroupStack(nTrial);
+                self.roiCollectStack = self.createEmptyRoiCollectionStack(nTrial);
             end
             
             if length(pr.transformStack)
@@ -93,7 +93,7 @@ classdef TrialStackModel < handle
         
         function set.currentTrialIdx(self, idx)
             self.currentTrialIdx = idx;
-            self.currentRoiGroup = self.roiGroupStack{idx};
+            self.currentRoiCollect = self.roiCollectStack{idx};
         end
         
         
@@ -155,12 +155,12 @@ classdef TrialStackModel < handle
         
         function addRoi(self, roi)
             roi.tag = self.getNewRoiTag();
-            self.currentRoiGroup.addRoi(roi, 2);
+            self.currentRoiCollect.addRoi(roi, 2);
             self.allRoiTags(end+1) = roi.tag;
         end
 
         function addRoisInStack(self)
-            roiArr = self.currentRoiGroup.getSelectedRois(2);
+            roiArr = self.currentRoiCollect.getSelectedRois(2);
             tags = roiArr.getTagList();
             transformInv = self.transformInvStack{self.currentTrialIdx};
             templateRoiArr = BUnwarpJ.transformRoiArray(roiArr, transformInv);
@@ -169,19 +169,19 @@ classdef TrialStackModel < handle
             for k=1:self.nTrial
                 transform = self.transformStack{k};
                 troiArr = BUnwarpJ.transformRoiArray(templateRoiArr, transform);
-                self.roiGroupStack{k}.addRois(troiArr.getRoiList(), 1);
+                self.roiCollectStack{k}.addRois(troiArr.getRoiList(), 1);
             end
-            self.currentRoiGroup.deleteRois(tags, 2);
+            self.currentRoiCollect.deleteRois(tags, 2);
         end
 
         function updateRoi(self, tag, roi)
-            arrIdx = self.currentRoiGroup.currentIdx;
-            self.currentRoiGroup.updateRoi(tag, roi, arrIdx)
+            arrIdx = self.currentRoiCollect.currentIdx;
+            self.currentRoiCollect.updateRoi(tag, roi, arrIdx)
         end
         
         function deleteRoi(self,tag)
-            arrIdx = self.currentRoiGroup.currentIdx;
-            self.currentRoiGroup.deleteRoi(tag, arrIdx)
+            arrIdx = self.currentRoiCollect.currentIdx;
+            self.currentRoiCollect.deleteRoi(tag, arrIdx)
         end
 
         function deleteRoiInStack(self, tag)
@@ -195,13 +195,13 @@ classdef TrialStackModel < handle
             self.allRoiTags(aidx) = [];
 
             for k=1:self.nTrial
-                roiGroup = self.roiGroupStack{k};
+                roiGroup = self.roiCollectStack{k};
                 roiGroup.deleteRoi(tag, 1);
             end
         end
         
         function selectRois(self, arrIdxs, tagLists)
-            self.currentRoiGroup.selectRois(arrIdxs, tagLists);
+            self.currentRoiCollect.selectRois(arrIdxs, tagLists);
         end
     end
 
@@ -213,10 +213,10 @@ classdef TrialStackModel < handle
             allTags = sort(unique(cell2mat(tagListStack)));
         end
         
-        function roiGroupStack = separateCommonRois(self, roiArrStack, commonRoiTags)
-            roiGroupStack = {};
+        function roiCollectStack = separateCommonRois(self, roiArrStack, commonRoiTags)
+            roiCollectStack = {};
             for k=1:length(roiArrStack)
-                roiGroupStack{k} = self.splitRoiArr(roiArrStack{k}, commonRoiTags);
+                roiCollectStack{k} = self.splitRoiArr(roiArrStack{k}, commonRoiTags);
             end
         end
         
@@ -238,16 +238,16 @@ classdef TrialStackModel < handle
                                                  'roiList', roiFunc.RoiM.empty());
             end
             
-            roiGroup = roiFunc.RoiGroup(roiArrList, nameList);
+            roiGroup = roiFunc.RoiCollection(roiArrList, nameList);
         end
         
-        function roiGroupStack = createEmptyRoiGroupStack(self, nTrial)
-            roiGroupStack = {};
+        function roiCollectStack = createEmptyRoiCollectionStack(self, nTrial)
+            roiCollectStack = {};
             for k=1:length(roiArrStack)
                 nameList = {'common', 'diff'};
                 roiArrList(1:2) = [roiFunc.RoiArray('imageSize', self.mapSize),...
                                    roiFunc.RoiArray('imageSize', self.mapSize)];
-                roiGroupStack{k} = roiFunc.RoiGroup(roiArrList, nameList);
+                roiCollectStack{k} = roiFunc.RoiCollection(roiArrList, nameList);
             end
         end
         

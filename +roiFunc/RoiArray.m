@@ -1,6 +1,7 @@
 classdef RoiArray < handle
     properties
         imageSize
+        % TODO name
         meta
     end
     
