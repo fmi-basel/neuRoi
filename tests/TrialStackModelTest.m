@@ -83,8 +83,9 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             freshRoi = roiFunc.RoiM(position);
             stackModel.updateRoi(3, freshRoi);
             stackModel.deleteRoiInStack(2);
-            % TODO if I deleted #3 in trial 1, and then delete from the stack #3, problem?
             
+            % TODO if I already deleted #3 in trial 1, and then delete #3 from the stack from trial 2, problem?
+            stackModel.deleteRoiInStack(3);
             
             stackModel.selectTrial(3);
             position = [55,82; 56,82; 55,83; 56,83];
@@ -105,14 +106,14 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
 
             % trial 2
             tags = testCase.getTags(2, 1);
-            testCase.verifyEqual(tags, [1, 3, 4, 6, 7]);
+            testCase.verifyEqual(tags, [1, 4, 6, 7]);
             tags = testCase.getTags(2, 2);
             testCase.verifyEqual(length(tags), 0);
             % updated roi 3
 
             % trial 3
             tags = testCase.getTags(3, 1);
-            testCase.verifyEqual(tags, [1, 3, 4, 6, 7]);
+            testCase.verifyEqual(tags, [1, 4, 6, 7]);
             tags = testCase.getTags(3, 2);
             testCase.verifyEqual(length(tags), 0);
             % updated roi 1

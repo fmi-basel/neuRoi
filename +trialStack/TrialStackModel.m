@@ -13,6 +13,7 @@ classdef TrialStackModel < handle
         roiCollectStack
         commonRoiTags
         allRoiTags
+        partialDeletedTags
         currentRoiCollect
 
         doTransform
@@ -74,6 +75,7 @@ classdef TrialStackModel < handle
                 self.commonRoiTags = [];
                 self.roiCollectStack = self.createEmptyRoiCollectionStack(nTrial);
             end
+            self.partialDeletedTags = {};
             
             if length(pr.transformStack)
                 self.doTransform = true;
@@ -182,6 +184,11 @@ classdef TrialStackModel < handle
         function deleteRoi(self,tag)
             arrIdx = self.currentRoiCollect.currentIdx;
             self.currentRoiCollect.deleteRoi(tag, arrIdx)
+            
+            % If the ROI is in the common stack, record the deletion
+            if arrIdx == 1
+                self.partialDeletedTags{end+1} = [self.currentTrialIdx, tag];
+            end
         end
 
         function deleteRoiInStack(self, tag)
@@ -195,8 +202,22 @@ classdef TrialStackModel < handle
             self.allRoiTags(aidx) = [];
 
             for k=1:self.nTrial
-                roiGroup = self.roiCollectStack{k};
-                roiGroup.deleteRoi(tag, 1);
+                trialTagPair = [k, tag];
+                
+                % If the ROI is deleted in the trial already
+                % skip deletion and remove the record of partial deletion
+                if length(self.partialDeletedTags)
+                    pidx = find(isequal(self.partialDeletedTags{:}, trialTagPair));
+                else
+                    pidx = [];
+                end
+                
+                if length(pidx)
+                    self.partialDeletedTags(pidx) = [];
+                else
+                    roiCollect = self.roiCollectStack{k};
+                    roiCollect.deleteRoi(tag, 1);
+                end
             end
         end
         
