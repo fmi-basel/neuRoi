@@ -13,8 +13,6 @@ classdef TrialStackController < handle
             MaxTrialnumber = self.model.getMaxTrialnumber;
             self.view.setTrialNumberandSliderLim(1,[1,MaxTrialnumber]);
             self.view.displayCurrentMap();
-            % self.view.redrawAllRoiAsOnePatch();
-            % self.view.drawAllRoisOverlay();
             if ~isempty(mymodel.transformationParameter)
                 self.view.displayTransformationData(mymodel.transformationParameter);
                 if ~isempty(mymodel.transformationName)
@@ -27,7 +25,7 @@ classdef TrialStackController < handle
         function ScrollWheelFcnCallback(self, src, evnt)
         %JE-Mouswheelscroll functionality for scrolling trough the trials
         %TO DO: zoom function can casues problems and should be deactivated first
-            tempTrial =self.model.currentTrialIdx-round(evnt.VerticalScrollCount); % - to get the direction as i prefer it, JE
+            tempTrial = self.model.currentTrialIdx-round(evnt.VerticalScrollCount); % - to get the direction as i prefer it, JE
             self.model.currentTrialIdx = tempTrial;
             self.view.setTrialNumberSlider(self.model.currentTrialIdx);
         end
@@ -160,7 +158,7 @@ classdef TrialStackController < handle
 
         end
 
-           function exitMoveRoiMode(self,src,status)
+        function exitMoveRoiMode(self,src,status)
             thisFig = ancestor(src,'figure');
             thisAxes = get(thisFig,'CurrentAxes');
             usrData = get(thisFig,'UserData');

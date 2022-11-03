@@ -10,11 +10,11 @@ classdef TrialStackModel < handle
         mapTypeList
         mapSize
 
-        roiCollectStack
+        roiArrStack
         commonRoiTags
         allRoiTags
         partialDeletedTags
-        currentRoiCollect
+        DIFF_NAME = 'diff'
 
         doTransform
         transformStack
@@ -64,16 +64,18 @@ classdef TrialStackModel < handle
             if length(pr.roiArrStack)
                 if pr.doSummarizeRoiTags
                     [self.commonRoiTags, self.allRoiTags] = self.summarizeRoiTags(pr.roiArrStack);
+                    self.roiArrStack = self.separateCommonRois(pr.roiArrStack,...
+                                                               self.commonRoiTags);
                 else
-                    self.allRoiTags = roiArrStack{1}.getAllTags();
+                    self.allRoiTags = roiArrStack{1}.getTagList();
                     self.commonRoiTags = self.allRoiTags;
+                    self.roiArrStack = pr.roiArrStack;
                 end
-                self.roiCollectStack = self.separateCommonRois(pr.roiArrStack,...
-                                                             self.commonRoiTags);
+                
             else
                 self.allRoiTags = [];
                 self.commonRoiTags = [];
-                self.roiCollectStack = self.createEmptyRoiCollectionStack(nTrial);
+                self.roiArrStack = self.createEmptyRoiArrStack(self.nTrial);
             end
             self.partialDeletedTags = {};
             
@@ -93,12 +95,7 @@ classdef TrialStackModel < handle
             self.currentTrialIdx = trialIdx;
         end
         
-        function set.currentTrialIdx(self, idx)
-            self.currentTrialIdx = idx;
-            self.currentRoiCollect = self.roiCollectStack{idx};
-        end
-        
-        
+            
         function data = getMapData(self,mapType,trialIdx)
             switch mapType
               case 'anatomy'
@@ -151,18 +148,23 @@ classdef TrialStackModel < handle
     end
     
     methods
+        function roiArr = getCurrentRoiArr(self)
+            roiArr = self.roiArrStack{self.currentTrialIdx};
+        end
+        
         function tag = getNewRoiTag(self)
             tag = max(self.allRoiTags) + 1;
         end
         
         function addRoi(self, roi)
             roi.tag = self.getNewRoiTag();
-            self.currentRoiCollect.addRoi(roi, 2);
+            roi.setMeta('groupName', self.DIFF_NAME);
+            self.getCurrentRoiArr().addRoi(roi, 'groupName', self.DIFF_NAME);
             self.allRoiTags(end+1) = roi.tag;
         end
 
         function addRoisInStack(self)
-            roiArr = self.currentRoiCollect.getSelectedRois(2);
+            roiArr = self.currentRoiArr.getSelectedRoisFromGroup(DIFF_NAME);
             tags = roiArr.getTagList();
             transformInv = self.transformInvStack{self.currentTrialIdx};
             templateRoiArr = BUnwarpJ.transformRoiArray(roiArr, transformInv);
@@ -171,22 +173,20 @@ classdef TrialStackModel < handle
             for k=1:self.nTrial
                 transform = self.transformStack{k};
                 troiArr = BUnwarpJ.transformRoiArray(templateRoiArr, transform);
-                self.roiCollectStack{k}.addRois(troiArr.getRoiList(), 1);
+                self.roiArrStack{k}.addRois(troiArr.getRoiList(), self.groupIdx);
             end
-            self.currentRoiCollect.deleteRois(tags, 2);
+            self.currentRoiArr.deleteRois(tags);
         end
 
         function updateRoi(self, tag, roi)
-            arrIdx = self.currentRoiCollect.currentIdx;
-            self.currentRoiCollect.updateRoi(tag, roi, arrIdx)
+            self.currentRoiArr.updateRoi(tag, roi, self.groupIdx)
         end
         
         function deleteRoi(self,tag)
-            arrIdx = self.currentRoiCollect.currentIdx;
-            self.currentRoiCollect.deleteRoi(tag, arrIdx)
+            self.currentRoiArr.deleteRoi(tag, self.groupIdx)
             
             % If the ROI is in the common stack, record the deletion
-            if arrIdx == 1
+            if self.groupIdx == 1
                 self.partialDeletedTags{end+1} = [self.currentTrialIdx, tag];
             end
         end
@@ -221,8 +221,8 @@ classdef TrialStackModel < handle
             end
         end
         
-        function selectRois(self, arrIdxs, tagLists)
-            self.currentRoiCollect.selectRois(arrIdxs, tagLists);
+        function selectRois(self, groupIdxs, tagLists)
+            self.currentRoiCollect.selectRois(groupIdxs, tagLists);
         end
     end
 
@@ -234,41 +234,27 @@ classdef TrialStackModel < handle
             allTags = sort(unique(cell2mat(tagListStack)));
         end
         
-        function roiCollectStack = separateCommonRois(self, roiArrStack, commonRoiTags)
-            roiCollectStack = {};
+        function sroiArrStack = separateCommonRois(self, roiArrStack, commonRoiTags)
+            sroiArrStack = {};
             for k=1:length(roiArrStack)
-                roiCollectStack{k} = self.splitRoiArr(roiArrStack{k}, commonRoiTags);
+                sroiArrStack{k} = self.splitRoiArr(roiArrStack{k}, commonRoiTags);
             end
         end
         
-        function roiGroup = splitRoiArr(self, roiArr, tags)
-            nameList = {'common', 'diff'};
-            roiArrList = roiFunc.RoiArray.empty();
-            commonRois = roiArr.getRoisByTags(tags);
-            roiArrList(1) = roiFunc.RoiArray('imageSize', self.mapSize,...
-                                             'roiList', commonRois);
-            
+        function roiArr = splitRoiArr(self, roiArr, tags)
             allTags = roiArr.getTagList();
             diffTags = setdiff(allTags, tags);
+            roiArr.addGroup('diff')
             if length(diffTags)
-                diffRois = roiArr.getRoisByTags(diffTags);
-                roiArrList(2) = roiFunc.RoiArray('imageSize', self.mapSize,...
-                                                 'roiList', diffRois);
-            else
-                roiArrList(2) = roiFunc.RoiArray('imageSize', self.mapSize,...
-                                                 'roiList', roiFunc.RoiM.empty());
+                roiArr.setRoiGroup(diffTags, 'diff')
             end
-            
-            roiGroup = roiFunc.RoiCollection(roiArrList, nameList);
         end
         
-        function roiCollectStack = createEmptyRoiCollectionStack(self, nTrial)
-            roiCollectStack = {};
-            for k=1:length(roiArrStack)
-                nameList = {'common', 'diff'};
-                roiArrList(1:2) = [roiFunc.RoiArray('imageSize', self.mapSize),...
-                                   roiFunc.RoiArray('imageSize', self.mapSize)];
-                roiCollectStack{k} = roiFunc.RoiCollection(roiArrList, nameList);
+        function roiCollectStack = createEmptyRoiArrStack(self, nTrial)
+            roiArrStack = {};
+            for k=1:nTrial
+                roiArrStack{k} = roiFunc.RoiArray('imageSize', self.mapSize);
+                roiArrStack{k}.addGroup('diff')
             end
         end
         

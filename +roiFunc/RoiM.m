@@ -2,6 +2,7 @@ classdef RoiM
     properties
         tag
         position
+        meta
     end
     
     methods
@@ -15,7 +16,7 @@ classdef RoiM
             if isempty(pr.position) || ~isequal(size(pr.position,2),2)
                 error('Invalid Position!')
             end
-            % TODO position must be integers
+            % TODO varify position
             self.position = pr.position;
             self.tag = pr.tag;
         end
@@ -40,5 +41,10 @@ classdef RoiM
             linearInd = sub2ind(roiSize(end:-1:1), posShifted(:,2),posShifted(:,1));
             mask(linearInd) = 1;
         end
+        
+        function setMeta(self, propName, val)
+            self.meta.(propName) = val;
+        end
+        
     end
 end

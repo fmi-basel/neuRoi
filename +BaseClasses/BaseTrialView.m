@@ -36,17 +36,7 @@ classdef BaseTrialView < handle
             addlistener(self.model,'roiTagChanged',...
                         @self.changeRoiPatchTag);
             addlistener(self.model,'roiArrayReplaced',...
-                        @(~,~)self.redrawAllRoiPatch());
-
-            
-
-%             addlistener(self.model,'roiSelected',...
-%                         @self.updateRoiSelected);
-%             addlistener(self.model,'roiUnSelected',...
-%                         @self.updateRoiUnSelected);
-%             addlistener(self.model,'roiSelectionCleared',...
-%                         @self.roiSelectionCleared);
-        
+                        @(~,~)self.redrawAllRoiPatch());        
         end
 
         function assignCallbacks(self)

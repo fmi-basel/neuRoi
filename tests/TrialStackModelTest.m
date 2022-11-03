@@ -26,6 +26,8 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             
             roiArrStack = cellfun(@(x) roiFunc.RoiArray('maskImg', x.mask),...
                                   movieStructList, 'UniformOutput', false);
+            
+            roiArrStack = testCase.splitRoiArrStack(roiArrStack);
 
             trialNameList = arrayfun(@(x) sprintf('trial%02d', x), 1:nTrial,...
                                               'UniformOutput', false);
@@ -123,6 +125,22 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
     methods
         function tags = getTags(testCase, trialIdx, roiArrIdx)
             tags = testCase.stackModel.roiCollectStack{trialIdx}.roiArrList(roiArrIdx).getTagList();
+        end
+
+        function troiArrStack = splitRoiArrStack(testCase, roiArrStack)
+            troiArrStack = {};
+            for k=1:length(roiArrStack)
+                troiArrStack{k} = testCase.splitRoiArr(roiArrStack{k});
+            end
+        end
+        
+        function roiArr = splitRoiArr(testCase, roiArr)
+            tags1 = [1, 2];
+            tags2 = [3, 4];
+            roiArr.addGroup('region1');
+            roiArr.addGroup('region2');
+            roiArr.setRoiGroup(tags1, 'region1');
+            roiArr.setRoiGroup(tags2, 'region2');
         end
     end
 end
