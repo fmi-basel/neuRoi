@@ -85,8 +85,6 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             freshRoi = roiFunc.RoiM(position);
             stackModel.updateRoi(3, freshRoi);
             stackModel.deleteRoiInStack(2);
-            
-            % TODO if I already deleted #3 in trial 1, and then delete #3 from the stack from trial 2, problem?
             stackModel.deleteRoiInStack(3);
             
             stackModel.selectTrial(3);
@@ -95,36 +93,41 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             stackModel.updateRoi(1, freshRoi);
             
             stackModel.selectTrial(2);
-            % select in arr 2, roi #6 and #7
-            stackModel.selectRois([2], {[6, 7]});
-            stackModel.addRoisInStack();
+            stackModel.selectRois([6, 7]);
+            stackModel.addRoisInStack('region1');
   
             % Verify
             % trial 1
-            tags = testCase.getTags(1, 1);
-            testCase.verifyEqual(tags, [1, 4, 6, 7]);
-            tags = testCase.getTags(1, 2);
+            tags = testCase.getTags(1, 'diff');
             testCase.verifyEqual(tags, [5]);
+            tags = testCase.getTags(1, 'region1');
+            testCase.verifyEqual(tags, [1, 6, 7]);
+            tags = testCase.getTags(1, 'region2');
+            testCase.verifyEqual(tags, [4]);
 
             % trial 2
-            tags = testCase.getTags(2, 1);
-            testCase.verifyEqual(tags, [1, 4, 6, 7]);
-            tags = testCase.getTags(2, 2);
+            tags = testCase.getTags(2, 'diff');
             testCase.verifyEqual(length(tags), 0);
+            tags = testCase.getTags(2, 'region1');
+            testCase.verifyEqual(tags, [1, 6, 7]);
+            tags = testCase.getTags(2, 'region2');
+            testCase.verifyEqual(tags, [4]);
             % updated roi 3
 
             % trial 3
-            tags = testCase.getTags(3, 1);
-            testCase.verifyEqual(tags, [1, 4, 6, 7]);
-            tags = testCase.getTags(3, 2);
+            tags = testCase.getTags(3, 'diff');
             testCase.verifyEqual(length(tags), 0);
+            tags = testCase.getTags(3, 'region1');
+            testCase.verifyEqual(tags, [1, 6, 7]);
+            tags = testCase.getTags(3, 'region2');
+            testCase.verifyEqual(tags, [4]);
             % updated roi 1
         end
     end
     
     methods
-        function tags = getTags(testCase, trialIdx, roiArrIdx)
-            tags = testCase.stackModel.roiCollectStack{trialIdx}.roiArrList(roiArrIdx).getTagList();
+        function tags = getTags(testCase, trialIdx, groupName)
+            [rois, tags] = testCase.stackModel.roiArrStack{trialIdx}.getRoisInGroup(groupName);
         end
 
         function troiArrStack = splitRoiArrStack(testCase, roiArrStack)
@@ -137,10 +140,10 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
         function roiArr = splitRoiArr(testCase, roiArr)
             tags1 = [1, 2];
             tags2 = [3, 4];
-            roiArr.addGroup('region1');
+            roiArr.renameGroup(roiArr.DEFAULT_GROUP, 'region1');
             roiArr.addGroup('region2');
-            roiArr.setRoiGroup(tags1, 'region1');
-            roiArr.setRoiGroup(tags2, 'region2');
+            roiArr.putRoisIntoGroup(tags1, 'region1');
+            roiArr.putRoisIntoGroup(tags2, 'region2');
         end
     end
 end

@@ -42,9 +42,5 @@ classdef RoiM
             mask(linearInd) = 1;
         end
         
-        function setMeta(self, propName, val)
-            self.meta.(propName) = val;
-        end
-        
     end
 end

@@ -1,9 +1,6 @@
 classdef RoiArray < handle
     properties
         imageSize
-        name
-        meta
-        
         DEFAULT_GROUP = 'default'
     end
     
@@ -53,11 +50,16 @@ classdef RoiArray < handle
             roiList = self.roiList;
         end
 
-        function idx = findRoi(tag)
+        function idx = findRoi(self, tag)
             idx = find(self.tagList == tag);
             if ~length(idx)
                 error(sprintf('roi #%s not found!', tag))
             end
+        end
+
+        function roi = getRoi(self, tag)
+            idx = self.findRoi(tag);
+            roi = self.roiList(idx);
         end
         
         function rois = getRoisByTags(self, tags)
@@ -79,7 +81,7 @@ classdef RoiArray < handle
             
             groupTag = self.findGroupTag(groupName);
             self.roiGroupTagList(end+1) = groupTag;
-            roi.setMeta('groupName', groupName)
+            roi.meta.groupName = groupName;
             
             self.roiList(end+1) = roi;
             self.tagList(end+1) = tag;
@@ -105,6 +107,7 @@ classdef RoiArray < handle
             idx = self.findRoi(tag);
             self.roiList(idx) = [];
             self.tagList(idx) = [];
+            self.roiGroupTagList(idx) = [];
         end
         
         function deleteRois(self, tags)
@@ -123,20 +126,12 @@ classdef RoiArray < handle
         function rois = getSelectedRois(self)
             rois = self.selectedRois;
         end
-        
-        function rois = getSelectedRoisFromGroup(self, groupName)
-            gidxs = self.findRoisInGroup(groupName);
-            idxs = intersect(self.selectedIdxs, gidxs);
-            rois = self.roiList(idxs);
-        end
-        
-        function idxs = findRoisInGroup(groupName)
-            groupTag = self.findGroupTag(groupName);
-            idxs = find(self.roiGroupTagList == groupTag);
-        end
-    
 
 
+        function groupNames = getGroupNames(self)
+            groupNames = self.groupNames;
+        end
+        
         function idx = findGroupIdx(self, groupName)
             idx = find(strcmp(self.groupNames, groupName));
             if ~length(idx)
@@ -154,15 +149,46 @@ classdef RoiArray < handle
             self.groupTags = [self.groupTags, newTag];
         end
         
-        function moveRoisToGroup(self, tags, groupName)
+        function renameGroup(self, oldGroupName, newGroupName)
+          idx = self.findGroupIdx(oldGroupName);
+          self.groupNames{idx} = newGroupName;
+        end
+        
+        function putRoisIntoGroup(self, tags, groupName)
             groupTag = self.findGroupTag(groupName);
             for k=1:length(tags)
                 idx = self.findRoi(tags(k));
                 self.roiGroupTagList(idx) = groupTag;
-                self.roiList(idx).setMeta('groupName', groupName);
+                self.roiList(idx).meta.groupName = groupName;
             end
         end
         
+        function [rois, tags] = getSelectedRoisFromGroup(self, groupName)
+            gidxs = self.findRoisInGroup(groupName);
+            idxs = intersect(self.selectedIdxs, gidxs);
+            rois = self.roiList(idxs);
+            tags = self.tagList(idxs);
+        end
+        
+        function idxs = findRoisInGroup(self, groupName)
+            groupTag = self.findGroupTag(groupName);
+            idxs = find(self.roiGroupTagList == groupTag);
+        end
+        
+        function [rois, tags] = getRoisInGroup(self, groupName)
+            idxs = self.findRoisInGroup(groupName);
+            rois = self.roiList(idxs);
+            tags = self.tagList(idxs);
+        end
+        
+        
+        function groupName = getRoiGroupName(self, tag)
+            roi = self.getRoi(tag);
+            groupName = roi.meta.groupName;
+        end
+        
+
+        %% Mask convertion functions
         function importFromMaskImg(self, maskImg, groupName)
             self.imageSize = size(maskImg);
             tagArray = unique(maskImg);

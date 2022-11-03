@@ -14,6 +14,7 @@ classdef TrialStackModel < handle
         commonRoiTags
         allRoiTags
         partialDeletedTags
+
         DIFF_NAME = 'diff'
 
         doTransform
@@ -158,35 +159,45 @@ classdef TrialStackModel < handle
         
         function addRoi(self, roi)
             roi.tag = self.getNewRoiTag();
-            roi.setMeta('groupName', self.DIFF_NAME);
-            self.getCurrentRoiArr().addRoi(roi, 'groupName', self.DIFF_NAME);
+            self.getCurrentRoiArr().addRoi(roi, self.DIFF_NAME);
             self.allRoiTags(end+1) = roi.tag;
         end
 
-        function addRoisInStack(self)
-            roiArr = self.currentRoiArr.getSelectedRoisFromGroup(DIFF_NAME);
-            tags = roiArr.getTagList();
+        function addRoisInStack(self, groupName)
+            if strcmp(groupName, self.DIFF_NAME)
+                error('Diff group should not be used for containing common ROIs of a stack!')
+            end
+            roiArr = self.getCurrentRoiArr();
+            [rois, tags] = roiArr().getSelectedRoisFromGroup(self.DIFF_NAME);
             transformInv = self.transformInvStack{self.currentTrialIdx};
+            roiArr = roiFunc.RoiArray('roiList', rois, 'imageSize', roiArr.imageSize);
             templateRoiArr = BUnwarpJ.transformRoiArray(roiArr, transformInv);
             templateTags = templateRoiArr.getTagList();
             self.commonRoiTags = [self.commonRoiTags, templateTags];
             for k=1:self.nTrial
                 transform = self.transformStack{k};
                 troiArr = BUnwarpJ.transformRoiArray(templateRoiArr, transform);
-                self.roiArrStack{k}.addRois(troiArr.getRoiList(), self.groupIdx);
+                % TODO handle loss of ROI after transformation
+                if k == self.currentTrialIdx
+                    tags = troiArr.getTagList();
+                    self.roiArrStack{k}.putRoisIntoGroup(tags, groupName)
+                else
+                    self.roiArrStack{k}.addRois(troiArr.getRoiList(), groupName);
+                end
             end
-            self.currentRoiArr.deleteRois(tags);
         end
 
         function updateRoi(self, tag, roi)
-            self.currentRoiArr.updateRoi(tag, roi, self.groupIdx)
+            self.getCurrentRoiArr().updateRoi(tag, roi)
         end
         
         function deleteRoi(self,tag)
-            self.currentRoiArr.deleteRoi(tag, self.groupIdx)
+            roiArr = self.getCurrentRoiArr();
+            groupName = roiArr.getRoiGroupName(tag);
+            roiArr.deleteRoi(tag)
             
             % If the ROI is in the common stack, record the deletion
-            if self.groupIdx == 1
+            if ~strcmp(groupName, self.DIFF_NAME)
                 self.partialDeletedTags{end+1} = [self.currentTrialIdx, tag];
             end
         end
@@ -215,14 +226,14 @@ classdef TrialStackModel < handle
                 if length(pidx)
                     self.partialDeletedTags(pidx) = [];
                 else
-                    roiCollect = self.roiCollectStack{k};
-                    roiCollect.deleteRoi(tag, 1);
+                    roiArr = self.roiArrStack{k};
+                    roiArr.deleteRoi(tag);
                 end
             end
         end
         
-        function selectRois(self, groupIdxs, tagLists)
-            self.currentRoiCollect.selectRois(groupIdxs, tagLists);
+        function selectRois(self, tagLists)
+            self.getCurrentRoiArr().selectRois(tagLists);
         end
     end
 
