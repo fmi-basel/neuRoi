@@ -189,6 +189,8 @@ classdef TrialModel < handle
 
             if pr.loadMapFromFile
                 self.loadMapFromFile = pr.loadMapFromFile;
+            else
+                self.loadMapFromFile =0;
             end
             % User specified frame rate
             self.meta.frameRate = pr.frameRate;
@@ -206,7 +208,7 @@ classdef TrialModel < handle
             % Initialize map array
             self.mapArray = {};
             
-            if ~self.loadMapFromFile
+            if ~self.loadMapFromFile 
                 % Calculate anatomy map
                 self.calculateAndAddNewMap('anatomy');
             else
@@ -467,7 +469,7 @@ classdef TrialModel < handle
         function importMap(self,mapFilePath)
             map.type = 'import';
             [~,map.option.fileName,~] = fileparts(mapFilePath);
-            
+            local
             TifLink = Tiff(mapFilePath, 'r');
             map.data = TifLink.read();
             self.addMap(map);

@@ -44,19 +44,17 @@ classdef TrialStackView < BaseClasses.Base_trial_view
         
         function listenToModel(self)
             listenToModel@BaseClasses.Base_trial_view(self); %call base function
-%             addlistener(self.model,'selectedRoiTagArray','PostSet',...
-%                         @self.updateRoiPatchSelection);
             addlistener(self.model,'currentTrialIdx','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'mapType','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'loadNewRois',@(~,~)self.redrawAllRoiPatch());
             addlistener(self.model,'roiUpdated',...
                         @self.updateRoiPatchPosition);
-%             addlistener(self.model,'roiSelected',...
-%                         @self.updateTimeTraceDisplay);
-%             addlistener(self.model,'roiUnSelected',...
-%                         @self.updateTimeTraceDisplay);
-%             addlistener(self.model,'roiSelectionCleared',...
-%                         @self.updateTimeTraceDisplay);
+            addlistener(self.model,'roiSelected',...
+                        @self.updateTimeTraceDisplay);
+            addlistener(self.model,'roiUnSelected',...
+                        @self.updateTimeTraceDisplay);
+            addlistener(self.model,'roiSelectionCleared',...
+                        @self.updateTimeTraceDisplay);
             addlistener(self.model,'NewRoiFileIdentifier',...
                         @self.UpdateRoiFileIdentifier);
             
@@ -94,7 +92,7 @@ classdef TrialStackView < BaseClasses.Base_trial_view
             
         end
 
-              function UpdateRoiFileIdentifier(self,src,evnt)
+        function UpdateRoiFileIdentifier(self,src,evnt)
             set(self.guiHandles.RoiFileIdentifierEdit,'String',self.model.roiFileIdentifier);
         end
 
@@ -183,12 +181,11 @@ classdef TrialStackView < BaseClasses.Base_trial_view
             if self.model.EditCheckbox
                 self.model.SaveRoiArrayInRoiArrays();
                 self.model.unselectAllRoi();
-                selectedRois=arrayfun(@(x) str2num(self.guiHandles.roiListbox.String{x}), self.guiHandles.roiListbox.Value);
                 if self.model.roiListboxOptionIdx==1
                     self.redrawAllRoiPatch();
-                    self.model.selectMultiRoi(selectedRois);
+                    self.model.selectMultiRoi(arrayfun(@(x) str2num(self.guiHandles.roiListbox.String{x}), self.guiHandles.roiListbox.Value));
                 else
-                    self.redrawMultipleRoiPatch(selectedRois);
+                    self.redrawMultipleRoiPatch()
                 end
             else
                 if self.model.roiListboxOptionIdx==1

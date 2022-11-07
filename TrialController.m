@@ -60,6 +60,7 @@ classdef TrialController < handle
             end
         end
 
+
         function TrialNumberSlider_Callback(self,src,evnt)
             self.model.changeTrialNumber(newTrialnumber);
         end
@@ -70,7 +71,7 @@ classdef TrialController < handle
         function roiGroupAddButton_Callback(self,src,evnt)
             %s.Color={'red'};
             s.Name={'newGroup'};
-            s.Color = {'{red}|green|blue|yellow|orange|magenta'};
+            s.Color = {'{red}|green|blue|yellow|cyan|magenta'};
             userinput= thirdPartyTools.structdlg.StructDlg(s,'Please specify the new roigroup');
             if ~isempty(userinput)
                 self.model.addRoiGroup(userinput.Name,userinput.Color);
@@ -79,9 +80,10 @@ classdef TrialController < handle
         end
         function roiGroupListbox_Callback(self,src,evnt)
             self.model.roiGroupSelectionChanged(src.Value);
-            selectedRoisTags=self.model.selectRoiGroupRois(src.Value);
+            
             if self.view.guiHandles.roiGroupSelectionCheckbox.Value==1
-                self.view.selectRoisInRoiList(selectedRoisTags);
+                selectedRoisTags=self.model.selectRoiGroupRois(src.Value);
+                %self.view.selectRoisInRoiList(selectedRoisTags);
             end
         end
         function roiGroupDeleteButton_Callback(self,src,evnt)
@@ -121,6 +123,16 @@ classdef TrialController < handle
             self.model.unselectAllRoi();
             self.view.redrawMultipleRoiPatch(selectedRois);
             self.model.selectMultiRoi(arrayfun(@(x) x.tag, selectedRois));
+        end
+
+        function redrawSelectedRoiGroup(self)
+            selectedRoisTags=self.model.selectRoiGroupRois(self.view.guiHandles.roiGroupListbox.Value);
+            multipleRoiArray=zeros(1,length(self.model.roiArray), 'logical');
+            for i=selectedRoisTags
+                multipleRoiArray=multipleRoiArray+arrayfun(@(x) x.tag==i, self.model.roiArray);
+            end
+            multipleRoiArray=self.model.roiArray(logical(multipleRoiArray));
+            self.view.redrawMultipleRoiPatch(multipleRoiArray);
         end
        
 

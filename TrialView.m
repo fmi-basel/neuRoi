@@ -158,7 +158,6 @@ classdef TrialView < handle
             set(self.guiHandles.roiListboxSelectionGroup,'Callback',...
             @(s,e)self.controller.roiListboxSelectionGroup_Callback(s,e));
 
-
         end
         
          function selectRoisInRoiList(self, selectedRoisTags)
@@ -172,12 +171,16 @@ classdef TrialView < handle
         end
 
         function roiGroupSelectionChanged(self,src,evnt)
-            self.guiHandles.roiGroupListbox.Value=evnt.groupIdx;
+            self.guiHandles.roiGroupListbox.Value=evnt.groupIdx;%is this needed?
             self.changeRoiGroupColorButton(evnt.color);
         end
         
         function changeRoiGroupColorButton(self, newcolor)
             self.guiHandles.roiGroupColorButton.BackgroundColor=newcolor;
+            if length(self.guiHandles.roiListbox.String)>0
+                self.controller.redrawSelectedRoiGroup();
+            else
+            end
         end
         
         function displayTitle(self)
