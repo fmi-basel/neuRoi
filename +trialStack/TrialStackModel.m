@@ -29,6 +29,8 @@ classdef TrialStackModel < handle
         roiFileIdentifier
         roiSavedStatus
 
+        roiListboxOptionIdx
+
     end
     
     properties (SetObservable)
@@ -76,6 +78,7 @@ classdef TrialStackModel < handle
             self.nTrial = length(rawFileList);
             self.currentTrialIdx = 1;
             self.EditCheckbox=0;
+            self.roiListboxOptionIdx=1;
             self.roiArrayNotOriginal=0;
             self.mapTypeList = {'anatomy','response'};
             self.contrastLimArray = cell(length(self.mapTypeList),...
@@ -154,7 +157,8 @@ classdef TrialStackModel < handle
 %             wantedRoi= cellfun(@(x) x.tag==RoiTag,currentRoiArray);
 %             wantedRoiIndex=find(wantedRoi);
             for i=1:numel(self.roiArrays)
-                self.roiArrays{i}(indArray)=[];
+                wantedRoi= find(arrayfun(@(x) x.tag==tagArray,self.roiArrays{i}));
+                self.roiArrays{i}(wantedRoi)=[];
             end
             notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
         end
@@ -375,6 +379,20 @@ classdef TrialStackModel < handle
             end
         end
         
+        function selectMultiRoi(self, tagArray)
+            self.unselectAllRoi();
+            self.selectedRoiTagArray= tagArray;
+            for k=1:length(tagArray)
+                tag = tagArray(k); 
+                notify(self,'roiSelected',NrEvent.RoiEvent(tag));
+            end
+            if length(tagArray)==1
+                disp(sprintf('ROI #%d selected',tagArray))
+            else
+                disp('Multiple Rois selected')
+            end
+        end
+
         function tagArray = getAllRoiTag(self)
         % TODO remove uniform false
         % Debug tag data type (uint16 or double)
