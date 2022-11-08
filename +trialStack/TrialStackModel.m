@@ -10,6 +10,7 @@ classdef TrialStackModel < handle
         mapTypeList
         mapSize
 
+        roiArr
         roiArrStack
         commonRoiTags
         allRoiTags

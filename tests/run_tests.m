@@ -5,5 +5,7 @@ addpath('..')
 % results = testCase.run
 % testCase = NrModelTest;
 % results = testCase.run
-testCase = TrialStackModelTest;
+% testCase = TrialStackModelTest;
+% results = testCase.run
+testCase = TrialStackMvcTest;
 results = testCase.run

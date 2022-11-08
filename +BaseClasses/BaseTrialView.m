@@ -1,6 +1,4 @@
 classdef BaseTrialView < handle
-
-
    properties
         model
         controller

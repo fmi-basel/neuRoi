@@ -54,9 +54,8 @@ classdef TrialStackView < BaseClasses.BaseTrialView
         
         function listenToModel(self)
             listenToModel@BaseClasses.BaseTrialView(self); %call base function
-            addlistener(self.model,'currentTrialIdx','PostSet',@self.selectAndDisplayMap);
-            addlistener(self.model,'mapType','PostSet',@self.selectAndDisplayMap);
-            addlistener(self.model,'loadNewRois',@(~,~)self.redrawAllRoiPatch());
+            addlistener(self.model,'currentTrialIdx','PostSet',@self.displayCurrentTrial);
+            addlistener(self.model,'mapType','PostSet',@self.displayMap);
             addlistener(self.model,'roiUpdated',...
                         @self.updateRoiPatchPosition);
             addlistener(self.model,'NewRoiFileIdentifier',...
@@ -167,9 +166,9 @@ classdef TrialStackView < BaseClasses.BaseTrialView
             end
         end
         
-        function selectAndDisplayMap(self,src,evnt)
-
+        function displayCurrentTrial(self,src,evnt)
             self.displayCurrentMap();
+            self.drawAllRoisOverlay();
         end
         
         function displayCurrentMap(self)
@@ -177,14 +176,6 @@ classdef TrialStackView < BaseClasses.BaseTrialView
             self.plotMap(map);
             self.displayMeta(map.meta);
             self.controller.updateContrastForCurrentMap();
-            self.drawAllRoisOverlay();
-            if self.model.EditCheckbox
-                self.model.SaveRoiArrayInRoiArrays();
-                self.model.unselectAllRoi();
-                self.redrawAllRoiPatch();
-            else
-                self.redrawAllRoiAsOnePatch();
-            end
         end
         
         function displayMeta(self,meta)
