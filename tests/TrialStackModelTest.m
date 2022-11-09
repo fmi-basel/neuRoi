@@ -25,13 +25,13 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             % add/update/delete ROI in current trial
             % apply ROI add/delete to trial stack
 
-            stackModel.selectTrial(1);
+            stackModel.currentTrialIdx = 1;
             position = [65,45; 65,46; 66,45; 66,46];
             roi = roiFunc.RoiM(position);
             stackModel.addRoi(roi); % ROI #5
             stackModel.deleteRoi(3);
             
-            stackModel.selectTrial(2);
+            stackModel.currentTrialIdx = 2;
             position = [61,41; 62,41; 62,42; 63,42];
             roi = roiFunc.RoiM(position);
             stackModel.addRoi(roi); % ROI #6
@@ -46,12 +46,12 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             stackModel.deleteRoiInStack(2);
             stackModel.deleteRoiInStack(3);
             
-            stackModel.selectTrial(3);
+            stackModel.currentTrialIdx = 3;
             position = [55,82; 56,82; 55,83; 56,83];
             freshRoi = roiFunc.RoiM(position);
             stackModel.updateRoi(1, freshRoi);
             
-            stackModel.selectTrial(2);
+            stackModel.currentTrialIdx = 2;
             stackModel.selectRois([6, 7]);
             stackModel.addRoisInStack('region1');
   

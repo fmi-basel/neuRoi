@@ -1,4 +1,4 @@
-classdef TrialStackModel < handle
+classdef TrialStackModel < baseTrial.BaseTrialModel
     properties
         trialNameList
         anatomyStack
@@ -93,19 +93,19 @@ classdef TrialStackModel < handle
             self.currentTrialIdx = 1;
         end
 
-        function selectTrial(self, trialIdx)
+        function set.currentTrialIdx(self, trialIdx)
             self.currentTrialIdx = trialIdx;
+            self.roiArr = self.roiArrStack{self.currentTrialIdx};
         end
-        
             
         function data = getMapData(self,mapType,trialIdx)
             switch mapType
               case 'anatomy'
-                mapArray = self.anatomyArray;
+                mapStack = self.anatomyStack;
               case 'response'
-                mapArray = self.responseArray;
+                mapStack = self.responseStack;
             end
-            data = mapArray(:,:,trialIdx);
+            data = mapStack{trialIdx};
         end
         
         function map = getCurrentMap(self)
@@ -113,7 +113,7 @@ classdef TrialStackModel < handle
             map.type = self.mapType;
             map.meta.trialIdx = self.currentTrialIdx;
             
-            map.meta.fileName = self.rawFileList{self.currentTrialIdx};
+            map.meta.fileName = self.trialNameList{self.currentTrialIdx};
             contrastLim = self.getContrastLimForCurrentMap();
             if isempty(contrastLim)
                 contrastLim = helper.minMax(map.data);
@@ -150,17 +150,13 @@ classdef TrialStackModel < handle
     end
     
     methods
-        function roiArr = getCurrentRoiArr(self)
-            roiArr = self.roiArrStack{self.currentTrialIdx};
-        end
-        
         function tag = getNewRoiTag(self)
             tag = max(self.allRoiTags) + 1;
         end
         
         function addRoi(self, roi)
             roi.tag = self.getNewRoiTag();
-            self.getCurrentRoiArr().addRoi(roi, self.DIFF_NAME);
+            self.roiArr.addRoi(roi, self.DIFF_NAME);
             self.allRoiTags(end+1) = roi.tag;
         end
 
@@ -168,10 +164,9 @@ classdef TrialStackModel < handle
             if strcmp(groupName, self.DIFF_NAME)
                 error('Diff group should not be used for containing common ROIs of a stack!')
             end
-            roiArr = self.getCurrentRoiArr();
-            [rois, tags] = roiArr().getSelectedRoisFromGroup(self.DIFF_NAME);
+            [rois, tags] = self.roiArr.getSelectedRoisFromGroup(self.DIFF_NAME);
             transformInv = self.transformInvStack{self.currentTrialIdx};
-            roiArr = roiFunc.RoiArray('roiList', rois, 'imageSize', roiArr.imageSize);
+            roiArr = roiFunc.RoiArray('roiList', rois, 'imageSize', self.roiArr.imageSize);
             templateRoiArr = BUnwarpJ.transformRoiArray(roiArr, transformInv);
             templateTags = templateRoiArr.getTagList();
             self.commonRoiTags = [self.commonRoiTags, templateTags];
@@ -189,13 +184,12 @@ classdef TrialStackModel < handle
         end
 
         function updateRoi(self, tag, roi)
-            self.getCurrentRoiArr().updateRoi(tag, roi)
+            self.roiArr.updateRoi(tag, roi)
         end
         
         function deleteRoi(self,tag)
-            roiArr = self.getCurrentRoiArr();
-            groupName = roiArr.getRoiGroupName(tag);
-            roiArr.deleteRoi(tag)
+            groupName = self.roiArr.getRoiGroupName(tag);
+            self.roiArr.deleteRoi(tag)
             
             % If the ROI is in the common stack, record the deletion
             if ~strcmp(groupName, self.DIFF_NAME)
@@ -234,7 +228,7 @@ classdef TrialStackModel < handle
         end
         
         function selectRois(self, tagLists)
-            self.getCurrentRoiArr().selectRois(tagLists);
+            self.roiArr.selectRois(tagLists);
         end
     end
 

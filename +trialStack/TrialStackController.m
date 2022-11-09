@@ -1,24 +1,10 @@
-classdef TrialStackController < handle
-    properties
-        model
-        view
-
-        enableFreehandShortcut
-    end
-    
+classdef TrialStackController < baseTrial.BaseTrialController
     methods
         function self = TrialStackController(mymodel)
             self.model = mymodel;
             self.view = trialStack.TrialStackView(self.model,self);
-            MaxTrialnumber = self.model.getMaxTrialnumber;
-            self.view.setTrialNumberandSliderLim(1,[1,MaxTrialnumber]);
+            self.view.setTrialNumberandSliderLim(1,[1,self.model.nTrial]);
             self.view.displayCurrentMap();
-            if ~isempty(mymodel.transformationParameter)
-                self.view.displayTransformationData(mymodel.transformationParameter);
-                if ~isempty(mymodel.transformationName)
-                    self.view.displayTransformationName(mymodel.transformationName);
-                end
-            end
         end
         
         function ScrollWheelFcnCallback(self, src, evnt)
@@ -32,8 +18,6 @@ classdef TrialStackController < handle
         function keyPressCallback(self, src, evnt)
             if isempty(evnt.Modifier)
                 switch evnt.Key
-                  case {'j','k'}
-                    self.slideTrialCallback(evnt)
                   case 'q'
                     self.model.selectMapType(1)
                   case 'w'
@@ -62,15 +46,6 @@ classdef TrialStackController < handle
         function ExportRois_Callback(self,src,evnt)
             self.model.ExportRois();
             self.view.RoiSaveStatus('Rois exported','green');
-        end
-        
-        function slideTrialCallback(self,evnt)
-            if strcmp(evnt.Key, 'k')
-                self.model.currentTrialIdx = self.model.currentTrialIdx+1;
-            elseif strcmp(evnt.Key, 'j')
-                self.model.currentTrialIdx = self.model.currentTrialIdx-1;
-            end
-            self.view.setTrialNumberSlider(self.model.currentTrialIdx);
         end
         
         function EditCheckbox_Callback(self,src,evnt)

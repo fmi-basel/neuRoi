@@ -9,3 +9,4 @@ addpath('..')
 % results = testCase.run
 testCase = TrialStackMvcTest;
 results = testCase.run
+% close all

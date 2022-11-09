@@ -1,5 +1,12 @@
 classdef BaseTrialController < handle
-    function replaceRoiByDrawing(self)
+    properties
+        model
+        view
+        enableFreehandShortcut
+    end
+    
+    methods
+        function replaceRoiByDrawing(self)
             if length(self.model.selectedRoiTagArray) == 1
                 % TODO at least dislay the edge!!
                 self.view.changeRoiPatchColor('none','selected');
@@ -26,22 +33,21 @@ classdef BaseTrialController < handle
             end
         end
         
-    end
-    function deleteSelectedRoi(self,src,evnt)
-        answer=questdlg("Do you want to delete the roi only in the current trial or in all trials?","Roi deleting",...
-                        'Current','All','Cancel');
-        
-        switch answer
-          case 'Current'
-            self.model.deleteRoiCurrent();
-          case 'All'
-            self.model.deleteRoiAll();
+        function deleteSelectedRoi(self,src,evnt)
+            answer=questdlg("Do you want to delete the roi only in the current trial or in all trials?","Roi deleting",...
+                            'Current','All','Cancel');
+            
+            switch answer
+              case 'Current'
+                self.model.deleteRoiCurrent();
+              case 'All'
+                self.model.deleteRoiAll();
+            end
+            self.view.RoiSaveStatus('Rois have been changed and not saved','red');
         end
-        self.view.RoiSaveStatus('Rois have been changed and not saved','red');
-    end
 
-    
-            function selectRoi_Callback(self,src,evnt)
+
+        function selectRoi_Callback(self,src,evnt)
             selectedObj = gco;
             if RoiFreehand.isaRoiPatch(selectedObj)
                 self.roiClicked_Callback(selectedObj);
@@ -129,7 +135,7 @@ classdef BaseTrialController < handle
             set(thisFig,'UserData',usrData);
             self.view.RoiSaveStatus('Rois have been changed and not saved','red');
         end
-        
+
         function moveRoi_Callback(self,src,evnt)
             selectedObj = gco;
             selectionType = get(gcf,'SelectionType');
@@ -150,11 +156,11 @@ classdef BaseTrialController < handle
                 end
             end
         end
-        
+
         function toggleRoiVisibility(self)
             self.view.toggleRoiVisibility()
         end
-        
+
         function moveRoiKeyPressCallback(self,src,evnt)
             if isempty(evnt.Modifier) && strcmp(evnt.Key,'escape')
                 selectedObj = gco;
@@ -162,5 +168,6 @@ classdef BaseTrialController < handle
             end
         end
 
-end
+    end
 
+end
