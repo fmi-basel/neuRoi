@@ -375,10 +375,6 @@ classdef NrController < handle
             TempParameter=thirdPartyTools.structdlg.StructDlg(self.model.SIFTParameter,'SIFT parameter');
             self.model.SIFTParameter=TempParameter;
         end
-        %obsolete since CKAHE added
-%         function BUnwarpJUseHistNorm_Callback(self,src,evnt) 
-%             self.model.UseHistEqualForBUnwarpJ= src.Value;
-%         end
 
         function BUnwarpJInspectTrialsButton_Callback(self,src,evnt)
             self.model.InspectBUnwarpJ();

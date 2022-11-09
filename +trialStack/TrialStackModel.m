@@ -1,152 +1,109 @@
 classdef TrialStackModel < handle
     properties
-        rawFileList
-        anatomyArray
-        responseArray
-        mapSize
+        trialNameList
+        anatomyStack
+        responseStack
         nTrial
         
         contrastLimArray
         contrastForAllTrial
         mapTypeList
-		roiProvided
-        roiArrays
-        roiArray
-        SingleRoi
+        mapSize
 
-        transformationParameter
-        transformationName
-        containsRawFileList
+        roiArrStack
+        commonRoiTags
+        allRoiTags
+        partialDeletedTags
 
-        EditCheckbox
-        previousTrialIdx
-        previousroiArray
-        roiArrayNotOriginal
-        resultDir
-        planeString
-        TransformationFiles
-
-        roiFileIdentifier
-        roiSavedStatus
+        DIFF_NAME = 'diff'
 
         roiListboxOptionIdx
 
+        doTransform
+        transformStack
+        transformInvStack
+        templateIdx
     end
     
     properties (SetObservable)
         currentTrialIdx
         mapType
         roiVisible
-        selectedRoiTagArray
     end
 
-    events
-        loadNewRois
-        roiAdded
-        roiDeleted
-        roiUpdated
-        roiArrayReplaced
-        roiTagChanged
-        
-        roiSelected
-        roiUnSelected
-        roiSelectionCleared
-
-        roiNewAlpha
-        roiNewAlphaAll
-
-        NewRoiFileIdentifier
-    end
-    
     methods
-        function self = TrialStackModel(rawFileList, anatomyArray,...
-                                        responseArray,roiArrays,transformationParameter,transformationName,resultDir,planeString,TransformationFiles,roiFileIdentifier)
-            % TODO check sizes of all arrays
-            self.rawFileList = rawFileList;
-            self.TransformationFiles=TransformationFiles;
-            self.resultDir=resultDir;
-            self.planeString=planeString;
-            %apply CLAHE
-            for i=1:size(anatomyArray,3)
-                anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
-            end
+        function self = TrialStackModel(trialNameList,...
+                                        anatomyStack,...
+                                        responseStack,...
+                                        varargin)
+            pa = inputParser;
+            addRequired(pa,'trialNameList');
+            addRequired(pa,'anatomyStack');
+            addRequired(pa,'responseStack');
+            addOptional(pa,'roiArrStack', []);
+            addOptional(pa,'transformStack', []);
+            addOptional(pa,'transformInvStack', []);
+            addOptional(pa,'templateIdx', inf);
+            addParameter(pa, 'doSummarizeRoiTags', true)
             
-            self.anatomyArray = anatomyArray;
-            self.responseArray = responseArray;
+            %self.anatomyArray = anatomyArray;
+            %self.responseArray = responseArray;
             self.mapSize = size(anatomyArray(:,:,1));
             self.mapType = 'anatomy';
-            self.nTrial = length(rawFileList);
+            %self.nTrial = length(rawFileList);
             self.currentTrialIdx = 1;
             self.EditCheckbox=0;
             self.roiListboxOptionIdx=1;
             self.roiArrayNotOriginal=0;
+            parse(pa,trialNameList,...
+                  anatomyStack,...
+                  responseStack,...
+                  varargin{:})
+            pr = pa.Results;
+
+            % TODO check sizes of all arrays
+            self.trialNameList = pr.trialNameList;
+            self.anatomyStack = pr.anatomyStack;
+            self.responseStack = pr.responseStack;
+            self.nTrial = length(trialNameList);
+
             self.mapTypeList = {'anatomy','response'};
+            self.mapType = 'anatomy';
             self.contrastLimArray = cell(length(self.mapTypeList),...
                                          self.nTrial);
             self.contrastForAllTrial = false;
-			if ~exist('roiArrays','var')
-                self.roiProvided= false;
-            else
-                self.roiArrays=roiArrays;
-                self.roiProvided=true;
-                roiSize=length(roiArrays);
-                if roiSize(1)==1
-                    self.SingleRoi=true;
-                    self.roiArray=roiArrays;
-                else
-                    self.SingleRoi=false;
-                    if roiSize(1)~=self.nTrial
-                        self.roiArrays= [];
-                        self.roiProvided=false;
-                    else
-                        self.roiArray=roiArrays{1};
-                    end
-                end
-             end
-            if exist('transformationParameter','var')
-                self.transformationParameter=transformationParameter;
-                if isfield(self.transformationParameter,"Rawfile_List")
-                    self.containsRawFileList=true;
-                else
-                    self.containsRawFileList=false;
-                end
-                if isfield(self.transformationParameter,"RoiFileIdentifier")
-                    self.roiFileIdentifier=self.transformationParameter.RoiFileIdentifier;
-                else
-                    self.roiFileIdentifier="_RoiArray";
-                end
-            else
-                self.transformationParameter=string();
-            end
-            if exist('transformationName','var')
-                self.transformationName=transformationName;
-            end
+            self.mapSize = size(self.anatomyStack{1});
 
-            self.roiSavedStatus=true;
+            if length(pr.roiArrStack)
+                if pr.doSummarizeRoiTags
+                    [self.commonRoiTags, self.allRoiTags] = self.summarizeRoiTags(pr.roiArrStack);
+                    self.roiArrStack = self.separateCommonRois(pr.roiArrStack,...
+                                                               self.commonRoiTags);
+                else
+                    self.allRoiTags = roiArrStack{1}.getTagList();
+                    self.commonRoiTags = self.allRoiTags;
+                    self.roiArrStack = pr.roiArrStack;
+                end
+                
+            else
+                self.allRoiTags = [];
+                self.commonRoiTags = [];
+                self.roiArrStack = self.createEmptyRoiArrStack(self.nTrial);
+            end
+            self.partialDeletedTags = {};
             
+            if length(pr.transformStack)
+                self.doTransform = true;
+                self.transformStack = pr.transformStack;
+                self.transformInvStack = pr.transformInvStack;
+                self.templateIdx = pr.templateIdx; % templateIdx == inf means template is not in the stack
+            else
+                self.doTransform = false;
+            end
+            
+            self.currentTrialIdx = 1;
         end
-        
-        function deleteRoiCurrent(self)
-            tagArray = self.selectedRoiTagArray;
-            self.unselectAllRoi();
-            indArray = self.findRoiByTagArray(tagArray);
-            self.roiArray(indArray) = [];
-            self.roiArrays{ self.currentTrialIdx}=self.roiArray;
-            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
-%             currentRoiArray = self.roiArrays{ self.currentTrialIdx};
-%              for i=1:numel(currentRoiArray)
-%                  if currentRoiArray(i).tag==RoiTag
-%                     wantedRoi=i;
-%                     %return
-%                  end
-%              end
-             %wantedRoi= cellfun(@(x) x.tag==RoiTag,currentRoiArray);
-             %wantedRoiIndex=find(wantedRoi);
-%              self.unselectRoi(wantedRoi);
-%              currentRoiArray(wantedRoi)=[];
-             
-             %notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(wantedRoi));
-        end
+
 
         function deleteRoiAll(self)
             tagArray = self.selectedRoiTagArray;
@@ -161,8 +118,13 @@ classdef TrialStackModel < handle
                 self.roiArrays{i}(wantedRoi)=[];
             end
             notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
+		end
+
+        function selectTrial(self, trialIdx)
+            self.currentTrialIdx = trialIdx;
         end
         
+            
         function data = getMapData(self,mapType,trialIdx)
             switch mapType
               case 'anatomy'
@@ -201,34 +163,59 @@ classdef TrialStackModel < handle
             climit = self.contrastLimArray{mapTypeIdx,self.currentTrialIdx};
         end
         
-        function MaxTrialnumber = getMaxTrialnumber(self)
-            MaxTrialnumber = length(self.anatomyArray(1,1,:));
-        end
-
-        
         function idx = findMapTypeIdx(self, mapType)
             idx = find(strcmp(self.mapTypeList, self.mapType));
-        end
-        
-        function set.currentTrialIdx(self,idx)
-            self.previousTrialIdx=self.currentTrialIdx;
-            self.previousroiArray=self.roiArray;
-            newIdx = min(max(idx,1),length(self.rawFileList));
-            self.currentTrialIdx = newIdx;
-            self.roiArray= self.getCurrentRoiArray();
         end
         
         function selectMapType(self,idx)
            self.mapType = self.mapTypeList{idx};
         end
-		function roiArray = getCurrentRoiArray(self)
-            if self.roiProvided== true
-                if self.SingleRoi
-                      roiArray =self.roiArrays;
+        
+        function saveTrialStack(self, filePath)
+            save(filePath, 'self')
+        end
+    end
+    
+    methods
+        function roiArr = getCurrentRoiArr(self)
+            roiArr = self.roiArrStack{self.currentTrialIdx};
+        end
+        
+        function tag = getNewRoiTag(self)
+            tag = max(self.allRoiTags) + 1;
+        end
+        
+        function addRoi(self, roi)
+            roi.tag = self.getNewRoiTag();
+            self.getCurrentRoiArr().addRoi(roi, self.DIFF_NAME);
+            self.allRoiTags(end+1) = roi.tag;
+        end
+
+        function addRoisInStack(self, groupName)
+            if strcmp(groupName, self.DIFF_NAME)
+                error('Diff group should not be used for containing common ROIs of a stack!')
+            end
+            roiArr = self.getCurrentRoiArr();
+            [rois, tags] = roiArr().getSelectedRoisFromGroup(self.DIFF_NAME);
+            transformInv = self.transformInvStack{self.currentTrialIdx};
+            roiArr = roiFunc.RoiArray('roiList', rois, 'imageSize', roiArr.imageSize);
+            templateRoiArr = BUnwarpJ.transformRoiArray(roiArr, transformInv);
+            templateTags = templateRoiArr.getTagList();
+            self.commonRoiTags = [self.commonRoiTags, templateTags];
+            for k=1:self.nTrial
+                transform = self.transformStack{k};
+                troiArr = BUnwarpJ.transformRoiArray(templateRoiArr, transform);
+                % TODO handle loss of ROI after transformation
+                if k == self.currentTrialIdx
+                    tags = troiArr.getTagList();
+                    self.roiArrStack{k}.putRoisIntoGroup(tags, groupName)
                 else
-                    roiArray =self.roiArrays{self.currentTrialIdx};
+
+                    %roiArray =self.roiArrays{self.currentTrialIdx};
+					self.roiArrStack{k}.addRois(troiArr.getRoiList(), groupName);
                 end
             else
+				%check if needed after merge
                 roiArray=[];
             end
         end
@@ -442,179 +429,91 @@ classdef TrialStackModel < handle
                    NrEvent.RoiNewAlphaEvent(selectedRois));
         end
         
-        function updateRoi(self,tag,varargin)
-            ind = self.findRoiByTag(tag);
-            oldRoi = self.roiArray(ind);
-            freshRoi = RoiFreehand(varargin{:});
-            freshRoi.tag = tag;
-            % TODO validate ROI position (should not go outside of image)
-            self.roiArray(ind) = freshRoi;
+      
 
-            notify(self,'roiUpdated', ...
-                   NrEvent.RoiUpdatedEvent([self.roiArray(ind)]));
-            disp(sprintf('Roi #%d updated',tag))
-        end
-        
-        function changeRoiTag(self,oldTag,newTag)
-            ind = self.findRoiByTag(oldTag);
-            oldRoi = self.roiArray(ind);
-            tagArray = self.getAllRoiTag();
-            if ismember(newTag,tagArray)
-                error(['New tag cannot be assigned! The tag is ' ...
-                       'already used by another ROI.'])
-            else
-                oldRoi.tag = newTag;
-                self.roiArray(ind) = oldRoi;
-                notify(self,'roiTagChanged', ...
-                NrEvent.RoiTagChangedEvent(oldTag,newTag));
-                disp(sprintf('Roi #%d changed to #%d',oldTag,newTag))
-                if ismember(oldTag,self.selectedRoiTagArray)
-                    idx = find(self.selectedRoiTagArray,oldTag);
-                    self.selectedRoiTagArray(idx) = newTag;
-                end
-            end
-        end
-        
-        function deleteSelectedRoi(self)
-            tagArray = self.selectedRoiTagArray;
-            self.unselectAllRoi();
-            indArray = self.findRoiByTagArray(tagArray);
-            self.roiArray(indArray) = [];
-            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
+       
+
+        function updateRoi(self, tag, roi)
+            self.getCurrentRoiArr().updateRoi(tag, roi)
         end
         
         function deleteRoi(self,tag)
-            ind = self.findRoiByTag(tag);
-            self.unselectRoi(tag);
-            self.roiArray(ind) = [];
-            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent([tag]));loadRoiArray
+            roiArr = self.getCurrentRoiArr();
+            groupName = roiArr.getRoiGroupName(tag);
+            roiArr.deleteRoi(tag)
+            
+            % If the ROI is in the common stack, record the deletion
+            if ~strcmp(groupName, self.DIFF_NAME)
+                self.partialDeletedTags{end+1} = [self.currentTrialIdx, tag];
+            end
         end
-        
-        function roiArray = getRoiArray(self)
-            roiArray = self.roiArray;
-        end
-        
-        function roi = getRoiByTag(self,tag)
-            if strcmp(tag,'end')
-                roi = self.roiArray(end);
+
+        function deleteRoiInStack(self, tag)
+            cidx = find(self.commonRoiTags == tag);
+            if cidx
+                self.commonRoiTags(cidx) = [];
             else
-                ind = self.findRoiByTag(tag);
-                roi = self.roiArray(ind);
+                error(sprintf('ROI #%d not found in common ROIs of the stack!', tag))
             end
-        end
-        
-        function saveRoiArray(self,filePath)
-            roiArray = self.roiArray;
-            ind = self.findMapByType('anatomy');
-            templateAnatomy = self.mapArray{ind}.data;
-            save(filePath,'roiArray');
-        end
-        
-        function loadRoiArray(self,filePath,option)
-            foo = load(filePath);
-            roiArray = foo.roiArray;
-            nRoi = length(roiArray);
-                if nRoi >= self.MAX_N_ROI
-                    error('Maximum number of ROIs exceeded!')
+            aidx = find(self.allRoiTags == tag);
+            self.allRoiTags(aidx) = [];
+
+            for k=1:self.nTrial
+                trialTagPair = [k, tag];
+                
+                % If the ROI is deleted in the trial already
+                % skip deletion and remove the record of partial deletion
+                if length(self.partialDeletedTags)
+                    pidx = find(isequal(self.partialDeletedTags{:}, trialTagPair));
+                else
+                    pidx = [];
                 end
-            self.insertRoiArray(roiArray,option)
-            if isfield(foo,'templateAnatomy')
-                self.templateAnatomy = foo.templateAnatomy;
-            end
-        end
-
-        function insertRoiArray(self,roiArray,option)
-            if strcmp(option,'merge')
-                arrayfun(@(x) self.addRoi(x),roiArray);
-            elseif strcmp(option,'replace')
-                self.roiArray = roiArray;
-                tagArray = self.getAllRoiTag();
-                self.roiTagMax = max(tagArray);
-                notify(self,'roiArrayReplaced');
-            end
-        end
-
-        
-        function importRoisFromMask(self,filePath)
-            maskImg = movieFunc.readTiff(filePath);
-            if ~isequal(size(maskImg),self.getMapSize())
-                error(['Image size of mask does not match the map size ' ...
-                       '(pixel size in x and y)!'])
-            end
-            tagArray = unique(maskImg);
-            roiArray = RoiFreehand.empty();
-            for k=1:length(tagArray)
-                tag = tagArray(k);
-                if tag ~= 0
-                    mask = maskImg == tag;
-                    poly = roiFunc.mask2poly(mask);
-                    if length(poly) > 1
-                        % TODO If the mask corresponds multiple polygon,
-                        % for simplicity,
-                        % take the largest polygon
-                        warning(sprintf('ROI %d has multiple components, only taking the largest one.',tag))
-                        pidx = find([poly.Length] == max([poly.Length]));
-                        poly = poly(pidx);
-                    end
-                    position = [poly.X',poly.Y'];
-                    roi = RoiFreehand(position);
-                    roi.tag = double(tag);
-                    roiArray(end+1) = roi;
+                
+                if length(pidx)
+                    self.partialDeletedTags(pidx) = [];
+                else
+                    roiArr = self.roiArrStack{k};
+                    roiArr.deleteRoi(tag);
                 end
             end
-            self.insertRoiArray(roiArray,'replace')
         end
         
-        function importRoisFromImageJ(self,filePath)
-            [jroiArray] = roiFunc.ReadImageJROI(filePath);
-            roiArray = roiFunc.convertFromImageJRoi(jroiArray);
-            self.insertRoiArray(roiArray,'replace');
+        function selectRois(self, tagLists)
+            self.getCurrentRoiArr().selectRois(tagLists);
         end
-        
-        
-        function matchRoiPos(self,roiTagArray,windowSize)
-            fitGauss = 1;
-            normFlag = 1;
-            roiIndArray = self.findRoiByTagArray(roiTagArray);
-            mapInd = self.findMapByType('anatomy');
-            inputMap = self.mapArray{mapInd}.data;
-            for ind = roiIndArray
-                self.roiArray(ind).matchPos(inputMap, ...
-                                            self.templateAnatomy,...
-                                            windowSize,...
-                                            fitGauss,...
-                                            normFlag)
-            end
-            notify(self,'roiUpdated', ...
-                   NrEvent.RoiUpdatedEvent(self.roiArray(roiIndArray)));
-        end
-        
-        % function checkRoiImageSize(self,roi)
-        %     mapSize = self.getMapSize();
-        %     if ~isequal(roi.imageSize,mapSize)
-        %         error(['Image size of ROI does not match the map size ' ...
-        %                '(pixel size in x and y)!'])
-        %     end
-        % end
-        
-        function ind = findRoiByTag(self,tag)
-            ind = find(arrayfun(@(x) isequal(x.tag,tag), ...
-                                self.roiArray),1);
-            if ~isempty(ind)
-                ind = ind(1);
-            else
-                error(sprintf('Cannot find ROI with tag %d!',tag))
-            end
-        end
-        
-        function roiIndArray = findRoiByTagArray(self,tagArray)
-            roiIndArray = arrayfun(@(x) self.findRoiByTag(x), ...
-                                   tagArray);
-        end
-
-
-
     end
 
+    methods
+        function [commonTags, allTags] = summarizeRoiTags(self, roiArrStack)
+            tagListStack = cellfun(@(x) x.getTagList(), roiArrStack,...
+                                    'UniformOutput', false);
+            commonTags = helper.multiIntersect(tagListStack);
+            allTags = sort(unique(cell2mat(tagListStack)));
+        end
+        
+        function sroiArrStack = separateCommonRois(self, roiArrStack, commonRoiTags)
+            sroiArrStack = {};
+            for k=1:length(roiArrStack)
+                sroiArrStack{k} = self.splitRoiArr(roiArrStack{k}, commonRoiTags);
+            end
+        end
+        
+        function roiArr = splitRoiArr(self, roiArr, tags)
+            allTags = roiArr.getTagList();
+            diffTags = setdiff(allTags, tags);
+            roiArr.addGroup('diff')
+            if length(diffTags)
+                roiArr.setRoiGroup(diffTags, 'diff')
+            end
+        end
+        
+        function roiCollectStack = createEmptyRoiArrStack(self, nTrial)
+            roiArrStack = {};
+            for k=1:nTrial
+                roiArrStack{k} = roiFunc.RoiArray('imageSize', self.mapSize);
+                roiArrStack{k}.addGroup('diff')
+            end
+        end
+        
+    end       
 end
-

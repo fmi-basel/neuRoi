@@ -1,10 +1,4 @@
 function mapArray = calcMapFromFile(inDir,fileNameList,mapType,varargin)
-
-% Optional input arguments
-% outDir
-% trialOption
-% outFileType
-
 pa = inputParser;
 addRequired(pa,'inDir',@ischar)
 addRequired(pa,'fileNameList',@iscell)

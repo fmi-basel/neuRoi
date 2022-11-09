@@ -13,7 +13,6 @@ classdef TrialStackController < handle
             MaxTrialnumber = self.model.getMaxTrialnumber;
             self.view.setTrialNumberandSliderLim(1,[1,MaxTrialnumber]);
             self.view.displayCurrentMap();
-            self.view.redrawAllRoiAsOnePatch();
             if ~isempty(mymodel.transformationParameter)
                 self.view.displayTransformationData(mymodel.transformationParameter);
                 if ~isempty(mymodel.transformationName)
@@ -26,7 +25,7 @@ classdef TrialStackController < handle
         function ScrollWheelFcnCallback(self, src, evnt)
         %JE-Mouswheelscroll functionality for scrolling trough the trials
         %TO DO: zoom function can casues problems and should be deactivated first
-            tempTrial =self.model.currentTrialIdx-round(evnt.VerticalScrollCount); % - to get the direction as i prefer it, JE
+            tempTrial = self.model.currentTrialIdx-round(evnt.VerticalScrollCount); % - to get the direction as i prefer it, JE
             self.model.currentTrialIdx = tempTrial;
             self.view.setTrialNumberSlider(self.model.currentTrialIdx);
         end
@@ -42,6 +41,8 @@ classdef TrialStackController < handle
                     self.model.selectMapType(1)
                   case 'w'
                     self.model.selectMapType(2)
+                  case 't'
+                    self.toggleRoiVisibility()
                   case 'x'
                     self.replaceRoiByDrawing();
                   case 'v'
@@ -128,10 +129,6 @@ classdef TrialStackController < handle
         end
 
         function deleteSelectedRoi(self,src,evnt)
-%             currentRoiPatch = self.view.selectedRoiPatchArray{1};
-%             tagString=currentRoiPatch.Tag;
-%             tagString=strsplit(tagString,'_');
-%             roiTag=int16(str2num(tagString{2}));
             answer=questdlg("Do you want to delete the roi only in the current trial or in all trials?","Roi deleting",...
                 'Current','All','Cancel');
             
@@ -207,7 +204,7 @@ classdef TrialStackController < handle
 
         end
 
-           function exitMoveRoiMode(self,src,status)
+        function exitMoveRoiMode(self,src,status)
             thisFig = ancestor(src,'figure');
             thisAxes = get(thisFig,'CurrentAxes');
             usrData = get(thisFig,'UserData');
@@ -273,6 +270,10 @@ classdef TrialStackController < handle
             % self.model.roiVisible = ~self.model.roiVisible;
         end
         
+        function toggleRoiVisibility(self)
+            self.view.toggleRoiVisibility()
+        end
+        
         function moveRoiKeyPressCallback(self,src,evnt)
             if isempty(evnt.Modifier) && strcmp(evnt.Key,'escape')
                 selectedObj = gco;
@@ -321,11 +322,8 @@ classdef TrialStackController < handle
         end
 
         function RoiAlphaSlider_Callback(self,src,evnt)
-            NewAlpha= self.view.getRoiAlphaSliderValue;
-            %self.model.NewAlphaAllRois(NewAlpha); %not needed since we
-            %draw them in one patch
-            self.view.AlphaForRoiOnePatch=NewAlpha;
-            self.view.redrawAllRoiAsOnePatch();
+            newAlpha= self.view.getRoiAlphaSliderValue;
+            self.view.setRoiImgAlpha(newAlpha);
         end
         
         function contrastSlider_Callback(self,src,evnt)
@@ -387,6 +385,16 @@ classdef TrialStackController < handle
             self.model.saveContrastLim(vcl);
             self.view.setDataLimAndContrastLim(dataLim,vcl);
             self.view.changeMapContrast(vcl);
+        end
+        
+        function delete(self)
+            if isvalid(self.view)
+                self.view.deleteFigures();
+                delete(self.view)
+            end
+            if isvalid(self.model)
+                delete(self.model)
+            end
         end
     end
 end

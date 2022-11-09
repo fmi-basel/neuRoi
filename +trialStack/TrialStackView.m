@@ -1,10 +1,11 @@
-classdef TrialStackView < BaseClasses.Base_trial_view
+classdef TrialStackView < BaseClasses.BaseTrialView
     properties
 %         model
 %         controller
 %         guiHandles
 %         mapColorMap
-        
+        roiColorMap
+        roiVisible
     end
 
     methods
@@ -14,22 +15,31 @@ classdef TrialStackView < BaseClasses.Base_trial_view
             %self.previousTrialIdx=self.model.currentTrialIdx;
             self.mapSize = self.model.mapSize;
             self.guiHandles = trialStack.trialStackGui(self.model.mapSize);
-            [neuRoiDir, ~, ~]= fileparts(mfilename('fullpath'));
+            [funcDir, ~, ~]= fileparts(mfilename('fullpath'));
+            neuRoiDir = fullfile(funcDir,'..');
             
             % Load customized color map
-            cmapPath = fullfile(neuRoiDir, 'colormap', ...
-                                'clut2b.mat');
+            cmapDir = fullfile(neuRoiDir,'colormap');
+            mapCmapPath = fullfile(cmapDir,'clut2b.mat');
             try
-                foo = load(cmapPath);
+                foo = load(mapCmapPath);
                 self.mapColorMap = foo.clut2b;
             catch ME
                 self.mapColorMap = 'default';
             end
 
+            roiCmapPath = fullfile(cmapDir,'roicolormap.mat');
+            try
+                foo = load(roiCmapPath);
+                self.roiColorMap = foo.roicolormap;
+            catch ME
+                self.roiColorMap = 'lines';
+            end
+
             self.listenToModel();
             self.assignCallbacks();
             self.setRoiAlphaSlider(0.5);
-
+            self.roiVisible = true;
             % Save original settings for zoom
             self.zoom.origXLim = self.guiHandles.mapAxes.XLim;
             self.zoom.origYLim = self.guiHandles.mapAxes.YLim;
@@ -43,27 +53,23 @@ classdef TrialStackView < BaseClasses.Base_trial_view
         end
         
         function listenToModel(self)
-            listenToModel@BaseClasses.Base_trial_view(self); %call base function
-%             addlistener(self.model,'selectedRoiTagArray','PostSet',...
-%                         @self.updateRoiPatchSelection);
+
+            %listenToModel@BaseClasses.Base_trial_view(self); %call base function
+            listenToModel@BaseClasses.BaseTrialView(self); %call base function
+
             addlistener(self.model,'currentTrialIdx','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'mapType','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'loadNewRois',@(~,~)self.redrawAllRoiPatch());
             addlistener(self.model,'roiUpdated',...
                         @self.updateRoiPatchPosition);
-%             addlistener(self.model,'roiSelected',...
-%                         @self.updateTimeTraceDisplay);
-%             addlistener(self.model,'roiUnSelected',...
-%                         @self.updateTimeTraceDisplay);
-%             addlistener(self.model,'roiSelectionCleared',...
-%                         @self.updateTimeTraceDisplay);
+
             addlistener(self.model,'NewRoiFileIdentifier',...
                         @self.UpdateRoiFileIdentifier);
             
         end
         
         function assignCallbacks(self)
-            assignCallbacks@BaseClasses.Base_trial_view(self); %call base function
+            assignCallbacks@BaseClasses.BaseTrialView(self); %call base function
 %             set(self.guiHandles.mainFig,'WindowKeyPressFcn',...
 %                               @(s,e)self.controller.keyPressCallback(s,e));
 %             set(self.guiHandles.mainFig,'WindowScrollWheelFcn',...
@@ -94,7 +100,8 @@ classdef TrialStackView < BaseClasses.Base_trial_view
             
         end
 
-              function UpdateRoiFileIdentifier(self,src,evnt)
+        function UpdateRoiFileIdentifier(self,src,evnt)
+
             set(self.guiHandles.RoiFileIdentifierEdit,'String',self.model.roiFileIdentifier);
         end
 
@@ -180,6 +187,7 @@ classdef TrialStackView < BaseClasses.Base_trial_view
             self.plotMap(map);
             self.displayMeta(map.meta);
             self.controller.updateContrastForCurrentMap();
+            self.drawAllRoisOverlay();
             if self.model.EditCheckbox
                 self.model.SaveRoiArrayInRoiArrays();
                 self.model.unselectAllRoi();
@@ -196,13 +204,13 @@ classdef TrialStackView < BaseClasses.Base_trial_view
                 else
                 end
             end
-%             self.previousTrialIdx=self.model.currentTrialIdx;
         end
         
         function displayMeta(self,meta)
             metaStr = helper.convertOptionToString(meta);
             set(self.guiHandles.metaText,'String',metaStr);
         end
+        
 
         function displayTransformationData(self, TransformationParameter)
             TransformationStr=helper.deconvoluteStruct(TransformationParameter);
@@ -229,6 +237,21 @@ classdef TrialStackView < BaseClasses.Base_trial_view
             end
         end
 
+        function drawAllRoisOverlay(self)
+            mapAxes = self.guiHandles.mapAxes;
+            roiImgData = self.model.roiArray.convertToMask();
+            if isfield(self.guiHandles,'roiImg')
+                self.guiHandles.roiImg.CData = roiImgData;
+                self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
+            else
+                self.guiHandles.roiImg = imagesc(roiImgData,'Parent',self.guiHandles.roiAxes);
+                set(self.guiHandles.roiAxes,'color','none','visible','off')
+                self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
+                colormap(self.guiHandles.roiAxes,self.roiColorMap);
+                self.setRoiVisibility();
+            end
+        end
+        
         function displayError(self,errorStruct)
             self.guiHandles.errorDlg = errordlg(errorStruct.message,'TrialController');
         end
@@ -247,8 +270,14 @@ classdef TrialStackView < BaseClasses.Base_trial_view
         end
 
         %JE-Methods for changing Alpha values
+        
+        function setRoiImgAlpha(self,newAlpha)
+            self.AlphaForRoiOnePatch = newAlpha;
+            roiImgData = self.guiHandles.roiImg.CData;
+            self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
+        end
 
-        function setRoiAlphaSlider(self, NewAlpha)
+        function setRoiAlphaSlider(self,NewAlpha)
              set(self.guiHandles.RoiAlphaSlider ,'Value',NewAlpha);
         end
 
@@ -329,6 +358,26 @@ classdef TrialStackView < BaseClasses.Base_trial_view
             for k=1:2
                 contrastSliderArr(end+1-k).Value = contrastLim(k);
             end
+        end
+        
+        function toggleRoiVisibility(self)
+            self.roiVisible = ~self.roiVisible;
+            self.setRoiVisibility();
+        end
+        
+        function setRoiVisibility(self)
+            if self.roiVisible
+                roiState = 'on';
+            else
+                roiState = 'off';
+            end
+            set(self.guiHandles.roiImg,'Visible',roiState);
+        end
+            
+            
+        function deleteFigures(self)
+            mainFig = self.guiHandles.mainFig;
+            delete(mainFig);
         end
     end
     

@@ -31,7 +31,7 @@ for k=1:nFile
     disp(sprintf('Loading %dth file:',k))
     disp(filePath)
     trialOptionCell = helper.structToNameValPair(trialOption);
-    trial = TrialModel(filePath,trialOptionCell{:});
+    trial = TrialModel('filePath', filePath, trialOptionCell{:});
     map = trial.calculateAndAddNewMap('anatomy');
     if k == 1
         mapSize = size(map.data);
