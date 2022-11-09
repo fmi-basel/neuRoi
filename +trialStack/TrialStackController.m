@@ -1,0 +1,392 @@
+classdef TrialStackController < handle
+    properties
+        model
+        view
+
+        enableFreehandShortcut
+    end
+    
+    methods
+        function self = TrialStackController(mymodel)
+            self.model = mymodel;
+            self.view = trialStack.TrialStackView(self.model,self);
+            MaxTrialnumber = self.model.getMaxTrialnumber;
+            self.view.setTrialNumberandSliderLim(1,[1,MaxTrialnumber]);
+            self.view.displayCurrentMap();
+            self.view.redrawAllRoiAsOnePatch();
+            if ~isempty(mymodel.transformationParameter)
+                self.view.displayTransformationData(mymodel.transformationParameter);
+                if ~isempty(mymodel.transformationName)
+                    self.view.displayTransformationName(mymodel.transformationName);
+                end
+            end
+        end
+        
+        
+        function ScrollWheelFcnCallback(self, src, evnt)
+        %JE-Mouswheelscroll functionality for scrolling trough the trials
+        %TO DO: zoom function can casues problems and should be deactivated first
+            tempTrial =self.model.currentTrialIdx-round(evnt.VerticalScrollCount); % - to get the direction as i prefer it, JE
+            self.model.currentTrialIdx = tempTrial;
+            self.view.setTrialNumberSlider(self.model.currentTrialIdx);
+        end
+
+        function keyPressCallback(self, src, evnt)
+            if isempty(evnt.Modifier)
+                switch evnt.Key
+                  case 'r'
+                    self.toggleRoiVisibility();
+                  case {'j','k'}
+                    self.slideTrialCallback(evnt)
+                  case 'q'
+                    self.model.selectMapType(1)
+                  case 'w'
+                    self.model.selectMapType(2)
+                  case 'x'
+                    self.replaceRoiByDrawing();
+                  case 'v'
+                    self.enterMoveRoiMode();
+                  case {'d','delete','backspace'}
+                    self.deleteSelectedRoi();
+                end
+            end
+        end
+
+        function roiSelectOption_Callback(self,src,evnt)
+            oldSelection=self.view.guiHandles.roiListbox.Value;
+             if self.model.EditCheckbox
+                 if src.Value==1
+                    self.model.unselectAllRoi();
+                    self.view.redrawAllRoiPatch();
+                    self.model.selectedRoiTagArray= arrayfun(@(x) str2num(self.view.guiHandles.roiListbox.String{x}), oldSelection);
+                 else
+                
+                 end
+                 self.model.roiListboxOptionIdx=src.Value;
+                 self.view.guiHandles.roiListbox.Value=oldSelection;
+                 self.roiListbox_Callback(self.view.guiHandles.roiListbox, []);%To seect/show the selection
+             
+             else
+                 self.model.roiListboxOptionIdx=src.Value;
+             end
+        end
+
+        function roiListbox_Callback(self,src,evnt)
+            if self.model.EditCheckbox
+                 if self.model.roiListboxOptionIdx==1
+                     self.model.selectMultiRoi(arrayfun(@(x) str2num(src.String{x}), src.Value));
+                 else
+                     self.model.unselectAllRoi();
+                     selectedRois=arrayfun(@(x) str2num(self.view.guiHandles.roiListbox.String{x}), self.view.guiHandles.roiListbox.Value);
+                     self.view.redrawMultipleRoiPatch(selectedRois);
+                     self.model.selectedRoiTagArray= arrayfun(@(x) str2num(src.String{x}), src.Value);
+                    if length(selectedRois)==1
+                        disp(sprintf('ROI #%d selected',selectedRois))
+                    else
+                        disp('Multiple Rois selected')
+                    end
+                 end
+            else
+                if self.model.roiListboxOptionIdx==1
+                    %you cannot select rois while one patch option is on
+                else
+                    selectedRois=arrayfun(@(x) str2num(self.view.guiHandles.roiListbox.String{x}), self.view.guiHandles.roiListbox.Value);
+                    self.view.redrawMultipleRoiAsOnePatch(selectedRois);
+                end
+            end
+        end
+
+        function replaceRoiByDrawing(self)
+            if length(self.model.selectedRoiTagArray) == 1
+                % TODO at least dislay the edge!!
+                self.view.changeRoiPatchColor('none','selected');
+                roiTag = self.model.selectedRoiTagArray(1);
+                figure(self.view.guiHandles.mainFig);
+                self.enableFreehandShortcut = false;
+                rawRoi = imfreehand;
+                if ~isempty(rawRoi)
+                    position = rawRoi.getPosition();
+                    mapAxes = self.view.guiHandles.mapAxes;
+                    if ~isempty(position)
+                        self.model.updateRoi(roiTag,mapAxes,position);
+                        self.model.selectSingleRoi(roiTag);
+                    else
+                        disp('Empty ROI. No replacement.')
+                    end
+                    delete(rawRoi)
+                end
+                self.enableFreehandShortcut = true;
+                self.view.changeRoiPatchColor('default','selected');
+            else
+                error(['Exactly one ROI should be selected for ' ...
+                       'replacing!']);
+            end
+        end
+
+        function RoiFileIdentifierEdit_Callback(self,src,evnt)
+            self.model.roiFileIdentifier=src.String;
+        end
+
+        function deleteSelectedRoi(self,src,evnt)
+%             currentRoiPatch = self.view.selectedRoiPatchArray{1};
+%             tagString=currentRoiPatch.Tag;
+%             tagString=strsplit(tagString,'_');
+%             roiTag=int16(str2num(tagString{2}));
+            answer=questdlg("Do you want to delete the roi only in the current trial or in all trials?","Roi deleting",...
+                'Current','All','Cancel');
+            
+            switch answer
+                case 'Current'
+                    self.model.deleteRoiCurrent();
+                case 'All'
+                    self.model.deleteRoiAll();
+            end
+            self.view.RoiSaveStatus('Rois have been changed and not saved','red');
+        end
+
+        function SaveRoiNormal_Callback(self,src,evnt)
+            self.model.SaveRoiNormal();
+            self.view.RoiSaveStatus('Rois saved','green');
+        end
+
+        function ExportRois_Callback(self,src,evnt)
+            self.model.ExportRois();
+            self.view.RoiSaveStatus('Rois exported','green');
+        end
+
+        function selectRoi_Callback(self,src,evnt)
+            selectedObj = gco;
+            if RoiFreehand.isaRoiPatch(selectedObj)
+                self.roiClicked_Callback(selectedObj);
+            elseif isequal(selectedObj, ...
+                           self.view.guiHandles.mapImage)
+                if ~isempty(self.model.selectedRoiTagArray)
+                    self.model.unselectAllRoi();
+                end
+            end
+        end
+
+        function roiClicked_Callback(self,roiPatch)
+            ptTag = roiPatch.Tag;
+            roiTag = helper.convertTagToInd(ptTag,'roi');
+
+            selectionType = get(gcf,'SelectionType');
+            switch selectionType
+              case {'normal','alt'}
+                self.model.selectSingleRoi(roiTag);
+              case 'extend'
+                if strcmp(roiPatch.Selected,'on')
+                    self.model.unselectRoi(roiTag);
+                else
+                    self.model.selectRoi(roiTag);
+                end
+            end
+        end
+
+        function enterMoveRoiMode(self)
+        % ENTERMOVEROIMODE callback to enter moving mode of
+        % selected ROIs
+            self.view.changeRoiPatchColor('y','selected');
+            mainFig = self.view.guiHandles.mainFig;
+            usrData = get(mainFig,'UserData');
+            usrData.oldWindowButtonDownFcn = get(mainFig,'WindowButtonDownFcn');
+            usrData.oldWindowKeyPressFcn = get(mainFig, ...
+                                               'WindowKeyPressFcn');
+            
+            % Initialize moveit data
+            currentRoiPatch = self.view.selectedRoiPatchArray{1};
+            usrData.moveitData.currentRoiPatch = currentRoiPatch;
+            usrData.moveitData.originalXYData = {get(currentRoiPatch,'XData') get(currentRoiPatch,'YData')};
+            
+            set(mainFig,'WindowButtonDownFcn',@ ...
+                        self.moveRoi_Callback);
+            % press Esc Callback
+            set(self.view.guiHandles.mainFig,'WindowKeyPressFcn', ...
+                              @(s,e)self.moveRoiKeyPressCallback(s,e));
+            set(mainFig,'UserData',usrData);
+
+        end
+
+           function exitMoveRoiMode(self,src,status)
+            thisFig = ancestor(src,'figure');
+            thisAxes = get(thisFig,'CurrentAxes');
+            usrData = get(thisFig,'UserData');
+            if strcmp(status,'success') && ...
+                    isfield(usrData.moveitData,'startPoint') && ...
+                    isfield(usrData.moveitData,'pos')
+                % if exit with success, update the roi position in
+                % trial model
+                startPoint = usrData.moveitData.startPoint;
+                relativePos = usrData.moveitData.pos;
+                movedPatch = usrData.moveitData.currentHandle;
+                pttag = movedPatch.Tag;
+                roiTag = helper.convertTagToInd(pttag,'roi');
+                axesPos = [movedPatch.XData,movedPatch.YData];
+                self.model.updateRoi(roiTag,thisAxes,axesPos);
+            else
+                movedPatch = usrData.moveitData.currentRoiPatch;
+                XYData = usrData.moveitData.originalXYData;
+                set(movedPatch,'XData',XYData{1});
+                set(movedPatch,'YData',XYData{2});
+
+            end
+            self.view.changeRoiPatchColor('default','selected');
+
+            set(thisFig,'WindowButtonDownFcn',...
+                        usrData.oldWindowButtonDownFcn);
+            set(self.view.guiHandles.mainFig,'WindowKeyPressFcn',...
+                              usrData.oldWindowKeyPressFcn);
+            rmfield(usrData,'moveitData');
+            rmfield(usrData,'oldWindowButtonDownFcn');
+            rmfield(usrData,'oldWindowKeyPressFcn');
+            set(thisFig,'UserData',usrData);
+            self.view.RoiSaveStatus('Rois have been changed and not saved','red');
+        end
+        
+        function moveRoi_Callback(self,src,evnt)
+            selectedObj = gco;
+            selectionType = get(gcf,'SelectionType');
+            % If the selected object is a roiPatch that has been
+            % already selected, then start to move it
+            if RoiFreehand.isaRoiPatch(selectedObj)
+                if strcmp(selectedObj.Selected,'on')
+                    switch selectionType
+                      case 'normal'
+                        disp('start moving ROIs')
+                        moveit.startmovit(selectedObj);
+                        % start point and relative position to
+                        % start point are saved in
+                        % UserData of parent figure
+                      case 'open'
+                        self.exitMoveRoiMode(selectedObj,'success');
+                    end
+                end
+            end
+        end
+
+        function toggleRoiVisibility(self)
+            if self.model.roiVisible
+                self.model.roiVisible = false;
+            else
+                self.model.roiVisible = true;
+            end
+            % self.model.roiVisible = ~self.model.roiVisible;
+        end
+        
+        function moveRoiKeyPressCallback(self,src,evnt)
+            if isempty(evnt.Modifier) && strcmp(evnt.Key,'escape')
+                selectedObj = gco;
+                self.exitMoveRoiMode(selectedObj,'cancel');
+            end
+        end
+        
+        function slideTrialCallback(self,evnt)
+            if strcmp(evnt.Key, 'k')
+                self.model.currentTrialIdx = self.model.currentTrialIdx+1;
+            elseif strcmp(evnt.Key, 'j')
+                self.model.currentTrialIdx = self.model.currentTrialIdx-1;
+            end
+            self.view.setTrialNumberSlider(self.model.currentTrialIdx);
+        end
+
+        
+        function EditCheckbox_Callback(self,src,evnt)
+            oldSelection=self.view.guiHandles.roiListbox.Value;
+            self.model.unselectAllRoi();
+            self.model.EditCheckbox=src.Value;
+            self.view.ChangePatchMode();
+            self.view.guiHandles.roiListbox.Value=oldSelection;
+            self.roiListbox_Callback(self.view.guiHandles.roiListbox, []);%To select/show the selection
+            
+        end
+        
+        function TrialNumberSlider_Callback(self,src,evnt)
+        %JE-added scrolling through trials via slider
+            oldSelection=arrayfun(@(x) str2num(self.view.guiHandles.roiListbox.String{x}), self.view.guiHandles.roiListbox.Value);
+            NewTrialNumber=round(self.view.getTrialnumberSlider);
+            if NewTrialNumber~=self.model.currentTrialIdx %To prevent looping with identical Idx
+                self.model.currentTrialIdx=NewTrialNumber;
+            end
+            selectedRoi=[];
+            for i=1:numel(oldSelection)
+                wantedRoi= find(cellfun(@(x) str2num(x)==oldSelection(i),self.view.guiHandles.roiListbox.String));
+                if isempty(wantedRoi)
+                    disp(sprintf('ROI #%d does not exist in this trial',oldSelection(i)))
+                else
+                    selectedRoi=[selectedRoi wantedRoi];
+                end
+            end
+            self.view.guiHandles.roiListbox.Value=selectedRoi;
+            self.roiListbox_Callback(self.view.guiHandles.roiListbox, []);%To select/show the selection
+        end
+
+        function RoiAlphaSlider_Callback(self,src,evnt)
+            NewAlpha= self.view.getRoiAlphaSliderValue;
+            %self.model.NewAlphaAllRois(NewAlpha); %not needed since we
+            %draw them in one patch
+            self.view.AlphaForRoiOnePatch=NewAlpha;
+            self.view.redrawAllRoiAsOnePatch();
+        end
+        
+        function contrastSlider_Callback(self,src,evnt)
+        % Method to change contrast of map image
+            contrastSliderInd = helper.convertTagToInd(src.Tag, ...
+                                                       'contrastSlider');
+            contrastLim = self.view.getContrastLim();
+            dataLim = self.view.getContrastSliderDataLim();
+            % Check whether contrastLim is valid (min < max), otherwise set the
+            % other slider to a valid value based on the new value of
+            % the changed slider;
+            if contrastLim(1) >= contrastLim(2)
+                contrastLim = ...
+                    self.calcMinLessThanMax(contrastSliderInd, ...
+                                              contrastLim,dataLim);
+                self.view.setContrastLim(contrastLim);
+            end
+            self.view.changeMapContrast(contrastLim);
+            self.model.saveContrastLim(contrastLim);
+        end
+
+        function contrastLim = ...
+                calcMinLessThanMax(self,contrastSliderInd,contrastLim,dataLim)
+            sn = 10000*eps; % a small number
+            switch contrastSliderInd
+              case 1
+                if contrastLim(1) >= dataLim(2)
+                    contrastLim(1) = dataLim(2)-sn;
+                end
+                contrastLim(2) = contrastLim(1)+sn;
+              case 2
+                if contrastLim(2) <= dataLim(1)
+                    contrastLim(2) = dataLim(1)+sn;
+                end
+                contrastLim(1) = contrastLim(2)-sn;
+              otherwise
+                error('contrastSliderInd should be 1 or 2 ');
+            end
+        end
+
+        function updateContrastForCurrentMap(self)
+        % Set limit and values of the contrast sliders
+            map = self.model.getCurrentMap();
+            dataLim = helper.minMax(map.data);
+            sn = 10000*eps; % a small number
+            dataLim(2) = dataLim(2) + sn;
+
+            if isfield(map,'contrastLim')
+                contrastLim = map.contrastLim;
+                ss = helper.rangeIntersect(dataLim,contrastLim);
+                if ~isempty(ss)
+                    vcl = ss;
+                else
+                    vcl = dataLim;
+                end
+            else
+                vcl = dataLim;
+            end
+            self.model.saveContrastLim(vcl);
+            self.view.setDataLimAndContrastLim(dataLim,vcl);
+            self.view.changeMapContrast(vcl);
+        end
+    end
+end
