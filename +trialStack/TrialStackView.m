@@ -114,29 +114,8 @@ classdef TrialStackView < baseTrial.BaseTrialView
                 end
             end
         end
-       
-        function updateRoiPatchSelection(self,src,evnt)
-            newTagArray = evnt.AffectedObject.selectedRoiTagArray;
-            for k=1:length(self.selectedRoiPatchArray)
-                roiPatch = self.selectedRoiPatchArray{k};
-                roiPatch.Selected = 'off';
-                roiTag = helper.convertTagToInd(roiPatch.Tag,'roi');
-                self.removeRoiTagText(roiTag);
-            end
-            self.selectedRoiPatchArray = {};
-            for k=1:length(newTagArray)
-                tag = newTagArray(k);
-                roiPatch = self.findRoiPatchByTag(tag);
-                roiPatch.Selected = 'on';
-                self.displayRoiTag(roiPatch);
-                uistack(roiPatch,'top') % bring the selected roi
-                                        % patch to front of the
-                                        % image and number tag
-                self.selectedRoiPatchArray{k} = roiPatch;
-            end
-        end
-
-       function roiPatch = findRoiPatchByTag(self,tag)
+        
+        function roiPatch = findRoiPatchByTag(self,tag)
             ptTag = RoiFreehand.getPatchTag(tag);
             roiPatch = findobj(self.guiHandles.roiGroup,...
                                'Type','patch',...

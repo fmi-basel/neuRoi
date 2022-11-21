@@ -34,6 +34,7 @@ function stack = createStack()
     stack.roiArrStack = roiArrStack;
     stack.transformStack = transformStack;
     stack.transformInvStack = transformInvStack;
+    stack.movieStructList = movieStructList;
 end
 
 function troiArrStack = splitRoiArrStack(roiArrStack)
@@ -54,9 +55,9 @@ end
 
 function movieStructList = createTestMovies(affineMat2, affineMat3)
     movieStructList = {};
-    movieStructList{1} = createMovie();
-    movieStructList{2}= createMovie('ampList', [45, 60, 100, 40], 'affineMat', affineMat2);
-    movieStructList{3}= createMovie('ampList', [60, 50, 80, 50], 'affineMat', affineMat3);
+    movieStructList{1} = testUtils.createMovie();
+    movieStructList{2}= testUtils.createMovie('ampList', [45, 60, 100, 40], 'affineMat', affineMat2);
+    movieStructList{3}= testUtils.createMovie('ampList', [60, 50, 80, 50], 'affineMat', affineMat3);
 end
 
 function transf = createTransform(imageSize, offsetYx)

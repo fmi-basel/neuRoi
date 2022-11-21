@@ -62,6 +62,10 @@ classdef RoiArray < handle
             roi = self.roiList(idx);
         end
         
+        function roi = getLastRoi(self)
+            roi = self.roiList(end);
+        end
+        
         function rois = getRoisByTags(self, tags)
             [~, idxs] = ismember(tags, self.tagList);
             rois = roiFunc.RoiM.empty();
@@ -117,7 +121,6 @@ classdef RoiArray < handle
         end
         
         function selectRois(self, tags)
-            self.selectedRois = roiFunc.RoiM.empty();
             idxs = arrayfun(@(x) self.findRoi(x), tags);
             self.selectedIdxs = idxs;
             self.selectedRois = self.roiList(idxs);
@@ -127,6 +130,11 @@ classdef RoiArray < handle
             rois = self.selectedRois;
         end
 
+        function selectLastRoi(self)
+            idxs = [length(self.roiList)];
+            self.selectedIdxs = idxs;
+            self.selectedRois = self.roiList(idxs);
+        end
 
         function groupNames = getGroupNames(self)
             groupNames = self.groupNames;
@@ -198,7 +206,7 @@ classdef RoiArray < handle
                 mask = maskImg == tag;
                 [mposY,mposX] = find(mask);
                 position = [mposX,mposY];
-                roi = roiFunc.RoiM(position,'tag',double(tag));
+                roi = roiFunc.RoiM('position', position,'tag',double(tag));
                 self.addRoi(roi, groupName);
             end
         end

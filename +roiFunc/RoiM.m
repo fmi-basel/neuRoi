@@ -8,15 +8,26 @@ classdef RoiM
     methods
         function self = RoiM(position,varargin)
             pa = inputParser;
-            addRequired(pa,'position',@ismatrix);
-            addParameter(pa,'tag','',@isnumeric);
-            parse(pa,position,varargin{:})
+            addParameter(pa, 'position', [], @ismatrix);
+            addParameter(pa, 'freeHand', [], @ismatrix);
+            addParameter(pa, 'tag', '', @isnumeric);
+            parse(pa, position, varargin{:})
             pr = pa.Results;
-                
-            if isempty(pr.position) || ~isequal(size(pr.position,2),2)
+
+            disp(pr.freeHand)
+            disp(isempty(pr.freeHand))
+            if ~isempty(pr.position)
+                position = pr.position;
+            elseif ~isempty(pr.freeHand)
+                position = roiFunc.RoiM.convertFreeHandPos(pr.freeHand);
+            else
+                error('Either a mask position or a FreeHand ROI needs to be supplied!')
+            end
+            
+            if ~roiFunc.RoiM.verifyPosition(position)
                 error('Invalid Position!')
             end
-            % TODO varify position
+            
             self.position = pr.position;
             self.tag = pr.tag;
         end
@@ -42,5 +53,25 @@ classdef RoiM
             mask(linearInd) = 1;
         end
         
+        function centroid = getCentroid(self)
+            error('Not implemented')
+        end
+        
+    end
+    
+    methods(Static)
+        function valid = verifyPosition(position)
+            valid = isequal(size(position,2),2) & all(position>=0, 'all');
+        end
+        
+        function position = convertFreeHandPos(freeHand)
+            polyPos = freeHand.Position;
+            [xlim, ylim] = boundingbox(polyshape(polyPos(:,1), polyPos(:,2)));
+            offset = [xlim(1), ylim(1)];
+            maskSize = [xlim(2)-xlim(1), ylim(2)-ylim(1)];
+            mask = freeHand.createMask(maskSize(1), maskSize(2));
+            mpos = find(mask==1);
+            position = mpos + offset;
+        end
     end
 end

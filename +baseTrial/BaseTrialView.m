@@ -3,7 +3,7 @@ classdef BaseTrialView < handle
         model
         controller
         guiHandles
-        selectedRoiPatchArray
+        selectedMarkers
         mapColorMap
         mapSize
         zoom
@@ -21,7 +21,7 @@ classdef BaseTrialView < handle
             addlistener(self.model,'roiVisible','PostSet',...
                         @self.changeRoiVisibility);
             addlistener(self.model,'roiAdded',@self.drawLastRoiPatch);
-            addlistener(self.model,'selectedRoiTags','PostSet',...
+            addlistener(self.model,'roiSelected',...
                         @self.updateRoiPatchSelection);
             addlistener(self.model,'roiDeleted',...
                         @self.deleteRoiPatch);
@@ -46,7 +46,7 @@ classdef BaseTrialView < handle
 
         % Methods for ROI based processing
         function drawLastRoiPatch(self,src,evnt)
-            roi = src.getRoiByTag('end');
+            roi = self.model.roiArr.getLastRoi();
             self.addRoiPatch(roi);
         end
 
@@ -121,24 +121,17 @@ classdef BaseTrialView < handle
         
         
         function updateRoiPatchSelection(self,src,evnt)
-            newTagArray = evnt.AffectedObject.selectedRoiTagArray;
-            for k=1:length(self.selectedRoiPatchArray)
-                roiPatch = self.selectedRoiPatchArray{k};
-                roiPatch.Selected = 'off';
-                roiTag = helper.convertTagToInd(roiPatch.Tag,'roi');
-                self.removeRoiTagText(roiTag);
+            roiList = self.model.roiArr.getSelectedRois();
+            delete(self.selectedMarkers);
+            nRois = length(roiList);
+            centroids = zeros(nRois, 2);
+            for k=1:nRois
+                roi = roiList(k);
+                centroids(k,:) = roi.getCentroid();
             end
-            self.selectedRoiPatchArray = {};
-            for k=1:length(newTagArray)
-                tag = newTagArray(k);
-                roiPatch = self.findRoiPatchByTag(tag);
-                roiPatch.Selected = 'on';
-                self.displayRoiTag(roiPatch);
-                uistack(roiPatch,'top') % bring the selected roi
-                                        % patch to front of the
-                                        % image and number tag
-                self.selectedRoiPatchArray{k} = roiPatch;
-            end
+            hold on;
+            self.selectedMarkers = plot(centroids, 'r+', 'MarkerSize', 30, 'LineWidth', 2);
+            hold off;
         end
         
         function changeRoiPatchColor(self,ptcolor,varargin)

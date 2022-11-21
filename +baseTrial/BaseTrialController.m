@@ -6,6 +6,26 @@ classdef BaseTrialController < handle
     end
     
     methods
+        function addRoiByDrawing(self)
+            self.model.roiVisible = true;
+            self.enableFreehandShortcut = false;
+            rawRoi = imfreehand;
+            self.addRoi(rawRoi);
+            self.enableFreehandShortcut = true;
+        end
+        
+        function addRoi(self, rawRoi)
+            mapAxes = self.view.guiHandles.mapAxes;
+            if ~isempty(rawRoi.Position)
+                freshRoi = roiFunc.RoiM('freeHand', rawRoi);
+                self.model.addRoi(freshRoi);
+                self.model.selectLastRoi();
+            else
+                disp('Empty ROI. Not added to ROI array.')
+            end
+            delete(rawRoi)
+        end
+
         function replaceRoiByDrawing(self)
             if length(self.model.selectedRoiTagArray) == 1
                 % TODO at least dislay the edge!!

@@ -10,7 +10,6 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         mapTypeList
         mapSize
 
-        roiArr
         roiArrStack
         commonRoiTags
         allRoiTags
@@ -158,6 +157,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             roi.tag = self.getNewRoiTag();
             self.roiArr.addRoi(roi, self.DIFF_NAME);
             self.allRoiTags(end+1) = roi.tag;
+            notify(self, 'roiAdded')
         end
 
         function addRoisInStack(self, groupName)
@@ -227,9 +227,6 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             end
         end
         
-        function selectRois(self, tagLists)
-            self.roiArr.selectRois(tagLists);
-        end
     end
 
     methods

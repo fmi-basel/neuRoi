@@ -153,25 +153,6 @@ classdef TrialController < handle
             % self.model.roiVisible = ~self.model.roiVisible;
         end
         
-        function addRoiByDrawing(self)
-            self.model.roiVisible = true;
-            self.enableFreehandShortcut = false;
-            rawRoi = imfreehand;
-            if ~isempty(rawRoi)
-                position = rawRoi.getPosition();
-                mapAxes = self.view.guiHandles.mapAxes;
-                if ~isempty(position)
-                    freshRoi = RoiFreehand(mapAxes,position);
-                    self.model.addRoi(freshRoi);
-                    self.model.selectSingleRoi('last');
-                else
-                    disp('Empty ROI. Not added to ROI array.')
-                end
-                delete(rawRoi)
-            end
-            self.enableFreehandShortcut = true;
-        end
-       
         function selectRoi_Callback(self,src,evnt)
             selectedObj = gco;
             if RoiFreehand.isaRoiPatch(selectedObj)

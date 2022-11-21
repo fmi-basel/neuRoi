@@ -1,12 +1,12 @@
 addpath('..')
 % testCase = TrialModelTest;
 % results = testCase.run
-% testCase = BUnwarpJTest;
+% testCase = BUnwarpJ.BUnwarpJTest;
 % results = testCase.run
 % testCase = NrModelTest;
 % results = testCase.run
 % testCase = TrialStackModelTest;
 % results = testCase.run
-testCase = TrialStackMvcTest;
+testCase = trialStack.TrialStackControllerTest;
 results = testCase.run
 % close all

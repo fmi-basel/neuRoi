@@ -773,43 +773,6 @@ classdef TrialModel < handle
             notify(self,'roiAdded')
         end
         
-        function selectSingleRoi(self,varargin)
-            if nargin == 2
-                if strcmp(varargin{1},'last')
-                    ind = length(self.roiArray);
-                    tag = self.roiArray(ind).tag;
-                else
-                    tag = varargin{1};
-                    ind = self.findRoiByTag(tag);
-                end
-            else
-                error('Too Many/few input args!')
-            end
-            
-            if ~isequal(self.selectedRoiTagArray,[tag])
-                self.unselectAllRoi();
-                self.selectRoi(tag);
-            end
-        end
-        
-        function selectRoi(self,tag)
-            if ~ismember(tag,self.selectedRoiTagArray)
-                ind = self.findRoiByTag(tag);
-                self.selectedRoiTagArray(end+1)  = tag;
-                notify(self,'roiSelected',NrEvent.RoiEvent(tag));
-                disp(sprintf('ROI #%d selected',tag))
-            end
-        end
-        
-        function unselectRoi(self,tag)
-            tagArray = self.selectedRoiTagArray;
-            tagInd = find(tagArray == tag);
-            if tagInd
-                self.selectedRoiTagArray(tagInd) = [];
-                notify(self,'roiUnSelected',NrEvent.RoiEvent(tag));
-            end
-        end
-        
         function tagArray = getAllRoiTag(self)
         % TODO remove uniform false
         % Debug tag data type (uint16 or double)
