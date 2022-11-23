@@ -69,9 +69,4 @@ function handles = trialStackGui(mapSize)
                                           'Units','normal',...
                                           'Position',[0 0 1 0.025]);
 
-    % UIContextMenu for ROI
-    handles.roiMenu = uicontextmenu(handles.mainFig);
-    handles.roiMenuEntry1 = uimenu(handles.roiMenu,'Label','Move ROI(s)');
-    % Group for displaying ROI
-    handles.roiGroup = hggroup(handles.mapAxes,'Tag','roiGroup');
 end

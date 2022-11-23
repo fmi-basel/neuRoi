@@ -29,7 +29,6 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             for k=1:3
                 testCase.stackCtrl.model.currentTrialIdx = k;
                 testCase.verifyMapImg(k, 0);
-                testCase.verifyMapImg(k, 0.05);
             end
         end
         
@@ -40,6 +39,10 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             rawRoi = images.roi.Freehand(stackCtrl.view.guiHandles.roiAxes,...
                                          'Position', [10, 10; 10, 20; 20, 20; 20, 10]);
             stackCtrl.addRoi(rawRoi);
+            roiImgData = stackCtrl.view.getRoiImgData();
+            mask = testCase.stack.movieStructList{1}.mask;
+            mask(11:20, 11:20) = 5;
+            testCase.verifyMse(roiImgData, mask, 0);
             % verify roi map in view
         %     stackCtrl.replaceRoiByDrawing();
         %     stackCtrl.moveRoi();
@@ -66,7 +69,7 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
         end
 
         function verifyRoiImg(testCase, trialIdx, thresh)
-            roiImgData = testCase.stackCtrl.view.guiHandles.roiImg.CData;
+            roiImgData = testCase.stackCtrl.getRoiImgData();
             testCase.verifyMse(roiImgData, testCase.stack.movieStructList{trialIdx}.mask,...
                                thresh);
         end

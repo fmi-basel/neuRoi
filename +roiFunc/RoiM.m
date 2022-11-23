@@ -28,7 +28,7 @@ classdef RoiM
                 error('Invalid Position!')
             end
             
-            self.position = pr.position;
+            self.position = position;
             self.tag = pr.tag;
         end
         
@@ -54,7 +54,17 @@ classdef RoiM
         end
         
         function centroid = getCentroid(self)
-            error('Not implemented')
+            centroid = mean(self.position, 1);
+        end
+        
+        function img = addMaskToImg(self, img)
+            if isempty(self.tag)
+                error('ROI tag not set!')
+            end
+            imageSize = size(img);
+            pos = self.position;
+            linearInd = sub2ind(imageSize, pos(:,2), pos(:,1));
+            img(linearInd) = self.tag;
         end
         
     end
@@ -65,13 +75,9 @@ classdef RoiM
         end
         
         function position = convertFreeHandPos(freeHand)
-            polyPos = freeHand.Position;
-            [xlim, ylim] = boundingbox(polyshape(polyPos(:,1), polyPos(:,2)));
-            offset = [xlim(1), ylim(1)];
-            maskSize = [xlim(2)-xlim(1), ylim(2)-ylim(1)];
-            mask = freeHand.createMask(maskSize(1), maskSize(2));
-            mpos = find(mask==1);
-            position = mpos + offset;
+            mask = freeHand.createMask();
+            [row,col] = find(mask==1);
+            position = [row,col];
         end
     end
 end

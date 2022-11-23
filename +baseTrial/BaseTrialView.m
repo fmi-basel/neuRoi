@@ -1,5 +1,5 @@
 classdef BaseTrialView < handle
-   properties
+    properties
         model
         controller
         guiHandles
@@ -8,7 +8,7 @@ classdef BaseTrialView < handle
         mapSize
         zoom
         AlphaForRoiOnePatch = 0.5
-   end
+    end
 
     properties (Constant)
         DEFAULT_PATCH_COLOR = 'red'
@@ -27,14 +27,14 @@ classdef BaseTrialView < handle
                         @self.deleteRoiPatch);
             addlistener(self.model,'roiNewAlpha',...
                         @self.UpdateRoiPatchAlpha);
-             addlistener(self.model,'roiNewAlphaAll',...
+            addlistener(self.model,'roiNewAlphaAll',...
                         @self.UpdateAllRoiPatchAlpha);
             addlistener(self.model,'roiUpdated',...
                         @self.updateRoiPatchPosition);
             addlistener(self.model,'roiTagChanged',...
                         @self.changeRoiPatchTag);
             addlistener(self.model,'roiArrayReplaced',...
-                        @(~,~)self.redrawAllRoiPatch());        
+                        @(~,~)self.drawAllRoisOverlay());        
         end
 
         function assignCallbacks(self)
@@ -56,53 +56,41 @@ classdef BaseTrialView < handle
             delete(children);
         end
 
-        function redrawAllRoiAsOnePatch(self)
-            mapAxes = self.guiHandles.roiGroup;
-            children = mapAxes.Children;
-            delete(children);
-            roiArray = self.model.getRoiArray();
-            parentAxes = self.guiHandles.roiGroup.Parent;
-            maxlength=0;
-            for i = 1:length(roiArray)
-                dimension=size(roiArray(i).position);
-                if dimension(1)>maxlength
-                    maxlength=dimension(1);
-                end
-            end
-            Xcoor=nan(maxlength,length(roiArray));
-            Ycoor=nan(maxlength,length(roiArray));
-            for i = 1:length(roiArray)
-                axesPos =getAxesPosition(parentAxes,roiArray(i).position);
-                Xcoor(1:length(axesPos(:,1)),i)=axesPos(:,1);
-                Ycoor(1:length(axesPos(:,2)),i)=axesPos(:,2);
-            end
-            
-
-            Xcoor= fillmissing(Xcoor,'previous',1); %need to replace nan with previous values, patch should work with nan but i got some error with display so i just replace them
-            Ycoor= fillmissing(Ycoor,'previous',1);
-           
-            roiPatch = patch(Xcoor,Ycoor,'red','Parent',self.guiHandles.roiGroup);
-            set(roiPatch,'FaceAlpha',self.AlphaForRoiOnePatch);
-            set(roiPatch,'LineStyle','none');
-            
-            set(roiPatch,'Tag',"AllRois");
-
-            %roiPatch.UIContextMenu = self.guiHandles.roiMenu;
+        function drawAllRoisOverlay(self)
+            mapAxes = self.guiHandles.mapAxes;
+            roiImgData = self.model.roiArr.convertToMask();
+            self.setRoiImgData(roiImgData)
         end
 
-         function redrawAllRoiPatch(self)
-            self.deleteAllRoiPatch();
-            roiArray = self.model.getRoiArray();
-            arrayfun(@(x) self.addRoiPatch(x),roiArray);
+        function roiImgData = getRoiImgData(self)
+            if isfield(self.guiHandles,'roiImg')
+                roiImgData = self.guiHandles.roiImg.CData;
+            else
+                roiImgData = [];
+            end
+        end
+        
+        function setRoiImgData(self, roiImgData)
+            if isfield(self.guiHandles,'roiImg')
+                self.guiHandles.roiImg.CData = roiImgData;
+                self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
+            else
+                self.guiHandles.roiImg = imagesc(roiImgData,'Parent',self.guiHandles.roiAxes);
+                set(self.guiHandles.roiAxes,'color','none','visible','off')
+                self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
+                colormap(self.guiHandles.roiAxes,self.roiColorMap);
+                self.setRoiVisibility();
+            end
         end
 
-         function addRoiPatch(self,roi)
-            roiPatch = roi.createRoiPatch(self.guiHandles.roiGroup, ...
-                                          self.DEFAULT_PATCH_COLOR);
-            % Add context menu for right click
-            roiPatch.UIContextMenu = self.guiHandles.roiMenu;
-         end
-          function displayRoiTag(self,roiPatch)
+        function addRoiPatch(self,roi)
+            if isfield(self.guiHandles,'roiImg')
+                roiImgData = self.guiHandles.roiImg.CData;
+                self.setRoiImgData(roi.addMaskToImg(roiImgData));
+            end
+        end
+        
+        function displayRoiTag(self,roiPatch)
             ptTag = get(roiPatch,'Tag');
             tag = helper.convertTagToInd(ptTag,'roi');
             pos = roiPatch.Vertices(1,:);
@@ -114,8 +102,8 @@ classdef BaseTrialView < handle
         function removeRoiTagText(self,roiTag)
             txtTag = sprintf('roiTag_%d',roiTag);
             htext = findobj(self.guiHandles.roiGroup,...
-                               'Type','text',...
-                               'Tag',txtTag);
+                            'Type','text',...
+                            'Tag',txtTag);
             delete(htext);
         end
         
@@ -127,10 +115,11 @@ classdef BaseTrialView < handle
             centroids = zeros(nRois, 2);
             for k=1:nRois
                 roi = roiList(k);
-                centroids(k,:) = roi.getCentroid();
+                centroids(k, :) = roi.getCentroid();
             end
             hold on;
-            self.selectedMarkers = plot(centroids, 'r+', 'MarkerSize', 30, 'LineWidth', 2);
+            self.selectedMarkers = plot(centroids(:,1), centroids(:,2),...
+                                        'r+', 'MarkerSize', 10, 'LineWidth', 1);
             hold off;
         end
         
@@ -219,9 +208,6 @@ classdef BaseTrialView < handle
             end
             set(self.guiHandles.roiGroup,'Visible',roiState);
         end
-
-
-
         
     end
     
@@ -264,12 +250,12 @@ function axesPos = getAxesPosition(parent,pixelPos)
 end
 
 function [xWorldLim,yWorldLim] = getWorldLim(imageSize,xdata,ydata)
-        pixelExtentInWorldX = (xdata(2)-xdata(1))/imageSize(2);
-        xWorldLim = [xdata(1)-pixelExtentInWorldX*0.5,...
-                     xdata(2)+pixelExtentInWorldX*0.5];
-        pixelExtentInWorldY = (ydata(2)-ydata(1))/imageSize(1);
-        yWorldLim = [ydata(1)-pixelExtentInWorldY*0.5,...
-                     ydata(2)+pixelExtentInWorldY*0.5];
+    pixelExtentInWorldX = (xdata(2)-xdata(1))/imageSize(2);
+    xWorldLim = [xdata(1)-pixelExtentInWorldX*0.5,...
+                 xdata(2)+pixelExtentInWorldX*0.5];
+    pixelExtentInWorldY = (ydata(2)-ydata(1))/imageSize(1);
+    yWorldLim = [ydata(1)-pixelExtentInWorldY*0.5,...
+                 ydata(2)+pixelExtentInWorldY*0.5];
 end
 
 function tf = isDefaultCoordinate(imageSize,xdata,ydata)
