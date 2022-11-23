@@ -38,13 +38,12 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
         
             rawRoi = images.roi.Freehand(stackCtrl.view.guiHandles.roiAxes,...
                                          'Position', [10, 10; 10, 20; 20, 20; 20, 10]);
-            stackCtrl.addRoi(rawRoi);
+            stackCtrl.addRawRoi(rawRoi);
             roiImgData = stackCtrl.view.getRoiImgData();
             mask = testCase.stack.movieStructList{1}.mask;
             mask(11:20, 11:20) = 5;
             testCase.verifyMse(roiImgData, mask, 0);
-            % verify roi map in view
-        %     stackCtrl.replaceRoiByDrawing();
+            stackCtrl.replaceRoiByDrawing([15, 15; 15, 25; 25, 25; 25, 15]);
         %     stackCtrl.moveRoi();
         %     stackCtrl.selectRoi();
         %     stackCtrl.deleteSelectedRoi();

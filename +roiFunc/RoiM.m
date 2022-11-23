@@ -14,8 +14,6 @@ classdef RoiM
             parse(pa, position, varargin{:})
             pr = pa.Results;
 
-            disp(pr.freeHand)
-            disp(isempty(pr.freeHand))
             if ~isempty(pr.position)
                 position = pr.position;
             elseif ~isempty(pr.freeHand)
@@ -57,14 +55,18 @@ classdef RoiM
             centroid = mean(self.position, 1);
         end
         
-        function img = addMaskToImg(self, img)
-            if isempty(self.tag)
-                error('ROI tag not set!')
+        function img = addMaskToImg(self, img, value)
+            if ~exist('value', 'var')
+                if isempty(self.tag)
+                    error('ROI tag not set!')
+                end
+                value = self.tag;
             end
+            
             imageSize = size(img);
             pos = self.position;
             linearInd = sub2ind(imageSize, pos(:,2), pos(:,1));
-            img(linearInd) = self.tag;
+            img(linearInd) = value;
         end
         
     end

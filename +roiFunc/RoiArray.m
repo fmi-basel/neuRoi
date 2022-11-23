@@ -99,12 +99,17 @@ classdef RoiArray < handle
         
         function updateRoi(self, tag, roi)
             idx = self.findRoi(tag);
-            if idx
-                % only update ROI position
-                self.roiList(idx).position = roi.position;
-            else
+            if ~idx
                 error(sprintf('ROI #%d not found!', tag))
             end
+            self.updateRoiByIdx(roi)
+        end
+        
+        function [newRoi, oldRoi] = updateRoiByIdx(self, idx, roi)
+        % UPDATEROIBUIDX only update ROI position
+            oldRoi = self.roiList(idx);
+            self.roiList(idx).position = roi.position;
+            newRoi = self.roiList(idx);
         end
         
         function deleteRoi(self, tag)
@@ -120,20 +125,27 @@ classdef RoiArray < handle
             end
         end
         
-        function selectRois(self, tags)
-            idxs = arrayfun(@(x) self.findRoi(x), tags);
+        function selectRoisByIdxs(self, idxs)
             self.selectedIdxs = idxs;
             self.selectedRois = self.roiList(idxs);
+        end
+        
+        function selectRois(self, tags)
+            idxs = arrayfun(@(x) self.findRoi(x), tags);
+            self.selectRoisByIdxs(idxs);
+        end
+
+        function selectLastRoi(self)
+            idxs = [length(self.roiList)];
+            self.selectRoisByIdxs(idxs);
         end
         
         function rois = getSelectedRois(self)
             rois = self.selectedRois;
         end
-
-        function selectLastRoi(self)
-            idxs = [length(self.roiList)];
-            self.selectedIdxs = idxs;
-            self.selectedRois = self.roiList(idxs);
+        
+        function idxs = getSelectedIdxs(self)
+            idxs = self.selectedIdxs;
         end
 
         function groupNames = getGroupNames(self)

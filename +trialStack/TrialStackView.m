@@ -52,8 +52,6 @@ classdef TrialStackView < baseTrial.BaseTrialView
             listenToModel@baseTrial.BaseTrialView(self); %call base function
             addlistener(self.model,'currentTrialIdx','PostSet',@self.displayCurrentTrial);
             addlistener(self.model,'mapType','PostSet',@self.displayMap);
-            addlistener(self.model,'roiUpdated',...
-                        @self.updateRoiPatchPosition);
         end
         
         function assignCallbacks(self)
@@ -123,15 +121,6 @@ classdef TrialStackView < baseTrial.BaseTrialView
             end
         end
 
-        function updateRoiPatchPosition(self,src,evnt)
-            updRoiArray = evnt.roiArray;
-            for k=1:length(updRoiArray)
-                roi = updRoiArray(k);
-                roiPatch = self.findRoiPatchByTag(roi.tag);
-                roi.updateRoiPatchPos(roiPatch);
-            end
-        end
-        
         function displayCurrentTrial(self,src,evnt)
             self.displayCurrentMap();
             self.drawAllRoisOverlay();

@@ -9,13 +9,12 @@ classdef BaseTrialController < handle
         function addRoiByDrawing(self)
             self.model.roiVisible = true;
             self.enableFreehandShortcut = false;
-            rawRoi = imfreehand;
-            self.addRoi(rawRoi);
+            rawRoi = drawfreehand(self.view.guiHandles.roiAxes);
+            self.addRawRoi(rawRoi);
             self.enableFreehandShortcut = true;
         end
         
-        function addRoi(self, rawRoi)
-            mapAxes = self.view.guiHandles.mapAxes;
+        function addRawRoi(self, rawRoi)
             if ~isempty(rawRoi.Position)
                 freshRoi = roiFunc.RoiM('freeHand', rawRoi);
                 self.model.addRoi(freshRoi);
@@ -26,27 +25,38 @@ classdef BaseTrialController < handle
             delete(rawRoi)
         end
 
-        function replaceRoiByDrawing(self)
-            if length(self.model.selectedRoiTagArray) == 1
-                % TODO at least dislay the edge!!
-                self.view.changeRoiPatchColor('none','selected');
-                roiTag = self.model.selectedRoiTagArray(1);
+        function replaceRoiByDrawing(self, varargin)
+            selectedIdxs = self.model.roiArr.getSelectedIdxs();
+            if length(selectedIdxs) == 1
+                roi = self.model.roiArr.getSelectedRois();
+                % Remove ROI in roiImg
+                roiImgData = self.view.getRoiImgData();
+                newRoiImgData = roi.addMaskToImg(roiImgData, 0);
+                self.view.setRoiImgData(newRoiImgData);
+
+                % Draw ROI
                 figure(self.view.guiHandles.mainFig);
                 self.enableFreehandShortcut = false;
-                rawRoi = imfreehand;
+                if length(varargin) == 1
+                    rawRoi = images.roi.Freehand(self.view.guiHandles.roiAxes,...
+                                                 'Position', varargin{1});
+                else
+                    rawRoi = drawfreehand(self.view.guiHandles.roiAxes);
+                end
+                
+                % Update ROI
                 if ~isempty(rawRoi)
-                    position = rawRoi.getPosition();
-                    mapAxes = self.view.guiHandles.mapAxes;
+                    position = rawRoi.Position;
                     if ~isempty(position)
-                        self.model.updateRoi(roiTag,mapAxes,position);
-                        self.model.selectSingleRoi(roiTag);
+                        freshRoi = roiFunc.RoiM('freeHand', rawRoi);
+                        self.model.updateRoiByIdx(selectedIdxs(1), freshRoi);
+                        self.model.selectRoisByIdxs(selectedIdxs(1));
                     else
                         disp('Empty ROI. No replacement.')
                     end
                     delete(rawRoi)
                 end
                 self.enableFreehandShortcut = true;
-                self.view.changeRoiPatchColor('default','selected');
             else
                 error(['Exactly one ROI should be selected for ' ...
                        'replacing!']);

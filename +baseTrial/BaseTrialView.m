@@ -123,17 +123,6 @@ classdef BaseTrialView < handle
             hold off;
         end
         
-        function changeRoiPatchColor(self,ptcolor,varargin)
-            if nargin == 3
-                if strcmp(ptcolor,'default')
-                    ptcolor = self.DEFAULT_PATCH_COLOR;
-                end
-                for k=1:length(self.selectedRoiPatchArray)
-                    roiPatch = self.selectedRoiPatchArray{k};
-                    set(roiPatch,'Facecolor',ptcolor);
-                end
-            end
-        end
         
         function roiPatch = findRoiPatchByTag(self,tag)
             ptTag = RoiFreehand.getPatchTag(tag);
@@ -164,12 +153,14 @@ classdef BaseTrialView < handle
         end
 
         function updateRoiPatchPosition(self,src,evnt)
-            updRoiArray = evnt.roiArray;
-            for k=1:length(updRoiArray)
-                roi = updRoiArray(k);
-                roiPatch = self.findRoiPatchByTag(roi.tag);
-                roi.updateRoiPatchPos(roiPatch);
-            end
+            newRoi = evnt.newRoi;
+            oldRoi = evnt.oldRoi;
+            % Remove original ROI in roiImg
+            roiImgData = self.getRoiImgData();
+            roiImgData = oldRoi.addMaskToImg(roiImgData, 0);
+            % Add updated ROI to roiImg
+            roiImgData = newRoi.addMaskToImg(roiImgData);
+            self.setRoiImgData(roiImgData);
         end
         
         function changeRoiPatchTag(self,src,evnt)

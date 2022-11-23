@@ -33,6 +33,17 @@ classdef BaseTrialModel < handle
             notify(self,'roiSelected');
         end
         
+        function selectRoisByIdxs(self, idxs)
+            self.roiArr.selectRoisByIdxs(idxs);
+            notify(self,'roiSelected');
+        end
+        
+        function updateRoiByIdx(self, idx, position)
+            [newRoi, oldRoi] = self.roiArr.updateRoiByIdx(idx, position);
+            notify(self,'roiUpdated', NrEvent.RoiUpdatedEvent(newRoi, oldRoi));
+        end
+        
+        
         % function selectSingleRoi(self,varargin)
         %     if nargin == 2
         %         if strcmp(varargin{1},'last')
