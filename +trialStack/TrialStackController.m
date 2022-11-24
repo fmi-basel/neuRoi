@@ -15,25 +15,6 @@ classdef TrialStackController < baseTrial.BaseTrialController
             self.view.setTrialNumberSlider(self.model.currentTrialIdx);
         end
 
-        function keyPressCallback(self, src, evnt)
-            if isempty(evnt.Modifier)
-                switch evnt.Key
-                  case 'q'
-                    self.model.selectMapType(1)
-                  case 'w'
-                    self.model.selectMapType(2)
-                  case 't'
-                    self.toggleRoiVisibility()
-                  case 'x'
-                    self.replaceRoiByDrawing();
-                  case 'v'
-                    self.enterMoveRoiMode();
-                  case {'d','delete','backspace'}
-                    self.deleteSelectedRoi();
-                end
-            end
-        end
-
         function RoiFileIdentifierEdit_Callback(self,src,evnt)
             self.model.roiFileIdentifier=src.String;
         end

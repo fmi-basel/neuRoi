@@ -28,13 +28,19 @@ classdef BaseTrialModel < handle
             notify(self,'roiSelected');
         end
         
+        function unselectAllRois(self)
+            self.roiArr.selectRois([]);
+            notify(self,'roiSelected');
+        end
+
+        
         function selectLastRoi(self)
             self.roiArr.selectLastRoi();
             notify(self,'roiSelected');
         end
         
         function selectRoi(self, tag)
-            self.roiArr.selectRoi();
+            self.roiArr.selectRoi(tag);
             notify(self,'roiSelected');
         end
         
@@ -43,11 +49,13 @@ classdef BaseTrialModel < handle
             notify(self,'roiSelected');
         end
         
-            
-        
         function selectRoisByIdxs(self, idxs)
             self.roiArr.selectRoisByIdxs(idxs);
             notify(self,'roiSelected');
+        end
+        
+        function res = singleRoiSelected(self)
+            res = length(self.roiArr.getSelectedIdxs()) == 1;
         end
         
         function updateRoiByIdx(self, idx, position)
@@ -55,43 +63,10 @@ classdef BaseTrialModel < handle
             notify(self,'roiUpdated', NrEvent.RoiUpdatedEvent(newRoi, oldRoi));
         end
         
-        
-        % function selectSingleRoi(self,varargin)
-        %     if nargin == 2
-        %         if strcmp(varargin{1},'last')
-        %             ind = length(self.roiArray);
-        %             tag = self.roiArray(ind).tag;
-        %         else
-        %             tag = varargin{1};
-        %             ind = self.findRoiByTag(tag);
-        %         end
-        %     else
-        %         error('Too Many/few input args!')
-        %     end
-            
-        %     if ~isequal(self.selectedRoiTagArray,[tag])
-        %         self.unselectAllRoi();
-        %         self.selectRoi(tag);
-        %     end
-        % end
-        
-        % function selectRoi(self,tag)
-        %     if ~ismember(tag,self.selectedRoiTagArray)
-        %         ind = self.findRoiByTag(tag);
-        %         self.selectedRoiTagArray(end+1)  = tag;
-        %         notify(self,'roiSelected',NrEvent.RoiEvent(tag));
-        %         disp(sprintf('ROI #%d selected',tag))
-        %     end
-        % end
-        
-        % function unselectRoi(self,tag)
-        %     tagArray = self.selectedRoiTagArray;
-        %     tagInd = find(tagArray == tag);
-        %     if tagInd
-        %         self.selectedRoiTagArray(tagInd) = [];
-        %         notify(self,'roiUnSelected',NrEvent.RoiEvent(tag));
-        %     end
-        % end
+        function moveRoi(self, tag, offset)
+            [newRoi, oldRoi] = self.roiArr.moveRoi(tag, offset)
+            notify(self,'roiUpdated', NrEvent.RoiUpdatedEvent(newRoi, oldRoi));
+        end
 
     end
 end

@@ -36,6 +36,7 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             stackCtrl = testCase.stackCtrl;
             stackCtrl.model.currentTrialIdx = 1;
         
+            % Test add ROI
             rawRoi = images.roi.Freehand(stackCtrl.view.guiHandles.roiAxes,...
                                          'Position', [10, 10; 10, 20; 20, 20; 20, 10]);
             stackCtrl.addRawRoi(rawRoi);
@@ -44,21 +45,44 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             mask(11:20, 11:20) = 5;
             testCase.verifyMse(roiImgData, mask, 0);
             
-            % Move to ROI #1 and select it by clicking
+            % Move mouse to ROI #1 and select it by clicking
             pause(1.0);
             import java.awt.Robot;
             import java.awt.event.*;
             mouse = Robot;
-            mouse.mouseMove(553, 1363); % relates to my personal location of open program instance
+            mouse.mouseMove(553, 1363);
             mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
             pause(0.1);
             mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
             pause(0.5);
+            testCase.verifyEqual(stackCtrl.model.roiArr.getSelectedTags, [1])
 
             % stackCtrl.selectRoi_Callback();
-            % stackCtrl.replaceRoiByDrawing([15, 15; 15, 25; 25, 25; 25, 15]);
-        %     stackCtrl.moveRoi();
-        %     stackCtrl.selectRoi();
+            
+            % Test replace ROI
+            stackCtrl.replaceRoiByDrawing([25, 33; 25, 44; 36, 44; 36, 33]);
+            mask(find(mask==1)) = 0;
+            mask(26:36, 34:44) = 1;
+            roiImgData = stackCtrl.view.getRoiImgData();
+            testCase.verifyMse(roiImgData, mask, 0);
+            
+            % Test moving ROI
+            stackCtrl.enterMoveRoiMode();
+            pause(0.1);
+            mouse.mouseMove(582, 1337);
+            pause(0.1);
+            mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
+            pause(0.1);
+            mouse.mouseMove(582+10, 1337+15);
+            pause(0.1);
+            mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
+            pause(1.0);
+            % Double click to confirm moving
+            mouse.mousePress(InputEvent.BUTTON1_MASK);
+            mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
+            mouse.mousePress(InputEvent.BUTTON1_MASK);
+            mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
+
         %     stackCtrl.deleteSelectedRoi();
         
         %     stackCtrl.model.currentTrialIdx = 2;

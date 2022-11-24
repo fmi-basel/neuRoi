@@ -68,6 +68,10 @@ classdef RoiM
             linearInd = sub2ind(imageSize, pos(:,2), pos(:,1));
             img(linearInd) = value;
         end
+
+        function move(self, offset)
+            self.position = self.position + offset;
+        end
         
     end
     

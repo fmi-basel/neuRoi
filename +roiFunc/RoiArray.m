@@ -101,6 +101,13 @@ classdef RoiArray < handle
             self.updateRoiByIdx(roi)
         end
         
+        function [newRoi, oldRoi] = moveRoi(self, tag, offset)
+            idx = self.findRoi(tag);
+            oldRoi = self.roiList(idx);
+            self.roiList(idx).move(offset);
+            newRoi = self.roiList(idx);
+        end
+        
         function [newRoi, oldRoi] = updateRoiByIdx(self, idx, roi)
         % UPDATEROIBUIDX only update ROI position
             oldRoi = self.roiList(idx);
@@ -159,7 +166,7 @@ classdef RoiArray < handle
         
         function tags = getSelectedTags(self)
             idxs = self.selectedIdxs;
-            tags = self.roiList(idxs);
+            tags = self.tagList(idxs);
         end
 
         function groupNames = getGroupNames(self)

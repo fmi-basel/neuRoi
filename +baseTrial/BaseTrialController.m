@@ -6,6 +6,25 @@ classdef BaseTrialController < handle
     end
     
     methods
+        function keyPressCallback(self, src, evnt)
+            if isempty(evnt.Modifier)
+                switch evnt.Key
+                  case 'q'
+                    self.model.selectMapType(1)
+                  case 'w'
+                    self.model.selectMapType(2)
+                  case 't'
+                    self.toggleRoiVisibility()
+                  case 'x'
+                    self.replaceRoiByDrawing();
+                  case 'v'
+                    self.enterMoveRoiMode();
+                  case {'d','delete','backspace'}
+                    self.deleteSelectedRoi();
+                end
+            end
+        end
+        
         function addRoiByDrawing(self)
             self.model.roiVisible = true;
             self.enableFreehandShortcut = false;
@@ -87,7 +106,7 @@ classdef BaseTrialController < handle
                 self.roiClicked_Callback(tag);
             else
                 if ~isempty(self.model.roiArr.getSelectedIdxs())
-                    self.model.unselectAllRoi();
+                    self.model.unselectAllRois();
                 end
             end
         end
@@ -98,6 +117,7 @@ classdef BaseTrialController < handle
               case {'normal','alt'}
                 self.model.selectRois([tag]);
               case 'extend'
+                selectedTags = self.model.roiArr.getSelectedTags();
                 if ismember(tag, selectedTags)
                     self.model.unselectRoi(tag);
                 else
@@ -109,7 +129,10 @@ classdef BaseTrialController < handle
         function enterMoveRoiMode(self)
         % ENTERMOVEROIMODE callback to enter moving mode of
         % selected ROIs
-            self.view.changeRoiPatchColor('y','selected');
+            if ~self.model.singleRoiSelected()
+                error('Please select a single ROI to move!')
+            end
+            
             mainFig = self.view.guiHandles.mainFig;
             usrData = get(mainFig,'UserData');
             usrData.oldWindowButtonDownFcn = get(mainFig,'WindowButtonDownFcn');
@@ -117,12 +140,10 @@ classdef BaseTrialController < handle
                                                'WindowKeyPressFcn');
             
             % Initialize moveit data
-            currentRoiPatch = self.view.selectedRoiPatchArray{1};
-            usrData.moveitData.currentRoiPatch = currentRoiPatch;
+            currentRoiPatch = self.view.createMovableRoi();
             usrData.moveitData.originalXYData = {get(currentRoiPatch,'XData') get(currentRoiPatch,'YData')};
             
-            set(mainFig,'WindowButtonDownFcn',@ ...
-                        self.moveRoi_Callback);
+            set(mainFig,'WindowButtonDownFcn',@self.moveRoi_Callback);
             % press Esc Callback
             set(self.view.guiHandles.mainFig,'WindowKeyPressFcn', ...
                               @(s,e)self.moveRoiKeyPressCallback(s,e));
@@ -140,20 +161,14 @@ classdef BaseTrialController < handle
                 % if exit with success, update the roi position in
                 % trial model
                 startPoint = usrData.moveitData.startPoint;
-                relativePos = usrData.moveitData.pos;
+                relativePos = usrData.moveitData.pos(1, 1:2);
                 movedPatch = usrData.moveitData.currentHandle;
                 pttag = movedPatch.Tag;
                 roiTag = helper.convertTagToInd(pttag,'roi');
-                axesPos = [movedPatch.XData,movedPatch.YData];
-                self.model.updateRoi(roiTag,thisAxes,axesPos);
+                self.model.moveRoi(roiTag, relativePos);
             else
-                movedPatch = usrData.moveitData.currentRoiPatch;
-                XYData = usrData.moveitData.originalXYData;
-                set(movedPatch,'XData',XYData{1});
-                set(movedPatch,'YData',XYData{2});
-
+                delete(usrData.moveitData.currentHandle);
             end
-            self.view.changeRoiPatchColor('default','selected');
 
             set(thisFig,'WindowButtonDownFcn',...
                         usrData.oldWindowButtonDownFcn);
@@ -171,18 +186,16 @@ classdef BaseTrialController < handle
             selectionType = get(gcf,'SelectionType');
             % If the selected object is a roiPatch that has been
             % already selected, then start to move it
-            if RoiFreehand.isaRoiPatch(selectedObj)
-                if strcmp(selectedObj.Selected,'on')
-                    switch selectionType
-                      case 'normal'
-                        disp('start moving ROIs')
-                        moveit.startmovit(selectedObj);
-                        % start point and relative position to
-                        % start point are saved in
-                        % UserData of parent figure
-                      case 'open'
-                        self.exitMoveRoiMode(selectedObj,'success');
-                    end
+            if roiFunc.isaRoiPatch(selectedObj)
+                switch selectionType
+                  case 'normal'
+                    disp('start moving ROIs')
+                    moveit.startmovit(selectedObj);
+                    % start point and relative position to
+                    % start point are saved in
+                    % UserData of parent figure
+                  case 'open'
+                    self.exitMoveRoiMode(selectedObj,'success');
                 end
             end
         end

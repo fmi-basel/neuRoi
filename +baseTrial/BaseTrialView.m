@@ -205,61 +205,23 @@ classdef BaseTrialView < handle
             set(self.guiHandles.roiGroup,'Visible',roiState);
         end
         
+        function roiPatch = createMovableRoi(self)
+            if ~self.model.singleRoiSelected()
+                error('Please select a single ROI!')
+            end
+            ptcolor = 'yellow'
+            roi = self.model.roiArr.getSelectedRois();
+            imageSize = size(self.guiHandles.mapImage.CData);
+            poly = roiFunc.mask2poly(roi.createMask(imageSize));
+            
+            roiPatch = patch(poly.X, poly.Y, ptcolor,...
+                             'Parent', self.guiHandles.roiAxes);
+            set(roiPatch,'FaceAlpha', 0.5);
+            set(roiPatch,'EdgeColor','blue');
+            ptTag = sprintf('roi_%d', roi.tag);
+            set(roiPatch,'Tag',ptTag);
+        end
+        
     end
     
 end
-
-function pixelPos = getPixelPosition(parent,axesPos)
-    [xdata,ydata,cdata] = getimage(parent);
-    imageSize = size(cdata);
-
-    if isDefaultCoordinate(imageSize,xdata,ydata)
-        pixelPos = axesPos;
-    else
-        [xWorldLim,yWorldLim] = getWorldLim(imageSize,xdata,ydata);
-        refObj = imref2d(imageSize,xWorldLim,yWorldLim);
-        [posx,posy] = worldToIntrinsic(refObj,...
-                                       axesPos(:,1),axesPos(:,2));
-        pixelPos = [posx,posy];
-    end
-end
-
-function axesPos = getAxesPosition(parent,pixelPos)
-% GETAXESPOSITON convert postion in intrinsic coordinates into world
-% coordinates.
-% Usage: axesPos = getAxesPosition(parent,pixelPos)
-% parent can be a handle of an image, or a handle that contains
-% image as children
-    
-    [xdata,ydata,cdata] = getimage(parent);
-    imageSize = size(cdata);
-
-    if isDefaultCoordinate(imageSize,xdata,ydata)
-        axesPos = pixelPos;
-    else
-        [xWorldLim,yWorldLim] = getWorldLim(imageSize,xdata,ydata);
-        refObj = imref2d(imageSize,xWorldLim,yWorldLim);
-        [posx,posy] = intrinsicToWorld(refObj,...
-                                       pixelPos(:,1),pixelPos(:,2));
-        axesPos = [posx,posy];
-    end
-end
-
-function [xWorldLim,yWorldLim] = getWorldLim(imageSize,xdata,ydata)
-    pixelExtentInWorldX = (xdata(2)-xdata(1))/imageSize(2);
-    xWorldLim = [xdata(1)-pixelExtentInWorldX*0.5,...
-                 xdata(2)+pixelExtentInWorldX*0.5];
-    pixelExtentInWorldY = (ydata(2)-ydata(1))/imageSize(1);
-    yWorldLim = [ydata(1)-pixelExtentInWorldY*0.5,...
-                 ydata(2)+pixelExtentInWorldY*0.5];
-end
-
-function tf = isDefaultCoordinate(imageSize,xdata,ydata)
-    if isequal(xdata,[1 imageSize(2)]) && isequal(ydata,[1 imageSize(1)])
-        tf = true;
-    else
-        tf = false;
-    end
-end
-
-
