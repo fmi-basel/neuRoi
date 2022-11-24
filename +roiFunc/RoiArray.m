@@ -9,7 +9,6 @@ classdef RoiArray < handle
         tagList
         roiGroupTagList
         selectedIdxs
-        selectedRois
         
         groupNames
         groupTags
@@ -53,7 +52,7 @@ classdef RoiArray < handle
         function idx = findRoi(self, tag)
             idx = find(self.tagList == tag);
             if ~length(idx)
-                error(sprintf('roi #%s not found!', tag))
+                error(sprintf('ROI #%d not found!', tag))
             end
         end
 
@@ -99,9 +98,6 @@ classdef RoiArray < handle
         
         function updateRoi(self, tag, roi)
             idx = self.findRoi(tag);
-            if ~idx
-                error(sprintf('ROI #%d not found!', tag))
-            end
             self.updateRoiByIdx(roi)
         end
         
@@ -127,7 +123,6 @@ classdef RoiArray < handle
         
         function selectRoisByIdxs(self, idxs)
             self.selectedIdxs = idxs;
-            self.selectedRois = self.roiList(idxs);
         end
         
         function selectRois(self, tags)
@@ -140,12 +135,31 @@ classdef RoiArray < handle
             self.selectRoisByIdxs(idxs);
         end
         
+        function selectRoi(self, tag)
+            idx = self.findRoi(tag);
+            self.selectedIdxs(end+1) = idx;
+        end
+        
+        function unselectRoi(self, tag)
+            idx = self.findRoi(tag);
+            sidx = find(self.selectedIdxs == idx);
+            if ~length(sidx)
+                error(sprintf('ROI #%d is not selected', tag))
+            end
+            self.selectedIdxs(sidx) = [];
+        end
+        
         function rois = getSelectedRois(self)
-            rois = self.selectedRois;
+            rois = self.roiList(self.selectedIdxs);
         end
         
         function idxs = getSelectedIdxs(self)
             idxs = self.selectedIdxs;
+        end
+        
+        function tags = getSelectedTags(self)
+            idxs = self.selectedIdxs;
+            tags = self.roiList(idxs);
         end
 
         function groupNames = getGroupNames(self)

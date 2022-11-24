@@ -33,6 +33,18 @@ classdef BaseTrialModel < handle
             notify(self,'roiSelected');
         end
         
+        function selectRoi(self, tag)
+            self.roiArr.selectRoi();
+            notify(self,'roiSelected');
+        end
+        
+        function unselectRoi(self, tag)
+            self.roiArr.unselectRoi();
+            notify(self,'roiSelected');
+        end
+        
+            
+        
         function selectRoisByIdxs(self, idxs)
             self.roiArr.selectRoisByIdxs(idxs);
             notify(self,'roiSelected');

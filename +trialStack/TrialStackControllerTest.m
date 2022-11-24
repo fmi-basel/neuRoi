@@ -43,7 +43,20 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             mask = testCase.stack.movieStructList{1}.mask;
             mask(11:20, 11:20) = 5;
             testCase.verifyMse(roiImgData, mask, 0);
-            stackCtrl.replaceRoiByDrawing([15, 15; 15, 25; 25, 25; 25, 15]);
+            
+            % Move to ROI #1 and select it by clicking
+            pause(1.0);
+            import java.awt.Robot;
+            import java.awt.event.*;
+            mouse = Robot;
+            mouse.mouseMove(553, 1363); % relates to my personal location of open program instance
+            mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
+            pause(0.1);
+            mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
+            pause(0.5);
+
+            % stackCtrl.selectRoi_Callback();
+            % stackCtrl.replaceRoiByDrawing([15, 15; 15, 25; 25, 25; 25, 15]);
         %     stackCtrl.moveRoi();
         %     stackCtrl.selectRoi();
         %     stackCtrl.deleteSelectedRoi();

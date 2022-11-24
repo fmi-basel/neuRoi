@@ -77,31 +77,31 @@ classdef BaseTrialController < handle
         end
 
 
-        function selectRoi_Callback(self,src,evnt)
-            selectedObj = gco;
-            if RoiFreehand.isaRoiPatch(selectedObj)
-                self.roiClicked_Callback(selectedObj);
-            elseif isequal(selectedObj, ...
-                           self.view.guiHandles.mapImage)
-                if ~isempty(self.model.selectedRoiTagArray)
+        function selectRoi_Callback(self, src, evnt)
+            currPt = get(self.view.guiHandles.roiAxes, 'CurrentPoint');
+            % get Tag value under currPt
+            roiImgData = self.view.getRoiImgData();
+            tag = roiImgData(round(currPt(1,2)), round(currPt(1,1)));
+            % select Roi accordingly
+            if tag > 0
+                self.roiClicked_Callback(tag);
+            else
+                if ~isempty(self.model.roiArr.getSelectedIdxs())
                     self.model.unselectAllRoi();
                 end
             end
         end
 
-        function roiClicked_Callback(self,roiPatch)
-            ptTag = roiPatch.Tag;
-            roiTag = helper.convertTagToInd(ptTag,'roi');
-
+        function roiClicked_Callback(self, tag)
             selectionType = get(gcf,'SelectionType');
             switch selectionType
               case {'normal','alt'}
-                self.model.selectSingleRoi(roiTag);
+                self.model.selectRois([tag]);
               case 'extend'
-                if strcmp(roiPatch.Selected,'on')
-                    self.model.unselectRoi(roiTag);
+                if ismember(tag, selectedTags)
+                    self.model.unselectRoi(tag);
                 else
-                    self.model.selectRoi(roiTag);
+                    self.model.selectRoi(tag);
                 end
             end
         end

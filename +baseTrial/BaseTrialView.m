@@ -42,6 +42,11 @@ classdef BaseTrialView < handle
                               @(s,e)self.controller.keyPressCallback(s,e));
             set(self.guiHandles.mainFig,'WindowScrollWheelFcn',...
                               @(s,e)self.controller.ScrollWheelFcnCallback(s,e));
+            
+            helper.imgzoompan(self.guiHandles.roiAxes,...
+                              'ButtonDownFcn',@(s,e) self.controller.selectRoi_Callback(s,e),...
+                              'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
+
         end
 
         % Methods for ROI based processing
