@@ -116,8 +116,9 @@ classdef RoiArray < handle
             newRoi = self.roiList(idx);
         end
         
-        function deleteRoi(self, tag)
+        function roi = deleteRoi(self, tag)
             idx = self.findRoi(tag);
+            roi = self.roiList(idx);
             self.roiList(idx) = [];
             self.tagList(idx) = [];
             self.roiGroupTagList(idx) = [];

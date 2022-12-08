@@ -20,7 +20,7 @@ classdef BaseTrialController < handle
                   case 'v'
                     self.enterMoveRoiMode();
                   case {'d','delete','backspace'}
-                    self.deleteSelectedRoi();
+                    self.deleteSelectedRois();
                 end
             end
         end
@@ -82,16 +82,8 @@ classdef BaseTrialController < handle
             end
         end
         
-        function deleteSelectedRoi(self,src,evnt)
-            answer=questdlg("Do you want to delete the roi only in the current trial or in all trials?","Roi deleting",...
-                            'Current','All','Cancel');
-            
-            switch answer
-              case 'Current'
-                self.model.deleteRoiCurrent();
-              case 'All'
-                self.model.deleteRoiAll();
-            end
+        function deleteSelectedRois(self,src,evnt)
+            self.model.deleteSelectedRois();
             self.view.RoiSaveStatus('Rois have been changed and not saved','red');
         end
 

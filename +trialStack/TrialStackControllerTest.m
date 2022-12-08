@@ -50,7 +50,8 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             import java.awt.Robot;
             import java.awt.event.*;
             mouse = Robot;
-            mouse.mouseMove(553, 1217);
+            roi1p = [552, 1322];
+            mouse.mouseMove(roi1p(1), roi1p(2));
             mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
             pause(0.1);
             mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
@@ -69,11 +70,11 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             % Test moving ROI
             stackCtrl.enterMoveRoiMode();
             pause(0.1);
-            mouse.mouseMove(582, 1191);
+            mouse.mouseMove(roi1p(1)+30, roi1p(2)-5);
             pause(0.1);
             mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
             pause(0.1);
-            mouse.mouseMove(582+10, 1191+15);
+            mouse.mouseMove(roi1p(1)+30, roi1p(2)-5+15);
             pause(0.1);
             mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
             pause(1.0);
@@ -83,7 +84,21 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             mouse.mousePress(InputEvent.BUTTON1_MASK);
             mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
 
-        %     stackCtrl.deleteSelectedRoi();
+            % Move mouse to ROI #1 and select it by clicking
+            pause(0.1);
+            mouse.mouseMove(roi1p(1)+85, roi1p(2)+147);
+            mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
+            pause(0.1);
+            mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
+            pause(0.1);
+            stackCtrl.deleteSelectedRois();
+            % stackCtrl.deleteSelectedRoi from all trials;
+            
+            % undo deletion from current trial
+            % undo deletion from all trials
+            
+            % undo move ROI
+            % undo redraw ROI
         
         %     stackCtrl.model.currentTrialIdx = 2;
         %     stackCtrl.drawRoi();

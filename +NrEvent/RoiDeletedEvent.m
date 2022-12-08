@@ -4,12 +4,12 @@ classdef (ConstructOnLoad) RoiDeletedEvent < ...
     % data in an event of roi deletion
     % Usage: data = RoiDeletedEvent(tagArray)
     properties
-        tagArray
+        rois
     end
     
     methods
-        function self = RoiDeletedEvent(tagArray)
-            self.tagArray = tagArray;
+        function self = RoiDeletedEvent(rois)
+            self.rois = rois;
         end
     end
 end

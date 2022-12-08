@@ -7,6 +7,16 @@ classdef TrialStackController < baseTrial.BaseTrialController
             self.view.displayCurrentMap();
         end
         
+        function keyPressCallback(self, src, evnt)
+            keyPressCallback@baseTrial.BaseTrialController(self); %call base function
+            if strcmp(evnt.Modifier,'control')
+                switch evnt.Key
+                  case {'d','delete','backspace'}
+                    self.deleteSelectedRoisInStack();
+                end
+            end
+        end
+        
         function ScrollWheelFcnCallback(self, src, evnt)
         %JE-Mouswheelscroll functionality for scrolling trough the trials
         %TO DO: zoom function can casues problems and should be deactivated first

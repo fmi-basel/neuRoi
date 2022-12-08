@@ -24,7 +24,7 @@ classdef BaseTrialView < handle
             addlistener(self.model,'roiSelected',...
                         @self.updateRoiPatchSelection);
             addlistener(self.model,'roiDeleted',...
-                        @self.deleteRoiPatch);
+                        @self.deleteRoiPatches);
             addlistener(self.model,'roiNewAlpha',...
                         @self.UpdateRoiPatchAlpha);
             addlistener(self.model,'roiNewAlphaAll',...
@@ -166,7 +166,7 @@ classdef BaseTrialView < handle
             % Add updated ROI to roiImg
             roiImgData = newRoi.addMaskToImg(roiImgData);
             self.setRoiImgData(roiImgData);
-            % TODO Move selection cross
+            % Move selection cross
             self.updateRoiPatchSelection()
         end
         
@@ -176,7 +176,6 @@ classdef BaseTrialView < handle
             roiPatch = self.findRoiByTag(evnt.oldTag);
             roiPatch.tag = RoiFreehand.getPatchTag(newTag);
         end
-        
         
         function roiPatchArray = getRoiPatchArray(self)
             mapAxes = self.guiHandles.roiGroup;
@@ -190,12 +189,16 @@ classdef BaseTrialView < handle
             arrayfun(@(x) delete(x), roiPatchArray);
         end
 
-        function deleteRoiPatch(self,src,evnt)
-            tagArray = evnt.tagArray;
-            for k=1:length(tagArray)
-                roiPatch = self.findRoiPatchByTag(tagArray(k))'
-                delete(roiPatch);
+        function deleteRoiPatches(self,src,evnt)
+            rois = evnt.rois;
+            roiImgData = self.getRoiImgData();
+            for k=1:length(rois)
+                % Remove ROI in roiImg
+                roi = rois(k);
+                roiImgData = roi.addMaskToImg(roiImgData, 0);
             end
+            self.setRoiImgData(roiImgData);
+            self.updateRoiPatchSelection()
         end
         
         function changeRoiVisibility(self,src,evnt)
@@ -211,7 +214,7 @@ classdef BaseTrialView < handle
             if ~self.model.singleRoiSelected()
                 error('Please select a single ROI!')
             end
-            ptcolor = 'yellow'
+            ptcolor = 'yellow';
             roi = self.model.roiArr.getSelectedRois();
             imageSize = size(self.guiHandles.mapImage.CData);
             poly = roiFunc.mask2poly(roi.createMask(imageSize));

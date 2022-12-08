@@ -187,9 +187,9 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             self.roiArr.updateRoi(tag, roi)
         end
         
-        function deleteRoi(self,tag)
+        function roi = deleteRoi(self,tag)
             groupName = self.roiArr.getRoiGroupName(tag);
-            self.roiArr.deleteRoi(tag)
+            roi = self.roiArr.deleteRoi(tag);
             
             % If the ROI is in the common stack, record the deletion
             if ~strcmp(groupName, self.DIFF_NAME)
@@ -227,8 +227,37 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             end
         end
         
+        function deleteSelectedRois(self)
+            tags = self.roiArr.getSelectedTags();
+            rois = roiFunc.RoiM.empty();
+            for k=1:length(tags)
+                tag = tags(k);
+                rois(k) = self.deleteRoi(tag);
+            end
+            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(rois));
+            % TODO save ROIs temporarily for undo
+        end
+        
+        function deleteSelectedRoisInStack(self)
+            tags = self.model.roiArr.getSelectedTags();
+            for k=1:length(tags)
+                tag = tags(k);
+                self.deleteRoiInStack(tag);
+            end
+            % TODO save ROIs temporarily for undo
+        end
+        
+        function undoDeleteRoi()
+        end
+        
+        function undoDeleteRoiInStack()
+        end
+        
+        function undoUpdateRoi()
+        end
+        
     end
-
+    
     methods
         function [commonTags, allTags] = summarizeRoiTags(self, roiArrStack)
             tagListStack = cellfun(@(x) x.getTagList(), roiArrStack,...
