@@ -103,8 +103,9 @@ classdef RoiArray < handle
         
         function [newRoi, oldRoi] = moveRoi(self, tag, offset)
             idx = self.findRoi(tag);
+            % TODO move ROI limit in x and y
             oldRoi = self.roiList(idx);
-            self.roiList(idx).move(offset);
+            self.roiList(idx).position = oldRoi.getMovedPos(offset);
             newRoi = self.roiList(idx);
         end
         

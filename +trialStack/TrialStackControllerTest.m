@@ -50,7 +50,7 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             import java.awt.Robot;
             import java.awt.event.*;
             mouse = Robot;
-            mouse.mouseMove(553, 1363);
+            mouse.mouseMove(553, 1217);
             mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
             pause(0.1);
             mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
@@ -69,11 +69,11 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             % Test moving ROI
             stackCtrl.enterMoveRoiMode();
             pause(0.1);
-            mouse.mouseMove(582, 1337);
+            mouse.mouseMove(582, 1191);
             pause(0.1);
             mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
             pause(0.1);
-            mouse.mouseMove(582+10, 1337+15);
+            mouse.mouseMove(582+10, 1191+15);
             pause(0.1);
             mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
             pause(1.0);

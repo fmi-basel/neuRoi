@@ -46,7 +46,6 @@ classdef BaseTrialView < handle
             helper.imgzoompan(self.guiHandles.roiAxes,...
                               'ButtonDownFcn',@(s,e) self.controller.selectRoi_Callback(s,e),...
                               'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
-
         end
 
         % Methods for ROI based processing
@@ -158,6 +157,7 @@ classdef BaseTrialView < handle
         end
 
         function updateRoiPatchPosition(self,src,evnt)
+            disp('update roi in view')
             newRoi = evnt.newRoi;
             oldRoi = evnt.oldRoi;
             % Remove original ROI in roiImg
@@ -166,6 +166,8 @@ classdef BaseTrialView < handle
             % Add updated ROI to roiImg
             roiImgData = newRoi.addMaskToImg(roiImgData);
             self.setRoiImgData(roiImgData);
+            % TODO Move selection cross
+            self.updateRoiPatchSelection()
         end
         
         function changeRoiPatchTag(self,src,evnt)

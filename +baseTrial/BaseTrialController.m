@@ -166,10 +166,9 @@ classdef BaseTrialController < handle
                 pttag = movedPatch.Tag;
                 roiTag = helper.convertTagToInd(pttag,'roi');
                 self.model.moveRoi(roiTag, relativePos);
-            else
-                delete(usrData.moveitData.currentHandle);
             end
-
+            delete(usrData.moveitData.currentHandle);
+            
             set(thisFig,'WindowButtonDownFcn',...
                         usrData.oldWindowButtonDownFcn);
             set(self.view.guiHandles.mainFig,'WindowKeyPressFcn',...

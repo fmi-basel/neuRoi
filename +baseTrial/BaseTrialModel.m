@@ -64,7 +64,7 @@ classdef BaseTrialModel < handle
         end
         
         function moveRoi(self, tag, offset)
-            [newRoi, oldRoi] = self.roiArr.moveRoi(tag, offset)
+            [newRoi, oldRoi] = self.roiArr.moveRoi(tag, offset);
             notify(self,'roiUpdated', NrEvent.RoiUpdatedEvent(newRoi, oldRoi));
         end
 

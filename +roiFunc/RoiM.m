@@ -69,8 +69,8 @@ classdef RoiM
             img(linearInd) = value;
         end
 
-        function move(self, offset)
-            self.position = self.position + offset;
+        function position = getMovedPos(self, offset)
+            position = self.position + round(offset);
         end
         
     end
