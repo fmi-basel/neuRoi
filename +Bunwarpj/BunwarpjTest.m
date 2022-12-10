@@ -1,4 +1,4 @@
-classdef BUnwarpJTest < matlab.unittest.TestCase
+classdef BunwarpjTest < matlab.unittest.TestCase
     % Tests the TrialModel class
     properties
         dirs
@@ -49,7 +49,7 @@ classdef BUnwarpJTest < matlab.unittest.TestCase
 
     methods(Test)
         function testCalcAndApplyBUnwarpJMask(testCase)
-        % TODO update this test
+        % TODO update this test, see NrModelTest
         % TODO test normalize images
             pathInput = [1, 1, 1];
             roiType = 0;

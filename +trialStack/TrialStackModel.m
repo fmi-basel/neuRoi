@@ -197,7 +197,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             end
         end
 
-        function deleteRoiInStack(self, tag)
+        function roiStack = deleteRoiInStack(self, tag)
             cidx = find(self.commonRoiTags == tag);
             if cidx
                 self.commonRoiTags(cidx) = [];
@@ -207,6 +207,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             aidx = find(self.allRoiTags == tag);
             self.allRoiTags(aidx) = [];
 
+            roiStack = {}
             for k=1:self.nTrial
                 trialTagPair = [k, tag];
                 
@@ -222,7 +223,8 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
                     self.partialDeletedTags(pidx) = [];
                 else
                     roiArr = self.roiArrStack{k};
-                    roiArr.deleteRoi(tag);
+                    roi = roiArr.deleteRoi(tag);
+                    roiStack{k} = roi;
                 end
             end
         end
@@ -239,11 +241,21 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         end
         
         function deleteSelectedRoisInStack(self)
-            tags = self.model.roiArr.getSelectedTags();
+            tags = self.roiArr.getSelectedTags();
+            roiStacks = {}
             for k=1:length(tags)
                 tag = tags(k);
-                self.deleteRoiInStack(tag);
+                roiStacks{k} = self.deleteRoiInStack(tag);
             end
+            % Only notify the deleted ROIs in current trial
+            rois = roiFunc.RoiM.empty();
+            for k=1:length(tags)
+                roi = roiStacks{k}{self.currentTrialIdx}
+                if ~isempty(roi)
+                    rois(k) = roi;
+                end
+            end
+            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(rois));
             % TODO save ROIs temporarily for undo
         end
         

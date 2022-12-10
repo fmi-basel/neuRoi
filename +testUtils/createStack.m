@@ -17,13 +17,13 @@ function stack = createStack()
 
     imageSize = size(movieStructList{1}.anatomy);
     transformStack = {};
-    transformStack{1} = BUnwarpJ.Transformation('identity');
+    transformStack{1} = Bunwarpj.Transformation('type', 'identity');
     for k=2:3
         transformStack{k} = createTransform(imageSize, affineMats{k-1}(3, 1:2));
     end
 
     transfomrInvStack = {};
-    transformInvStack{1} = BUnwarpJ.Transformation('identity');
+    transformInvStack{1} = Bunwarpj.Transformation('type', 'identity');
     for k=2:3
         transformInvStack{k} = createTransform(imageSize, -affineMats{k-1}(3, 1:2));
     end
@@ -63,5 +63,8 @@ end
 function transf = createTransform(imageSize, offsetYx)
     xcorr = repmat((1:imageSize(2)) + offsetYx(1), [imageSize(1), 1]);
     ycorr = repmat((1:imageSize(1)) + offsetYx(2), [imageSize(2), 1]);
-    transf = BUnwarpJ.Transformation('bunwarpj', xcorr, ycorr', imageSize);
+    transf = Bunwarpj.Transformation('type', 'bunwarpj',...
+                                     'xcorr', xcorr,...
+                                     'ycorr', ycorr',...
+                                     'imageSize', imageSize);
 end

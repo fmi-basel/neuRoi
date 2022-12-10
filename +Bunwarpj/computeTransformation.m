@@ -11,7 +11,7 @@ function computeTransformation(trialImages, referenceImage,...
     end
     
     
-    imagejPaths = BUnwarpJ.getImagejPaths();
+    imagejPaths = Bunwarpj.getImagejPaths();
     for k=1:length(imagejPaths)
         javaaddpath(imagejPaths{k})
     end
@@ -90,8 +90,8 @@ function computeTransformation(trialImages, referenceImage,...
                                         rawTransInvFile, targetTitile);
         
         % Convert raw transformation to mat
-        BUnwarpJ.convertRawToMat(rawTransFile, fullfile(matDir,strcat(trialName, ".mat")));
-        BUnwarpJ.convertRawToMat(rawTransInvFile, fullfile(matDir,strcat(trialName, "_inverse.mat")));
+        Bunwarpj.convertRawToMat(rawTransFile, fullfile(matDir,strcat(trialName, ".mat")));
+        Bunwarpj.convertRawToMat(rawTransInvFile, fullfile(matDir,strcat(trialName, "_inverse.mat")));
         
         if transformParam.useSift==true
             tempTrial.close();

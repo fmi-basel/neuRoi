@@ -349,11 +349,11 @@ classdef NrController < handle
 
         % Callbacks for BUnwaprJ
         function BUnwarpJReferencetrial_Callback(self,src,evnt)
-            self.model.ReferenceTrialIdx=src.Value;
+            self.model.referenceTrialIdx=src.Value;
         end
 
         function BUnwarpJCalculateButton_Callback(self,src,evnt)
-            self.model.CalculateBUnwarpJ();
+            self.model.computeBunwarpj();
             self.view.refreshView();
         end
 
@@ -368,7 +368,7 @@ classdef NrController < handle
         end
 
         function BUnwarpJUseSIFT_Callback(self,src,evnt)
-            self.model.UseSFITForBUnwarpJ= src.Value;
+            self.model.transformParam.useSift = src.Value;
         end
 
         function BUnwarpJSIFTPara_Callback(self,src,evnt)
@@ -377,11 +377,11 @@ classdef NrController < handle
         end
 
         function BUnwarpJInspectTrialsButton_Callback(self,src,evnt)
-            self.model.InspectBUnwarpJ();
+            self.model.inspectStack();
         end
 
         function BUnwarpJTransformationName_Callback(self,src,evnt)
-            self.model.TransformationName=src.String;
+            self.model.transformationName=src.String;
         end
         
         function BUnwarpJCalculatedTransformations_Callback(self,src,evnt)
@@ -394,14 +394,14 @@ classdef NrController < handle
             button = evnt.NewValue;
             tag = button.Tag;
             if strcmp(tag,'Norm_HistoEqu_radiobutton')
-                self.model.UseHistEqualForBUnwarpJ = 1;
-                self.model.UseCLAHEForBUnwarpJ = 0;
+                self.model.transformParam.normParam.useHistoEqual = true;
+                self.model.transformParam.normParam.useClahe = false;
             elseif strcmp(tag,'Norm_CLAHE_radiobutton')
-                self.model.UseHistEqualForBUnwarpJ = 0;
-                self.model.UseCLAHEForBUnwarpJ = 1;     
+                self.model.transformParam.normParam.useHistoEqual = false;
+                self.model.transformParam.normParam.useClahe = true;
             else
-                self.model.UseHistEqualForBUnwarpJ = 0;
-                self.model.UseCLAHEForBUnwarpJ = 0;
+                self.model.transformParam.normParam.useHistoEqual = false;
+                self.model.transformParam.normParam.useClahe = false;
             end
         end
 

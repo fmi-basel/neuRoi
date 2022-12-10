@@ -17,6 +17,12 @@ classdef TrialStackController < baseTrial.BaseTrialController
             end
         end
         
+        function deleteSelectedRoisInStack(self, src, evnt)
+            self.model.deleteSelectedRoisInStack();
+            self.view.RoiSaveStatus('Rois have been changed and not saved','red');
+        end
+        
+        
         function ScrollWheelFcnCallback(self, src, evnt)
         %JE-Mouswheelscroll functionality for scrolling trough the trials
         %TO DO: zoom function can casues problems and should be deactivated first

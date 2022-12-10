@@ -3,7 +3,7 @@
 function [outImg]= applyTransformation(img, transform)
 
 
-%TO DO compare input size with transformation!
+% TODO compare input size with transformation!
     if strcmp(transform.type, 'identity')
         outImg = img;
     elseif strcmp(transform.type, 'bunwarpj')
@@ -23,7 +23,7 @@ function [outImg]= applyTransformation(img, transform)
         imageSize = size(img);
         outImg = img(sub2ind(imageSize, uint16(ycorr), uint16(xcorr)));
     else
-        error(sprinft('Unknown transformation type %s', transform.type))
+        error(sprintf('Unknown transformation type %s', transform.type))
     end
 
 end

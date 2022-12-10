@@ -7,14 +7,14 @@ classdef Transformation
     end
     
     methods
-        function self = Transformation(varargin)
+        function self = Transformation(type, varargin)
             pa = inputParser;
-            addOptional(pa, 'type', 'identity', @ischar)
-            addOptional(pa, 'xcorr', [], @ismatrix)
-            addOptional(pa, 'ycorr', [], @ismatrix)
-            addOptional(pa, 'imageSize', [], @ismatrix)
+            addParameter(pa, 'type', 'identity', @ischar) % 'bunwarpj' for bUnwarpJ transformation
+            addParameter(pa, 'xcorr', [], @ismatrix)
+            addParameter(pa, 'ycorr', [], @ismatrix)
+            addParameter(pa, 'imageSize', [], @ismatrix)
             
-            parse(pa, varargin{:})
+            parse(pa, type, varargin{:})
             pr = pa.Results;
 
             self.type = pr.type;

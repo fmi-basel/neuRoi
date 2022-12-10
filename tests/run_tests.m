@@ -10,6 +10,7 @@ addpath('..')
 disp('xxxxxx')
 disp('xxxxxx')
 disp('xxxxxx')
-testCase = trialStack.TrialStackControllerTest;
+% testCase = trialStack.TrialStackControllerTest;
+testCase = NrControllerTest;
 results = testCase.run
 % close all

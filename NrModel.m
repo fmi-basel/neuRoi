@@ -125,13 +125,13 @@ classdef NrModel < handle
                                               'offset',0);
             defaultSetupCCorrOption = struct('skipping',5,...
                                               'tileSize',16 );
-             addParameter(pa,'SetupCAnatomyOption',defaultSetupCAnatomyOption, ...
+            addParameter(pa,'SetupCAnatomyOption',defaultSetupCAnatomyOption, ...
                          @isstruct);
-             addParameter(pa,'SetupCResponseOption',defaultSetupCResponseOption, ...
+            addParameter(pa,'SetupCResponseOption',defaultSetupCResponseOption, ...
                          @isstruct);
-             addParameter(pa,'SetupCMaxResponseOption',defaultSetupCMaxResponseOption, ...
+            addParameter(pa,'SetupCMaxResponseOption',defaultSetupCMaxResponseOption, ...
                          @isstruct);
-             addParameter(pa,'SetupCCorrOption',defaultSetupCCorrOption, ...
+            addParameter(pa,'SetupCCorrOption',defaultSetupCCorrOption, ...
                          @isstruct);
 
 
@@ -146,7 +146,7 @@ classdef NrModel < handle
             parse(pa,varargin{:})
             pr = pa.Results;
             
-            self.transformParam = BUnwarpJ.TransformParam();
+            self.transformParam = Bunwarpj.TransformParam();
             self.TransformationTooltip=struct();
             
             
@@ -1127,7 +1127,8 @@ classdef NrModel < handle
                     mkdir(bunwarpjDir);
                 end
                 
-                BUnwarpJ.computeBunwarpj(anatomyFileList, refAnatomyFile,...
+                % Compute tranfromation and save as .mat
+                Bunwarpj.computeBunwarpj(anatomyFileList, refAnatomyFile,...
                                          trialNameList, refTrialName,...
                                          self.transformParam, bunwarpjDir);
                 
@@ -1150,21 +1151,24 @@ classdef NrModel < handle
             foo = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
             transformMeta = foo.transformMeta;
             refTrialName = transformMeta.refTrialName;
+
+            trialNameList = self.getSelectedFileList('trial');
+            transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, refTrialName,...
+                                                         trialNameList, 'forward');
             
+            % TODO accept arbitrary roiFile
             roiDir = self.appendPlaneDir(self.getDefaultDir('roi'));
             roiFile = fullfile(roiDir, iopath.modifyFileName(refTrialName,'',...
                                                              self.roiFileIdentifier,"mat"));
             if ~isfile(roiFile)
-                error(sprintf("Cannot find roi file for selected reference trial. %s", roiFile));
+                error(sprintf("Cannot find roi file for reference trial. %s", roiFile));
                 return
             end
             foo = load(roiFile);
-            templateRoiArray = foo.roiArray;
+            templateRoiArr = foo.roiArray;
             
-            trialNameList = self.getSelectedFileList('trial');
-            roiArrayStack = BUnwarpJ.transformRoiArray(templateRoiArray, trialNameList,...
-                                                       refTrialName, bunwarpjDir);
-            save(fullfile(bunwarpjDir,"roiArrayStack.mat"),"roiArrayStack");
+            roiArrStack = Bunwarpj.transformRoiArrStack(templateRoiArr, transformStack);
+            save(fullfile(bunwarpjDir,"roiArrStack.mat"),"roiArrStack");
         end
         
         function NameOK=CheckBunwarpJName(self)
@@ -1200,39 +1204,46 @@ classdef NrModel < handle
         function inspectStack(self)
             
             if self.BUnwarpJCalculated
+                % TODO make sure RoiStack is already computed
+                bunwarpjDir = self.getBunwarpjDir();
+                foo = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
+                transformMeta = foo.transformMeta;
+                refTrialName = transformMeta.refTrialName;
+                
                 trialNameList = self.getSelectedFileList('trial');
 
                 anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'));
                 anatomyFileList = self.getSelectedFileList('anatomy');
-                anatomyArray = batch.loadStack(anatomyDir,anatomyFileList);
+                anatomyStack = batch.loadStack(anatomyDir,anatomyFileList);
                 
                 % TODO precomputed response
 %                 responseArray = self.calcResponseMapArray();
-                responseArray = anatomyArray;
+                responseStack = anatomyStack;
                 
-                RoisStruc
-                TempCellArray=struct2cell(RoisStruc.RoiArray);
-
-                BUnwarpJRoiCellarrayNew={};
-                TransformationAntatomyArray=zeros(ImageSize(1),ImageSize(2),2); %length(transformationParameter.Rawfile_List));
-                
-                TransformationFileList(finalIndex)=self.rawFileList(i);
-                TransformationAntatomyArray(:,:,finalIndex)=anatomyArray(:,:,i);
-                BUnwarpJRoiCellarrayNew=[BUnwarpJRoiCellarrayNew, self.BUnwarpJRoiCellarray(tempindex)];
                 % TODO 2022-10-23 Bo Hu
                 % sort out all arguments for TrialStackModel
 
-                %apply CLAHE
-                for i=1:size(anatomyArray,3)
-                    anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
-                end
+                % apply CLAHE
+                % for i=1:size(anatomyArray,3)
+                %     anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
+                % end
+                
+                foo = load(fullfile(bunwarpjDir,"roiArrStack.mat"));
+                roiArrStack = foo.roiArrStack;
+                
+                transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, refTrialName,...
+                                                             trialNameList, 'forward');
+                transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, refTrialName,...
+                                                                trialNameList, 'inverse');
                 
                 stackModel = trialStack.TrialStackModel(trialNameList,...
-                                                        anatomyArray,...
-                                                        responseArray,...
-                                                        templateRoiArr,...
-                                                        roiArrStack,...
-                                                        transformDir);
+                                                        anatomyStack,...
+                                                        responseStack,...
+                                                        'roiArrStack', roiArrStack,...
+                                                        'transformStack', transformStack,...
+                                                        'transformInvStack', transformInvStack,...
+                                                        'doSummarizeRoiTags', true);
+
                 self.stackModel.contrastForAllTrial = true;  
             end
 

@@ -92,6 +92,16 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
             pause(0.1);
             stackCtrl.deleteSelectedRois();
+            
+            pause(0.1);
+            mouse.mouseMove(549, 1578);
+            mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
+            pause(0.1);
+            mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
+            pause(0.1);
+            stackCtrl.deleteSelectedRoisInStack();
+
+            
             % stackCtrl.deleteSelectedRoi from all trials;
             
             % undo deletion from current trial
