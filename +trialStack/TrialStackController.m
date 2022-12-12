@@ -4,11 +4,11 @@ classdef TrialStackController < baseTrial.BaseTrialController
             self.model = mymodel;
             self.view = trialStack.TrialStackView(self.model,self);
             self.view.setTrialNumberandSliderLim(1,[1,self.model.nTrial]);
-            self.view.displayCurrentMap();
+            self.view.displayCurrentTrial();
         end
         
         function keyPressCallback(self, src, evnt)
-            keyPressCallback@baseTrial.BaseTrialController(self); %call base function
+            keyPressCallback@baseTrial.BaseTrialController(self, src, evnt); %call base function
             if strcmp(evnt.Modifier,'control')
                 switch evnt.Key
                   case {'d','delete','backspace'}

@@ -51,6 +51,8 @@ classdef NrControllerTest < matlab.unittest.TestCase
             end
             save(roiFile, 'roiArray')
 
+            myexp.processRawData();
+
             testDirs.tmpDir = tmpDir;
             testDirs.resultDir = resultDir;
             
@@ -66,7 +68,6 @@ classdef NrControllerTest < matlab.unittest.TestCase
     methods(Test)
         function testBunwarpj(testCase)
             myexp = testCase.myexp;
-            myexp.processRawData();
             mycon = testCase.mycon;
             src.Value = 1;
             mycon.BUnwarpJReferencetrial_Callback(src);
@@ -92,10 +93,16 @@ classdef NrControllerTest < matlab.unittest.TestCase
             mycon.BUnwarpJCalculateButton_Callback();
             
             myexp.applyBunwarpj();
+            myexp.BUnwarpJCalculated = true;
             mycon.BUnwarpJInspectTrialsButton_Callback();
+            
+            stackCtrl = mycon.stackCtrl;
+            stackCtrl.view.setTrialNumberSlider(2);
+            stackCtrl.TrialNumberSlider_Callback();
             % myexp.inspectStack();
 
-
+            % TODO First correct for big rigid translation!!
+            % Only bunwarpj for big translation causes inccorect flow field estimation
             % prefix = '';
             % bunwarpjDir = fullfile(testCase.dirs.resultDir, 'bunwarpj', 'transf');
             % tFileList = cellfun(@(x) fullfile(bunwarpjDir, 'Transformations',...

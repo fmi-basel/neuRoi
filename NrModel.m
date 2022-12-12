@@ -72,7 +72,6 @@ classdef NrModel < handle
         anatomyConfig
         alignDir
         alignConfig
-        
     end
     
     methods
@@ -205,7 +204,8 @@ classdef NrModel < handle
             addParameter(pa,'subtractScan',false);
             addParameter(pa,'noSignalWindow',1);
             addParameter(pa,'mcWithinTrial',false);
-            addParameter(pa,'mcBetweenTrial',true);
+            addParameter(pa,'computeAnatomy',true);
+            addParameter(pa,'mcBetweenTrial',false);
             addParameter(pa,'mcBTTemplateIdx',1);
             addParameter(pa,'binning',false);
             addParameter(pa,'binDir','');
@@ -237,8 +237,8 @@ classdef NrModel < handle
                 end
             end
             
-            % Motion correction between trials
-            if pr.mcBetweenTrial
+            % Compute averaged anatomy image for each trial
+            if pr.computeAnatomy
                 if pr.binning
                     anatomyParam.inFileType = 'binned';
                     anatomyParam.trialOption = [];
@@ -250,12 +250,17 @@ classdef NrModel < handle
                 for planeNum=1:self.expInfo.nPlane
                     self.calcAnatomyBatch(anatomyParam,planeNum);
                 end
-
+            end
+            
+            % Motion correction between trials
+            if pr.mcBetweenTrial
                 templateRawName = self.rawFileList{pr.mcBTTemplateIdx};
                 for planeNum=1:self.expInfo.nPlane
+                    outDir = fullfile(self.resultDir,self.alignDir);
                     self.alignTrialBatch(templateRawName,...
                                          'planeNum',planeNum,...
-                                         'alignOption',{'plotFig',false});
+                                         'alignOption',{'plotFig',false},...
+                                         'outDir', outDir);
                 end
             end
         end
@@ -621,16 +626,17 @@ classdef NrModel < handle
             self.anatomyConfig = jsondecode(fileread(filePath));
         end
 
-        function alignTrialBatch(self,templateRawName,varargin)
+        function alignResult = alignTrialBatch(self,templateRawName,varargin)
             pa = inputParser;
             addParameter(pa,'planeNum',1,@isnumeric);
             addParameter(pa,'fileIdx','all',@(x) ischar(x)|ismatrix(x));
             addParameter(pa,'alignOption',{},@iscell);
+            addParameter(pa, 'outDir', '', @ischar);
             parse(pa,varargin{:})
             pr = pa.Results;
             
             outFileName = 'alignResult.mat';
-            outDir = fullfile(self.resultDir,self.alignDir);
+            outDir = pr.outDir;
             if ~exist(outDir,'dir')
                 mkdir(outDir)
             end
@@ -689,7 +695,7 @@ classdef NrModel < handle
             outFilePath = fullfile(outSubDir,outFileName);
             save(outFilePath,'alignResult')
         end
-
+        
         function loadAlignResult(self,planeNum)
             fileName = 'alignResult.mat';
             multiPlane = self.checkMultiPlane(planeNum);
@@ -851,8 +857,7 @@ classdef NrModel < handle
                 offsetYx = alignResult.offsetYxMat(idx,:);
             end
         end
-        
-        
+                
         function [timeTraceMat,roiArray] = ...
                 extractTimeTrace(self,fileIdx,roiFilePath,planeNum)
             if ~exist('planeNum','var')
@@ -1109,6 +1114,19 @@ classdef NrModel < handle
         function computeBunwarpj(self, varargin)
             if self.CheckBunwarpJName()
                 self.BUnwarpJCalculated= false;
+                
+                bunwarpjDir = self.getBunwarpjDir();
+                if ~exist(bunwarpjDir, 'dir')
+                    mkdir(bunwarpjDir);
+                end
+                
+                % TODO rigid alignment before bunwarpj
+                % self.alignTrialBatch(templateRawName,...
+                %                      'planeNum', self.planeNum,...
+                %                      'alignOption', {'plotFig',false},...
+                %                      'outDir', bunwarpjDir);
+
+                % TODO how to translate image in imagej?
 
                 trialNameList = self.getSelectedFileList('trial');
                 refTrialName = self.getFileList('trial', self.referenceTrialIdx);
@@ -1122,11 +1140,6 @@ classdef NrModel < handle
                 [trialNameList, ~] = NrModel.removeReferenceFromList(trialNameList, refTrialName);
                 [anatomyFileList, ~] = NrModel.removeReferenceFromList(anatomyFileList, refAnatomyFile);
                     
-                bunwarpjDir = self.getBunwarpjDir();
-                if ~exist(bunwarpjDir, 'dir')
-                    mkdir(bunwarpjDir);
-                end
-                
                 % Compute tranfromation and save as .mat
                 Bunwarpj.computeBunwarpj(anatomyFileList, refAnatomyFile,...
                                          trialNameList, refTrialName,...
@@ -1236,7 +1249,7 @@ classdef NrModel < handle
                 transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, refTrialName,...
                                                                 trialNameList, 'inverse');
                 
-                stackModel = trialStack.TrialStackModel(trialNameList,...
+                self.stackModel = trialStack.TrialStackModel(trialNameList,...
                                                         anatomyStack,...
                                                         responseStack,...
                                                         'roiArrStack', roiArrStack,...

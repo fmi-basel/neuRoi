@@ -1,8 +1,6 @@
 %%%%% Jan Eckhardt/FMI/AG Friedrich/Basel/Switzerland 08.2021
 
 function [outImg]= applyTransformation(img, transform)
-
-
 % TODO compare input size with transformation!
     if strcmp(transform.type, 'identity')
         outImg = img;

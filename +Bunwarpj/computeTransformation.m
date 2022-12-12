@@ -25,6 +25,10 @@ function computeTransformation(trialImages, referenceImage,...
         trialName = trialNameList{i};
         tempTrial = ImageJ_LoaderEngine.openImage(trialImages(i));
         
+        % TODO shift tempTrial
+        imageProcessor = tempTrial.getProcessor();
+        imageProcessor.translate(5, 6)
+        
         if transformParam.useSift==true %https://imagej.net/plugins/feature-extraction
             SIFTParameters = transformParam.SIFTParameters;
             reference=ImageJ_LoaderEngine.openImage(referenceImage);

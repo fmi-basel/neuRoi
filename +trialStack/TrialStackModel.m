@@ -60,7 +60,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             self.contrastLimArray = cell(length(self.mapTypeList),...
                                          self.nTrial);
             self.contrastForAllTrial = false;
-            self.mapSize = size(self.anatomyStack{1});
+            self.mapSize = size(self.anatomyStack(:, :, 1));
 
             if length(pr.roiArrStack)
                 if pr.doSummarizeRoiTags
@@ -68,7 +68,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
                     self.roiArrStack = self.separateCommonRois(pr.roiArrStack,...
                                                                self.commonRoiTags);
                 else
-                    self.allRoiTags = roiArrStack{1}.getTagList();
+                    self.allRoiTags = roiArrStack(1).getTagList();
                     self.commonRoiTags = self.allRoiTags;
                     self.roiArrStack = pr.roiArrStack;
                 end
@@ -94,7 +94,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
 
         function set.currentTrialIdx(self, trialIdx)
             self.currentTrialIdx = trialIdx;
-            self.roiArr = self.roiArrStack{self.currentTrialIdx};
+            self.roiArr = self.roiArrStack(self.currentTrialIdx);
         end
             
         function data = getMapData(self,mapType,trialIdx)
@@ -104,7 +104,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
               case 'response'
                 mapStack = self.responseStack;
             end
-            data = mapStack{trialIdx};
+            data = mapStack(:, :, trialIdx);
         end
         
         function map = getCurrentMap(self)
@@ -272,16 +272,16 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
     
     methods
         function [commonTags, allTags] = summarizeRoiTags(self, roiArrStack)
-            tagListStack = cellfun(@(x) x.getTagList(), roiArrStack,...
+            tagListStack = arrayfun(@(x) x.getTagList(), roiArrStack,...
                                     'UniformOutput', false);
             commonTags = helper.multiIntersect(tagListStack);
             allTags = sort(unique(cell2mat(tagListStack)));
         end
         
         function sroiArrStack = separateCommonRois(self, roiArrStack, commonRoiTags)
-            sroiArrStack = {};
+            sroiArrStack = roiFunc.RoiArray.empty();
             for k=1:length(roiArrStack)
-                sroiArrStack{k} = self.splitRoiArr(roiArrStack{k}, commonRoiTags);
+                sroiArrStack(k) = self.splitRoiArr(roiArrStack(k), commonRoiTags);
             end
         end
         
@@ -290,7 +290,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             diffTags = setdiff(allTags, tags);
             roiArr.addGroup('diff')
             if length(diffTags)
-                roiArr.setRoiGroup(diffTags, 'diff')
+                roiArr.putRoisIntoGroup(diffTags, 'diff')
             end
         end
         

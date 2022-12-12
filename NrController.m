@@ -5,6 +5,7 @@ classdef NrController < handle
         trialContrlArray
         rootListener
         importGui
+        stackCtrl
     end
     
     methods
@@ -378,6 +379,7 @@ classdef NrController < handle
 
         function BUnwarpJInspectTrialsButton_Callback(self,src,evnt)
             self.model.inspectStack();
+            self.stackCtrl = trialStack.TrialStackController(self.model.stackModel);
         end
 
         function BUnwarpJTransformationName_Callback(self,src,evnt)
