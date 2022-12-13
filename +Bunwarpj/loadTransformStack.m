@@ -1,5 +1,7 @@
-function transformStack = loadTransformStack(bunwarpjDir, refTrialName,...
-                                             trialNameList, transformType)
+function transformStack = loadTransformStack(bunwarpjDir,trialNameList, transformType)
+    transformMeta = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
+    refTrialName = transformMeta.refTrialName;
+
     if strcmp(transformType, 'forward')
         appendix = '';
     elseif strcmp(transformType, 'inverse')

@@ -1,6 +1,6 @@
 %%%%% Jan Eckhardt/FMI/AG Friedrich/Basel/Switzerland 08.2021
 
-function [outImg]= applyTransformation(img, transform)
+function [outImg]= applyTransformation(img, transform, offsetYx)
 % TODO compare input size with transformation!
     if strcmp(transform.type, 'identity')
         outImg = img;
@@ -24,4 +24,5 @@ function [outImg]= applyTransformation(img, transform)
         error(sprintf('Unknown transformation type %s', transform.type))
     end
 
+    outImg = circshift(outImg, offsetYx);
 end

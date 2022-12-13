@@ -1153,8 +1153,10 @@ classdef NrModel < handle
             refTrialName = transformMeta.refTrialName;
 
             trialNameList = self.getSelectedFileList('trial');
-            transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, refTrialName,...
-                                                         trialNameList, 'forward');
+            transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
+            
+            offsetYxList = Bunwarpj.loadOffsetYxList(bunwarpjDir, trialNameList);
+
             
             % TODO accept arbitrary roiFile
             roiDir = self.appendPlaneDir(self.getDefaultDir('roi'));
@@ -1167,7 +1169,7 @@ classdef NrModel < handle
             foo = load(roiFile);
             templateRoiArr = foo.roiArray;
             
-            roiArrStack = Bunwarpj.transformRoiArrStack(templateRoiArr, transformStack);
+            roiArrStack = Bunwarpj.transformRoiArrStack(templateRoiArr, transformStack, offsetYxList);
             save(fullfile(bunwarpjDir,"roiArrStack.mat"),"roiArrStack");
         end
         
@@ -1230,10 +1232,8 @@ classdef NrModel < handle
                 foo = load(fullfile(bunwarpjDir,"roiArrStack.mat"));
                 roiArrStack = foo.roiArrStack;
                 
-                transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, refTrialName,...
-                                                             trialNameList, 'forward');
-                transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, refTrialName,...
-                                                                trialNameList, 'inverse');
+                transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
+                transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'inverse');
                 
                 self.stackModel = trialStack.TrialStackModel(trialNameList,...
                                                         anatomyStack,...
@@ -1242,6 +1242,7 @@ classdef NrModel < handle
                                                         'transformStack', transformStack,...
                                                         'transformInvStack', transformInvStack,...
                                                         'doSummarizeRoiTags', true);
+                % TODO IMPORTANT, add offsetYxList
 
                 self.stackModel.contrastForAllTrial = true;  
             end
