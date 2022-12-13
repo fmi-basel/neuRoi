@@ -68,9 +68,7 @@ classdef NrModel < handle
     end 
     
     properties (SetAccess = private, SetObservable = true)
-        anatomyDir
         anatomyConfig
-        alignDir
         alignConfig
     end
     
@@ -160,9 +158,6 @@ classdef NrModel < handle
             self.resultDir = pr.resultDir;
             self.precalculatedMapDir=pr.precalculatedMapDir;
             
-            self.anatomyDir = 'anatomy';
-            
-            self.alignDir = 'alignment';
             self.alignResult = cell(1,pr.expInfo.nPlane);
             
             if ~isempty(pr.roiDir)
@@ -556,7 +551,7 @@ classdef NrModel < handle
         end
         
         function calcAnatomyBatch(self,param,planeNum,fileIdx)
-            outDir = fullfile(self.resultDir,self.anatomyDir);
+            outDir = self.getDefaultDir('anatomy');
             if ~exist(outDir,'dir')
                 mkdir(outDir)
             end
@@ -654,26 +649,13 @@ classdef NrModel < handle
 
             % TODO deal with error that no anatomy files found
             % TODO deal with no anatomyConfig loaded
-
-            if self.expInfo.nPlane > 1
-                if pr.planeNum
-                    planeString = NrModel.getPlaneString(pr.planeNum);
-                    inDir = fullfile(self.resultDir,self.anatomyDir, ...
-                                     planeString);
-                    
-                    outSubDir = fullfile(outDir,planeString);
-                    if ~exist(outSubDir,'dir')
-                        mkdir(outSubDir)
-                    end
-                    multiPlane = true;
-                else
-                    error(['Please specify plane number for' ...
-                           ' multiplane data!']);
-                end
-            else
-                inDir = fullfile(self.resultDir,self.anatomyDir);
-                outSubDir = outDir;
+            
+            inDir = self.appendPlaneDir(self.getDefaultDir('anatomy'), pr.planeNum);
+            outSubDir = self.appendPlaneDir(outDir, pr.planeNum);
+            if ~exist(outSubDir,'dir')
+                mkdir(outSubDir)
             end
+            
             anatomyFileList = iopath.modifyFileName(rawFileList, ...
                                                     anatomyPrefix, ...
                                                     '','tif');
@@ -842,12 +824,15 @@ classdef NrModel < handle
             alignResult = self.alignResult{planeNum};
             
             rawFileName = self.rawFileList{fileIdx};
-            inFileList = alignResult.inFileList;
             anatomyPrefix = alignResult.anatomyPrefix;
             anatomyFileName = ...
                 iopath.modifyFileName(rawFileName, ...
                                       anatomyPrefix,'','tif');
-            
+            offsetYx = self.getOffsetYx(alignResult, anatomyFileName);
+        end
+        
+        function offsetYx = getOffsetYx(self, alignResult, anatomyFileName)
+            inFileList = alignResult.inFileList;
             idx = find(strcmp(inFileList,anatomyFileName));
             if isempty(idx)
                 msg = ['Cannot find offset value in the aligment ' ...
@@ -1043,10 +1028,6 @@ classdef NrModel < handle
         end
         
         function subDir = appendPlaneDir(self, parentDir, planeNum)
-            if ~exist('planeNum', 'var')
-                planeNum = 1;
-            end
-            
             if self.expInfo.nPlane > 1
                 planeString = NrModel.getPlaneString(planeNum);
                 subDir = fullfile(parentDir,planeString);
@@ -1120,30 +1101,37 @@ classdef NrModel < handle
                     mkdir(bunwarpjDir);
                 end
                 
-                % TODO rigid alignment before bunwarpj
-                % self.alignTrialBatch(templateRawName,...
-                %                      'planeNum', self.planeNum,...
-                %                      'alignOption', {'plotFig',false},...
-                %                      'outDir', bunwarpjDir);
-
-                % TODO how to translate image in imagej?
-
                 trialNameList = self.getSelectedFileList('trial');
                 refTrialName = self.getFileList('trial', self.referenceTrialIdx);
+                [trialNameList, ~] = NrModel.removeReferenceFromList(trialNameList, refTrialName);
                 
                 anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'));
-                anatomyFileList = self.getSelectedFileList('anatomy');
-                refAnatomyFile = self.getFileList('anatomy', self.referenceTrialIdx);
-                anatomyFileList = fullfile(anatomyDir, anatomyFileList);
-                refAnatomyFile = fullfile(anatomyDir, refAnatomyFile);
+                anatomyNameList = self.getSelectedFileList('anatomy');
+                refAnatomyName = self.getFileList('anatomy', self.referenceTrialIdx);
+                [anatomyNameList, ~] = NrModel.removeReferenceFromList(anatomyNameList, refAnatomyName);
+                anatomyFileList = fullfile(anatomyDir, anatomyNameList);
+                refAnatomyFile = fullfile(anatomyDir, refAnatomyName);
                
-                [trialNameList, ~] = NrModel.removeReferenceFromList(trialNameList, refTrialName);
-                [anatomyFileList, ~] = NrModel.removeReferenceFromList(anatomyFileList, refAnatomyFile);
-                    
+
+                % TODO rigid alignment before bunwarpj
+                alignDir = fullfile(bunwarpjDir, 'alignment');
+                if ~exist(alignDir, 'dir')
+                    mkdir(alignDir)
+                end
+                alignResult = self.alignTrialBatch(refTrialName,...
+                                                   'planeNum', self.planeNum,...
+                                                   'alignOption', {'plotFig',false},...
+                                                   'outDir', alignDir);
+
+                
+                offsetYxList = cellfun(@(x) self.getOffsetYx(alignResult, x),...
+                                       anatomyNameList, 'UniformOutput', false);
+                
                 % Compute tranfromation and save as .mat
                 Bunwarpj.computeBunwarpj(anatomyFileList, refAnatomyFile,...
                                          trialNameList, refTrialName,...
-                                         self.transformParam, bunwarpjDir);
+                                         self.transformParam, offsetYxList,...
+                                         bunwarpjDir);
                 
                 if isempty(self.CalculatedTransformationsList)
                     self.CalculatedTransformationsIdx=1;
@@ -1161,8 +1149,7 @@ classdef NrModel < handle
         
         function roiArrayStack = applyBunwarpj(self)
             bunwarpjDir = self.getBunwarpjDir();
-            foo = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
-            transformMeta = foo.transformMeta;
+            transformMeta = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
             refTrialName = transformMeta.refTrialName;
 
             trialNameList = self.getSelectedFileList('trial');
@@ -1219,8 +1206,7 @@ classdef NrModel < handle
             if self.BUnwarpJCalculated
                 % TODO make sure RoiStack is already computed
                 bunwarpjDir = self.getBunwarpjDir();
-                foo = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
-                transformMeta = foo.transformMeta;
+                transformMeta = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
                 refTrialName = transformMeta.refTrialName;
                 
                 trialNameList = self.getSelectedFileList('trial');

@@ -1,6 +1,7 @@
 function computeTransformation(trialImages, referenceImage,...
                                trialNameList, refTrialName,...
-                               saveDir, transformParam)
+                               saveDir, transformParam,...
+                               offsetYxList)
     rawTransformDir = fullfile(saveDir, 'TransformationsRaw');
     transformDir = fullfile(saveDir, 'Transformations');
     matDir = fullfile(saveDir, 'TransformationsMat');
@@ -25,9 +26,10 @@ function computeTransformation(trialImages, referenceImage,...
         trialName = trialNameList{i};
         tempTrial = ImageJ_LoaderEngine.openImage(trialImages(i));
         
-        % TODO shift tempTrial
+        % Translate tempTrial image by the computed offset
+        offsetYx = offsetYxList{i};
         imageProcessor = tempTrial.getProcessor();
-        imageProcessor.translate(5, 6)
+        imageProcessor.translate(offsetYx(2), offsetYx(1));
         
         if transformParam.useSift==true %https://imagej.net/plugins/feature-extraction
             SIFTParameters = transformParam.SIFTParameters;
