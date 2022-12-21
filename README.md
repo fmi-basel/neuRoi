@@ -24,8 +24,8 @@ This work-flow will soon be integrated in a guided procedure in GUI.
 
 # Contributors:
 
-* Bo Hu, **Friedrich-Meischer Institute for Biomedical research, Basel**
-* Jan Eckhardt, **Friedrich-Meischer Institute for Biomedical research, Basel**
+* Bo Hu, **Friedrich-Miescher Institute for Biomedical Research, Basel**
+* Jan Eckhardt, **Friedrich-Miescher Institute for Biomedical Research, Basel**
 * Peter Rupprecht, **Brain Research Institute*, Zurich**
 
 
