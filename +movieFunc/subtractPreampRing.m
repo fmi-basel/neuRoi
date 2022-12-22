@@ -15,8 +15,8 @@ dataType = class(rawMovie);
 
 if strcmp(dataType, 'uint8')
     template = uint8(template);
-elseif strcmp(dataType, 'unit16')
-    template = unit16(template);
+elseif strcmp(dataType, 'uint16')
+    template = uint16(template);
 end
 
 subMovie = rawMovie - template;

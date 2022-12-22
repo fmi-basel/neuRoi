@@ -1,21 +1,14 @@
 function normImages(imageList, normParam)
             
-        function NewTrialPathArray=NormTrialsForBUnwarpJ(self,TrialPath, SavePath, ReferenceIndex,UseCLAHE, CLAHEParameters )
-            if ~exist('ReferenceIndex','var')
-                ReferenceIndex=1;
-            end
-            if ~exist('UseCLAHE','var')
-                UseCLAHE=false;
-            end
-            if ~exist('CLAHEParameters','var')
-                CLAHEParameters=struct("NumTiles",[8 8],'ClipLimit',0.02);
-            end
-            %Load trials
-            for i = 1:length(TrialPath)
-                tempImgArray(i,:,:)= imread(TrialPath(i)); 
-                tempString= strcat("Loading trial ",int2str(i));
-                disp(tempString);   
-            end
+%         function NewTrialPathArray=NormTrialsForBUnwarpJ(self,TrialPath, SavePath, ReferenceIndex,UseCLAHE, CLAHEParameters )
+%                ReferenceIndex=1;
+
+%Load trials
+    for i = 1:length(imageList)
+        tempImgArray(i,:,:)= imread(imageList(i)); 
+        tempString= strcat("Loading trial ",int2str(i));
+        disp(tempString);   
+    end
 
             %match histo/calc CLAHE and save image
             NewTrialPathArray=strings(int8(length(TrialPath)),1);

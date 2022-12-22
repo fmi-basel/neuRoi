@@ -90,6 +90,10 @@ classdef NrControllerTest < matlab.unittest.TestCase
             src = struct('String', 'transf1');
             mycon.BUnwarpJTransformationName_Callback(src);
             
+            button.Tag = 'Norm_CLAHE_radiobutton';
+            evnt.NewValue = button;
+            % TODO also test hist eq
+            mycon.BUnwarpJNormTypeGroup_Callback(1, evnt)
             mycon.BUnwarpJCalculateButton_Callback();
             
             myexp.applyBunwarpj();
@@ -99,35 +103,9 @@ classdef NrControllerTest < matlab.unittest.TestCase
             stackCtrl = mycon.stackCtrl;
             stackCtrl.view.setTrialNumberSlider(2);
             stackCtrl.TrialNumberSlider_Callback();
-            % myexp.inspectStack();
-
-            % TODO First correct for big rigid translation!!
-            % Only bunwarpj for big translation causes inccorect flow field estimation
-            % prefix = '';
-            % bunwarpjDir = fullfile(testCase.dirs.resultDir, 'bunwarpj', 'transf');
-            % tFileList = cellfun(@(x) fullfile(bunwarpjDir, 'Transformations',...
-            %                                   iopath.modifyFileName(x,prefix,'_transformation','txt')),...
-            %                     myexp.rawFileList(2:end),...
-            %                     'UniformOutput', false);
-            % rtFileList = cellfun(@(x) fullfile(bunwarpjDir, 'TransformationsRaw',...
-            %                                    iopath.modifyFileName(x,prefix,'_transformationRaw','txt')),...
-            %                      myexp.rawFileList(2:end),...
-            %                      'UniformOutput', false);
-            % filesExist = cellfun(@(x) exist(x, 'file'), [tFileList, rtFileList]);
-            % testCase.verifyTrue(all(filesExist));
-            
-            % myexp.applyBunwarpj();
-            % foo = load(fullfile(bunwarpjDir,"roiArrayStack.mat"));
-            % roiArrayStack = foo.roiArrayStack;
-            % for k=1:3
-            %     err = mean(mean(abs(roiArrayStack(k).convertToMask()-testCase.movieStructList{k}.mask)));
-            %     testCase.verifyLessThanOrEqual(err, 0.05)
-            % end
-
-            % myexp.inspectStack();
-            % Verify trialStack
         end
-        
+
+        % TODO test for multiplane data
     end
 end
 

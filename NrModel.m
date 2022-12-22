@@ -209,7 +209,7 @@ classdef NrModel < handle
             pr = pa.Results;
 
             if pr.subtractScan
-                trialOption = struct('process',true,'noSignalWindow',[1 10]);
+                trialOption = struct('process',true,'noSignalWindow',pr.noSignalWindow);
             else
                 trialOption = {}; %
             end
