@@ -1,9 +1,4 @@
 classdef TrialStackView < baseTrial.BaseTrialView
-    properties
-        roiColorMap
-        roiVisible
-    end
-
     methods
         function self = TrialStackView(mymodel,mycontroller,mytransformationParameter)
             self.model = mymodel;

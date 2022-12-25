@@ -9,6 +9,7 @@ classdef BaseTrialView < handle
         zoom
         roiColorMap
         AlphaForRoiOnePatch = 0.5
+        roiVisible
     end
 
     properties (Constant)
