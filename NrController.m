@@ -245,7 +245,6 @@ classdef NrController < handle
         function openTrialContrl(self,trial)
             addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
             trialContrl = trialMvc.TrialController(trial);
-            % trialContrl.setSyncTimeTrace(true);
             self.trialContrlArray(end+1) = trialContrl;
             trialContrl.raiseView();
             

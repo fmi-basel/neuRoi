@@ -7,6 +7,7 @@ classdef BaseTrialView < handle
         mapColorMap
         mapSize
         zoom
+        roiColorMap
         AlphaForRoiOnePatch = 0.5
     end
 
@@ -33,7 +34,7 @@ classdef BaseTrialView < handle
                         @self.updateRoiPatchPosition);
             addlistener(self.model,'roiTagChanged',...
                         @self.changeRoiPatchTag);
-            addlistener(self.model,'roiArrayReplaced',...
+            addlistener(self.model,'roiArrReplaced',...
                         @(~,~)self.drawAllRoisOverlay());        
         end
 
@@ -47,6 +48,20 @@ classdef BaseTrialView < handle
                               'ButtonDownFcn',@(s,e) self.controller.selectRoi_Callback(s,e),...
                               'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
         end
+        
+        function loadRoiColormap(self)
+            [funcDir, ~, ~]= fileparts(mfilename('fullpath'));
+            neuRoiDir = fullfile(funcDir,'..');
+            cmapDir = fullfile(neuRoiDir,'colormap');
+            roiCmapPath = fullfile(cmapDir,'roicolormap.mat');
+            try
+                foo = load(roiCmapPath);
+                self.roiColorMap = foo.roicolormap;
+            catch ME
+                self.roiColorMap = 'lines';
+            end
+        end
+
 
         % Methods for ROI based processing
         function drawLastRoiPatch(self,src,evnt)
@@ -201,13 +216,13 @@ classdef BaseTrialView < handle
             self.updateRoiPatchSelection()
         end
         
-        function changeRoiVisibility(self,src,evnt)
-            if self.model.roiVisible
+        function setRoiVisibility(self)
+            if self.roiVisible
                 roiState = 'on';
             else
                 roiState = 'off';
             end
-            set(self.guiHandles.roiGroup,'Visible',roiState);
+            set(self.guiHandles.roiImg,'Visible',roiState);
         end
         
         function roiPatch = createMovableRoi(self)

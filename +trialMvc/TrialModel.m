@@ -1,4 +1,4 @@
-classdef TrialModel < handle
+classdef TrialModel < baseTrial.BaseTrialModel
     properties
         filePath
         loadMovieOption
@@ -13,11 +13,10 @@ classdef TrialModel < handle
         name
         sourceFileIdx
         
-        
         meta
+        mapSize
         rawMovie
         
-        roiArray
         templateAnatomy
         roiDir
         roiFilePath
@@ -43,24 +42,9 @@ classdef TrialModel < handle
         syncTimeTrace
     end
     
-    properties (Constant)
-        MAX_N_ROI = 800
-    end
-    
     events
         mapArrayLengthChanged
         mapUpdated
-        
-        roiAdded
-        roiDeleted
-        roiUpdated
-        roiArrayReplaced
-        roiTagChanged
-        
-        roiSelected
-        roiUnSelected
-        roiSelectionCleared
-        
         trialDeleted
     end
     
@@ -167,7 +151,6 @@ classdef TrialModel < handle
                     self.maskDir = pr.maskDir;
                 end
               
-
             end
 
             if pr.loadedMapsize
@@ -206,11 +189,9 @@ classdef TrialModel < handle
             self.syncTimeTrace = pr.syncTimeTrace;
             
             % Initialize ROI array
+            self.mapSize = self.getMapSize();
+            self.roiArr = roiFunc.RoiArray('imageSize', self.mapSize);
             self.roiVisible = true;
-            mapSize = self.getMapSize();
-            self.roiArray = RoiFreehand.empty();
-            self.roiTagMax = 0;
-            
         end
         
         function removeRoiOverlap(self)
@@ -747,40 +728,10 @@ classdef TrialModel < handle
         end
         
         % Methods for ROI-based processing
-        % TODO set roiArray to private
-        function addRoi(self,varargin)
-        % ADDROI add ROI to ROI array
-        % input arguments can be a RoiFreehand object
-        % or a structure containing position and imageSize
-            
-            if nargin == 2
-                if isa(varargin{1},'RoiFreehand')
-                    roi = varargin{1};
-                else
-                    % TODO add ROI from mask
-                    error('Wrong usage!')
-                    help trialMvc.TrialModel.addRoi
-                end
-            else
-                error('Wrong usage!')
-                help trialMvc.TrialModel.addRoi
-            end
-            
-            nRoi = length(self.roiArray);
-            if nRoi >= self.MAX_N_ROI
-                error('Maximum number of ROIs exceeded!')
-            end
-            
-            % TODO validate ROI position (should not go outside of image)
-            if isempty(self.roiArray)
-                roi.tag = 1;
-            else
-                roi.tag = self.roiTagMax+1;
-            end
-            self.roiTagMax = roi.tag;
-            self.roiArray(end+1) = roi;
-            
-            notify(self,'roiAdded')
+        function addRoi(self, roi)
+            roi.tag = self.getNewRoiTag();
+            self.roiArr.addRoi(roi, 'default');
+            notify(self, 'roiAdded')
         end
         
         function tagArray = getAllRoiTag(self)
@@ -897,14 +848,12 @@ classdef TrialModel < handle
             end
         end
 
-        function insertRoiArray(self,roiArray,option)
-            if strcmp(option,'merge')
-                arrayfun(@(x) self.addRoi(x),roiArray);
-            elseif strcmp(option,'replace')
-                self.roiArray = roiArray;
-                tagArray = self.getAllRoiTag();
-                self.roiTagMax = max(tagArray);
-                notify(self,'roiArrayReplaced');
+        function insertRoiArr(self,roiArr,option)
+            if strcmp(option, 'merge')
+                arrayfun(@(x) self.addRoi(x), roiArr.getRoiList);
+            elseif strcmp(option, 'replace')
+                self.roiArr = roiArr;
+                notify(self, 'roiArrReplaced');
             end
         end
 
@@ -915,28 +864,8 @@ classdef TrialModel < handle
                 error(['Image size of mask does not match the map size ' ...
                        '(pixel size in x and y)!'])
             end
-            tagArray = unique(maskImg);
-            roiArray = RoiFreehand.empty();
-            for k=1:length(tagArray)
-                tag = tagArray(k);
-                if tag ~= 0
-                    mask = maskImg == tag;
-                    poly = roiFunc.mask2poly(mask);
-                    if length(poly) > 1
-                        % TODO If the mask corresponds multiple polygon,
-                        % for simplicity,
-                        % take the largest polygon
-                        warning(sprintf('ROI %d has multiple components, only taking the largest one.',tag))
-                        pidx = find([poly.Length] == max([poly.Length]));
-                        poly = poly(pidx);
-                    end
-                    position = [poly.X',poly.Y'];
-                    roi = RoiFreehand(position);
-                    roi.tag = double(tag);
-                    roiArray(end+1) = roi;
-                end
-            end
-            self.insertRoiArray(roiArray,'replace')
+            roiArr = roiFunc.RoiArray('maskImg', maskImg);
+            self.insertRoiArr(roiArr,'replace')
         end
         
         function importRoisFromImageJ(self,filePath)

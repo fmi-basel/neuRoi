@@ -7,7 +7,7 @@ classdef BaseTrialModel < handle
         roiAdded
         roiDeleted
         roiUpdated
-        roiArrayReplaced
+        roiArrReplaced
         roiTagChanged
         
         roiSelected
@@ -19,6 +19,7 @@ classdef BaseTrialModel < handle
     end
 
     methods
+        % ROI CRUD operations
         function addRoi(self, varargin)
             error('Not implemented.')
         end

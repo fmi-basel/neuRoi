@@ -1,18 +1,4 @@
-classdef TrialView < handle
-    properties
-        model
-        controller
-        guiHandles
-        selectedRoiPatchArray
-        mapColorMap
-        mapSize
-        zoom
-    end
-    
-    properties (Constant)
-        DEFAULT_PATCH_COLOR = 'red'
-    end
-    
+classdef TrialView < baseTrial.BaseTrialView
     methods
         function self = TrialView(mymodel,mycontroller)
             self.model = mymodel;
@@ -29,8 +15,6 @@ classdef TrialView < handle
             set(self.guiHandles.syncTraceCheckbox,'Value', ...
                               self.model.syncTimeTrace)
             
-            self.selectedRoiPatchArray = {};
-            
             self.listenToModel();
             self.assignCallbacks();
             [neuRoiDir, ~, ~]= fileparts(mfilename('fullpath'));
@@ -42,6 +26,9 @@ classdef TrialView < handle
             catch ME
                 self.mapColorMap = 'default';
             end
+            
+            self.loadRoiColormap();
+            self.drawAllRoisOverlay();
             
             % Save original settings for zoom
             self.zoom.origXLim = self.guiHandles.mapAxes.XLim;
@@ -56,24 +43,11 @@ classdef TrialView < handle
         end
         
         function listenToModel(self)
+            listenToModel@baseTrial.BaseTrialView(self); %call base function
             addlistener(self.model,'currentMapInd','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'mapArrayLengthChanged',@self.toggleMapButtonValidity);
             addlistener(self.model,'mapUpdated',...
                         @self.updateMapDisplay);
-            
-            addlistener(self.model,'roiVisible','PostSet',...
-                        @self.changeRoiVisibility);
-            addlistener(self.model,'roiAdded',@self.drawLastRoiPatch);
-            addlistener(self.model,'selectedRoiTagArray','PostSet',...
-                        @self.updateRoiPatchSelection);
-            addlistener(self.model,'roiDeleted',...
-                        @self.deleteRoiPatch);
-            addlistener(self.model,'roiUpdated',...
-                        @self.updateRoiPatchPosition);
-            addlistener(self.model,'roiTagChanged',...
-                        @self.changeRoiPatchTag);
-            addlistener(self.model,'roiArrayReplaced',...
-                        @(~,~)self.redrawAllRoiPatch());
             
             addlistener(self.model,'syncTimeTrace','PostSet',...
                         @(~,~)self.changeTraceFigVisibility());
@@ -86,6 +60,7 @@ classdef TrialView < handle
         end
         
         function assignCallbacks(self)
+            assignCallbacks@baseTrial.BaseTrialView(self); %call base function
             set(self.guiHandles.mapButtonGroup,'SelectionChangedFcn', ...
                @(s,e)self.controller.mapButtonSelected_Callback(s,e));
             set(self.guiHandles.mainFig,'CloseRequestFcn',...
@@ -95,14 +70,8 @@ classdef TrialView < handle
             set(self.guiHandles.contrastMaxSlider,'Callback',...
                @(s,e)self.controller.contrastSlider_Callback(s,e));
             
-%             set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
-%                 @(s,e)self.controller.selectRoi_Callback(s,e));
-
             set(self.guiHandles.roiMenuEntry1,'Callback',...
                 @(~,~)self.controller.enterMoveRoiMode())
-            
-            set(self.guiHandles.mainFig,'WindowKeyPressFcn', ...
-                @(s,e)self.controller.keyPressCallback(s,e));
             
             set(self.guiHandles.saveRoiMenu,'Callback',...
                 @(~,~)self.controller.saveRoiArray());

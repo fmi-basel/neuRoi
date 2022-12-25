@@ -24,13 +24,7 @@ classdef TrialStackView < baseTrial.BaseTrialView
                 self.mapColorMap = 'default';
             end
 
-            roiCmapPath = fullfile(cmapDir,'roicolormap.mat');
-            try
-                foo = load(roiCmapPath);
-                self.roiColorMap = foo.roicolormap;
-            catch ME
-                self.roiColorMap = 'lines';
-            end
+            self.loadRoiColormap();
 
             self.listenToModel();
             self.assignCallbacks();
@@ -285,15 +279,6 @@ classdef TrialStackView < baseTrial.BaseTrialView
             self.setRoiVisibility();
         end
         
-        function setRoiVisibility(self)
-            if self.roiVisible
-                roiState = 'on';
-            else
-                roiState = 'off';
-            end
-            set(self.guiHandles.roiImg,'Visible',roiState);
-        end
-            
         function deleteFigures(self)
             mainFig = self.guiHandles.mainFig;
             delete(mainFig);

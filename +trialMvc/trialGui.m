@@ -50,6 +50,9 @@ function handles = trialGui(varargin)
     for i=1:nMapButton
         mb{1} = createMapButton(handles.mapButtonGroup,i);
     end
+
+    % ROIs
+    handles.roiAxes = axes('Position',[0.15 0.1 0.8 0.72],'Parent',handles.mainFig);
     
     % Sync time trace checkbox
     handles.syncTraceCheckbox = uicontrol('Style','checkbox',...

@@ -1,10 +1,8 @@
-classdef TrialController < handle
+classdef TrialController < baseTrial.BaseTrialController
     properties
-        model
-        view
         nMapMax
-        enableFreehandShortcut
     end
+    
     methods
         function self = TrialController(mymodel)
             self.model = mymodel;
