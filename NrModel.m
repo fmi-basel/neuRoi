@@ -147,7 +147,7 @@ classdef NrModel < handle
             self.TransformationTooltip=struct();
             
             
-            self.trialArray = TrialModel.empty;
+            self.trialArray = trialMvc.TrialModel.empty();
             
             self.expInfo = pr.expInfo; % expInfo.nPlane is the total number of planes in the data
 
@@ -383,7 +383,7 @@ classdef NrModel < handle
             end
             
             trialOptionCell = helper.structToNameValPair(trialOption);
-            trial = TrialModel('filePath',filePath,trialOptionCell{:});
+            trial = trialMvc.TrialModel('filePath',filePath,trialOptionCell{:});
             trial.tag = tag;
             self.trialArray(end+1) = trial;
         end
@@ -443,7 +443,7 @@ classdef NrModel < handle
             try
                 trial.calculateAndAddNewMap(mapType,mapOption);
             catch ME
-                if strcmp(ME.identifier,['TrialModel:' ...
+                if strcmp(ME.identifier,['trialMvc.TrialModel:' ...
                                         'windowValueError'])
                     self.view.displayError(ME);
                     return
@@ -459,7 +459,7 @@ classdef NrModel < handle
                 trial.findAndUpdateMap(mapType,mapOption);
             catch ME
                 switch ME.identifier
-                  case 'TrialModel:mapTypeError','TrialModel:windowValueError'
+                  case 'trialMvc.TrialModel:mapTypeError','trialMvc.TrialModel:windowValueError'
                     self.view.displayError(ME);
                     return
                 end
@@ -1326,7 +1326,15 @@ classdef NrModel < handle
                 for fn = fieldnames(s)'
                     fName = fn{1};
                     if isprop(obj, fName)
-                        obj.(fName) = s.(fName);
+                        if strcmp(fName, 'trialArray')
+                            if isempty(s.trialArray)
+                                self.trialArray = trialMvc.TrialModel.empty();
+                            else
+                                self.trialArray = s.trialArray;
+                            end
+                        else
+                            obj.(fName) = s.(fName);
+                        end
                     else
                         warning(sprintf("Property %s is not in NrModel.", fName));
                     end

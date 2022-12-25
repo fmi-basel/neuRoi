@@ -14,7 +14,7 @@ classdef NrController < handle
             self.view = NrView(mymodel,self);
 
             % nFile = self.model.getNFile();
-            self.trialContrlArray = TrialController.empty;
+            self.trialContrlArray = trialMvc.TrialController.empty;
             % Listen to MATLAB root object for changing of current figure
             self.rootListener = listener(groot,'CurrentFigure','PostSet',@self.selectTrial_Callback);
         end
@@ -30,7 +30,7 @@ classdef NrController < handle
             fld = fld{1};
             if ismember(fld,{'myexp','self'})
                 model = foo.(fld);
-                model.trialArray = TrialModel.empty;
+                model.trialArray = trialMvc.TrialModel.empty;
                 self.model = model;
                 self.view.model = self.model;
                 self.model.LoadCalculatedTransformation();
@@ -244,7 +244,7 @@ classdef NrController < handle
         
         function openTrialContrl(self,trial)
             addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
-            trialContrl = TrialController(trial);
+            trialContrl = trialMvc.TrialController(trial);
             % trialContrl.setSyncTimeTrace(true);
             self.trialContrlArray(end+1) = trialContrl;
             trialContrl.raiseView();

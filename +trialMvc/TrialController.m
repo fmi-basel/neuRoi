@@ -9,7 +9,7 @@ classdef TrialController < handle
         function self = TrialController(mymodel)
             self.model = mymodel;
             self.nMapMax = 6;
-            self.view = TrialView(self.model,self);
+            self.view = trialMvc.TrialView(self.model,self);
             
             % Initialize map display
             self.view.toggleMapButtonValidity(self.model);

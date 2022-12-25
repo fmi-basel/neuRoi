@@ -121,7 +121,7 @@ classdef TrialModel < handle
                 %Check if file is Tiff(SetupA) or .mat(SetupC)
                 if fileExtension==".tif"
                     self.name = ...
-                    TrialModel.getDefaultTrialName(self.fileBaseName,pr.zrange,pr.nFramePerStep);
+                    trialMvc.TrialModel.getDefaultTrialName(self.fileBaseName,pr.zrange,pr.nFramePerStep);
                     % Read data from file
                     self.meta = movieFunc.readMeta(self.filePath);
                     self.loadMovie(self.filePath,self.loadMovieOption);
@@ -415,7 +415,7 @@ classdef TrialModel < handle
                     msg = sprintf(['No map of type %s found! You can ' ...
                                    'create a new map of this type ' ...
                                    'by adding map.'],mapType);
-                    error('TrialModel:mapTypeError',msg)
+                    error('trialMvc.TrialModel:mapTypeError',msg)
                 end
                 mapInd = mapInd(1);
             end
@@ -555,7 +555,7 @@ classdef TrialModel < handle
                 skippingNumber = varargin{3};
             else
                 error('Wrong usage!')
-                help TrialModel.calcResponse
+                help trialMvc.TrialModel.calcResponse
             end
             mapData=movieFunc.dFoverF(self.rawMovie,offset,[],[],lowerPercentile,skippingNumber);
         end
@@ -576,7 +576,7 @@ classdef TrialModel < handle
                 sigma = mopt.sigma;
             else
                 error('Wrong usage!')
-                help TrialModel.calcSetupCAnatomy
+                help trialMvc.TrialModel.calcSetupCAnatomy
             end
             if ~(length(nFrameLimit) && nFrameLimit(2)>= ...
                  nFrameLimit(1))
@@ -615,7 +615,7 @@ classdef TrialModel < handle
                 sigma = mopt.sigma;
             else
                 error('Wrong usage!')
-                help TrialModel.calcAnatomy
+                help trialMvc.TrialModel.calcAnatomy
             end
             
             if ~(length(nFrameLimit) && nFrameLimit(2)>= ...
@@ -661,7 +661,7 @@ classdef TrialModel < handle
                 responseWindow = varargin{3};
             else
                 error('Wrong usage!')
-                help TrialModel.calcResponse
+                help trialMvc.TrialModel.calcResponse
             end
             
             % Convert unit of windows from second to frame number
@@ -672,10 +672,10 @@ classdef TrialModel < handle
             % Validate window parameters
             nf = self.getNFrameRawMovie();
             wdMinMax = [1,nf];
-            fres=TrialModel.isNotValidWindowValue(fZeroWindowFrame,...
+            fres=trialMvc.TrialModel.isNotValidWindowValue(fZeroWindowFrame,...
                                                   wdMinMax,...
                                                   'fZeroWindow');
-            rres=TrialModel.isNotValidWindowValue(responseWindowFrame,...
+            rres=trialMvc.TrialModel.isNotValidWindowValue(responseWindowFrame,...
                                                   wdMinMax,...
                                                   'responseWindow');
             if ~fres & ~rres
@@ -707,7 +707,7 @@ classdef TrialModel < handle
             % Validate window parameter
             nf = self.getNFrameRawMovie();
             wdMinMax = [1,nf];
-            fres=TrialModel.isNotValidWindowValue(fZeroWindowFrame,...
+            fres=trialMvc.TrialModel.isNotValidWindowValue(fZeroWindowFrame,...
                                                   wdMinMax,...
                                                   'fZeroWindow');
 
@@ -759,11 +759,11 @@ classdef TrialModel < handle
                 else
                     % TODO add ROI from mask
                     error('Wrong usage!')
-                    help TrialModel.addRoi
+                    help trialMvc.TrialModel.addRoi
                 end
             else
                 error('Wrong usage!')
-                help TrialModel.addRoi
+                help trialMvc.TrialModel.addRoi
             end
             
             nRoi = length(self.roiArray);
@@ -1002,8 +1002,8 @@ classdef TrialModel < handle
             fZeroPercent = 0.5;
             ind = self.findRoiByTag(tag);
             roi = self.roiArray(ind);
-            timeTraceRaw = TrialModel.getTimeTrace(self.rawMovie,roi);
-            timeTrace = TrialModel.getTimeTraceDf(timeTraceRaw, ...
+            timeTraceRaw = trialMvc.TrialModel.getTimeTrace(self.rawMovie,roi);
+            timeTrace = trialMvc.TrialModel.getTimeTraceDf(timeTraceRaw, ...
                                           'intensityOffset',self.intensityOffset, ...
                                           'fZeroPercent',fZeroPercent,'sm',sm);
             timeVec = self.convertFromFrameToSec(1:length(timeTrace));
@@ -1016,7 +1016,7 @@ classdef TrialModel < handle
             timeTraceMat = zeros(nRoi,size(self.rawMovie,3));
             for k=1:nRoi
                 roi = roiArray(k);
-                timeTraceRaw = TrialModel.getTimeTrace(self.rawMovie,roi);
+                timeTraceRaw = trialMvc.TrialModel.getTimeTrace(self.rawMovie,roi);
                 timeTraceMat(k,:) = timeTraceRaw;
             end
         end
@@ -1103,7 +1103,7 @@ classdef TrialModel < handle
             end
             
             if result
-                msgId = 'TrialModel:windowValueError';
+                msgId = 'trialMvc.TrialModel:windowValueError';
                 msg = sprintf('%s: %s',wdName,msg);
                 errorStruct.message = msg;
                 errorStruct.identifier = msgId;

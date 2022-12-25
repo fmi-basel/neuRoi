@@ -19,7 +19,7 @@ classdef TrialView < handle
             self.controller = mycontroller;
             
             self.mapSize = self.model.getMapSize();
-            self.guiHandles = trialGui(self.mapSize);
+            self.guiHandles = trialMvc.trialGui(self.mapSize);
             
 
             self.displayTitle();
@@ -138,7 +138,7 @@ classdef TrialView < handle
         end
         function displayMeta(self)
             meta = self.model.meta;
-            metaStr = TrialView.convertOptionToString(meta);
+            metaStr = trialMvc.TrialView.convertOptionToString(meta);
             set(self.guiHandles.metaText,'String',metaStr);
         end
 
@@ -200,7 +200,7 @@ classdef TrialView < handle
         end
         
         function showMapOption(self,map)
-            optionStr = TrialView.convertOptionToString(map.option);
+            optionStr = trialMvc.TrialView.convertOptionToString(map.option);
             self.guiHandles.mapOptionText.String = optionStr;
         end
         
