@@ -235,18 +235,6 @@ classdef NrController < handle
             planeNum = self.model.planeNum;
             trial = self.model.loadTrialFromList(fileIdx,fileType,planeNum);
             self.openTrialContrl(trial);
-%             if self.model.setupMode== 1
-%                 trial = self.model.loadTrialFromList(fileIdx,fileType,planeNum);
-%                 self.openTrialContrl(trial);
-%             elseif self.model.setupMode== 3
-%                 if self.model.loadMapFromFile
-%                     trial=  self.model.loadTrialFromList(fileIdx,fileType,planeNum);
-%                 else
-%                     %need to be checked!!
-%                     trial = self.model.loadTrialFromList(fileIdx,fileType,planeNum);
-%                 end
-%                 self.openTrialContrl(trial);
-%             end
         end
         
         function openAdditionalTrial(self,filePath,varargin)

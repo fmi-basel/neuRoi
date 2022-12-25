@@ -180,9 +180,7 @@ classdef TrialModel < handle
                 self.setupMode = pr.setupMode;
             end
 
-            if pr.loadMapFromFile
-                self.loadMapFromFile = pr.loadMapFromFile;
-            end
+            self.loadMapFromFile = pr.loadMapFromFile;
             % User specified frame rate
             self.meta.frameRate = pr.frameRate;
             
@@ -202,8 +200,6 @@ classdef TrialModel < handle
             if ~self.loadMapFromFile
                 % Calculate anatomy map
                 self.calculateAndAddNewMap('anatomy');
-            else
-                
             end
 
             % Whether to syncronize time trace while selecting ROIs
@@ -734,6 +730,20 @@ classdef TrialModel < handle
                 error('Wrong Usage!');
             end
             mapData = movieFunc.computeLocalCorrelation(self.rawMovie,mapOption.tileSize);
+        end
+        
+        function mapDataList = getMapDataList(self, mapTypeList)
+            nMap = length(mapTypeList);
+            mapIndList = cellfun(@(x) self.findMapByType(x), mapTypeList,...
+                                 'UniformOutput', false);
+            mapDataList = uint8(zeros([self.getMapSize(), nMap]));
+            for k=1:nMap
+                mapType = mapTypeList{k};
+                mapInd = mapIndList{k};
+                mapp = self.getMapByInd(mapInd);
+                mapData = movieFunc.convertToUint(mapp.data);
+                mapDataList(:,:,k) = mapData;
+            end
         end
         
         % Methods for ROI-based processing

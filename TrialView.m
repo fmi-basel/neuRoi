@@ -51,8 +51,8 @@ classdef TrialView < handle
             
             
             helper.imgzoompan(self.guiHandles.mapAxes,...
-                              'ButtonDownFcn',@(s,e)self.controller.selectRoi
-            _Callback(s,e),'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
+                              'ButtonDownFcn',@(s,e)self.controller.selectRoi_Callback(s,e),...
+                              'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
         end
         
         function listenToModel(self)
