@@ -17,6 +17,7 @@ classdef TrialController < baseTrial.BaseTrialController
         end
         
         function keyPressCallback(self,src,evnt)
+            keyPressCallback@baseTrial.BaseTrialController(self, src, evnt); %call base function
             if strcmp(src.Tag,'traceFig')
                 disp('switch to main figure')
                 figure(self.view.guiHandles.mainFig)
@@ -42,10 +43,6 @@ classdef TrialController < baseTrial.BaseTrialController
                     self.enterMoveRoiMode();
                   case 'x'
                     self.replaceRoiByDrawing();
-                  case {'equal','2'}
-                    self.view.zoomFcn(-1);
-                  case {'hyphen','1'}
-                    self.view.zoomFcn(1);
                 end
             elseif strcmp(evnt.Modifier,'control')
                 switch evnt.Key

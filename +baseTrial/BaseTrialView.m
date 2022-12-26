@@ -45,7 +45,14 @@ classdef BaseTrialView < handle
             set(self.guiHandles.mainFig,'WindowScrollWheelFcn',...
                               @(s,e)self.controller.ScrollWheelFcnCallback(s,e));
             
-            helper.imgzoompan(self.guiHandles.roiAxes,...
+            % Save original settings for zoom
+            self.zoom.origXLim = self.guiHandles.mapAxes.XLim;
+            self.zoom.origYLim = self.guiHandles.mapAxes.YLim;
+            self.zoom.maxZoomScrollCount = 30;
+            self.zoom.scrollCount = 0;
+
+            helper.imgzoompan(self.guiHandles.mainFig,...
+                              self.guiHandles.roiAxes,...
                               self.guiHandles.mapAxes,...
                               'ButtonDownFcn',@(s,e) self.controller.selectRoi_Callback(s,e),...
                               'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
@@ -245,6 +252,48 @@ classdef BaseTrialView < handle
             set(roiPatch,'Tag',ptTag);
         end
         
+        % Zoom
+        function zoomFcn(self,scrollChange)
+            opt.Magnify = 1.1;
+            opt.XMagnify = 1.0;
+            opt.YMagnify = 1.0;
+            imgWidth = self.mapSize(2);
+            imgHeight = self.mapSize(1);
+
+            if ((self.zoom.scrollCount - scrollChange) <= ...
+                self.zoom.maxZoomScrollCount)
+
+                % calculate the new XLim and YLim
+                axish = self.guiHandles.roiAxes;
+                cpaxes = mean(axish.CurrentPoint);
+                newXLim = (axish.XLim - cpaxes(1)) * (opt.Magnify * opt.XMagnify)^scrollChange + cpaxes(1);
+                newYLim = (axish.YLim - cpaxes(2)) * (opt.Magnify * opt.YMagnify)^scrollChange + cpaxes(2);
+
+                newXLim = floor(newXLim);
+                newYLim = floor(newYLim);
+                
+                hAxesList = {self.guiHandles.roiAxes,...
+                             self.guiHandles.mapAxes};
+                % Check for image border location
+                if (newXLim(1) >= 0 && newXLim(2) <= imgWidth && newYLim(1) >= 0 && newYLim(2) <= imgHeight)
+                    for k=1:length(hAxesList)
+                        axish = hAxesList{k};
+                        axish.XLim = newXLim;
+                        axish.YLim = newYLim;
+                    end
+                    self.zoom.scrollCount = self.zoom.scrollCount - scrollChange;
+                else
+                    for k=1:length(hAxesList)
+                        axish = hAxesList{k};
+                        axish.XLim = self.zoom.origXLim;
+                        axish.YLim = self.zoom.origYLim;
+                    end
+                    self.zoom.scrollCount = 0;
+                end
+            end
+        end
+        
+
     end
     
 end
