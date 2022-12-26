@@ -196,7 +196,11 @@ classdef BaseTrialController < handle
         end
 
         function toggleRoiVisibility(self)
-            self.view.toggleRoiVisibility()
+            if self.view.roiVisible
+                self.view.setRoiVisibility(false);
+            else
+                self.view.setRoiVisibility(true);
+            end
         end
 
         function moveRoiKeyPressCallback(self,src,evnt)

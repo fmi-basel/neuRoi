@@ -62,10 +62,10 @@ classdef BaseTrialView < handle
             [funcDir, ~, ~]= fileparts(mfilename('fullpath'));
             neuRoiDir = fullfile(funcDir,'..');
             cmapDir = fullfile(neuRoiDir,'colormap');
-            roiCmapPath = fullfile(cmapDir,'roicolormap.mat');
+            roiCmapPath = fullfile(cmapDir,'roiColorMapUnif.mat');
             try
                 foo = load(roiCmapPath);
-                self.roiColorMap = foo.roicolormap;
+                self.roiColorMap = foo.roiColorMapUnif;
             catch ME
                 self.roiColorMap = 'lines';
             end

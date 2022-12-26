@@ -28,6 +28,7 @@ classdef TrialView < baseTrial.BaseTrialView
             end
             
             self.loadRoiColormap();
+            self.roiVisible = true;
             self.drawAllRoisOverlay();
             
         end

@@ -12,7 +12,6 @@ classdef TrialController < baseTrial.BaseTrialController
             % Initialize map display
             self.view.toggleMapButtonValidity(self.model);
             self.view.displayCurrentMap();
-            self.view.roiVisible = true;
             self.enableFreehandShortcut = true;
         end
         
@@ -140,14 +139,6 @@ classdef TrialController < baseTrial.BaseTrialController
         end
         
         % Methods for ROI based processing
-        function toggleRoiVisibility(self)
-            if self.model.roiVisible
-                self.model.roiVisible = false;
-            else
-                self.model.roiVisible = true;
-            end
-            % self.model.roiVisible = ~self.model.roiVisible;
-        end
         
         function selectRoi_Callback(self,src,evnt)
             selectedObj = gco;

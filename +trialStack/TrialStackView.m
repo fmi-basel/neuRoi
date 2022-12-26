@@ -269,11 +269,6 @@ classdef TrialStackView < baseTrial.BaseTrialView
             end
         end
         
-        function toggleRoiVisibility(self)
-            self.roiVisible = ~self.roiVisible;
-            self.setRoiVisibility();
-        end
-        
         function deleteFigures(self)
             mainFig = self.guiHandles.mainFig;
             delete(mainFig);
