@@ -115,18 +115,6 @@ classdef TrialStackView < baseTrial.BaseTrialView
             self.drawAllRoisOverlay();
         end
         
-        function displayCurrentMap(self)
-            map = self.model.getCurrentMap();
-            self.plotMap(map);
-            self.displayMeta(map.meta);
-            self.controller.updateContrastForCurrentMap();
-        end
-        
-        function displayMeta(self,meta)
-            metaStr = helper.convertOptionToString(meta);
-            set(self.guiHandles.metaText,'String',metaStr);
-        end
-        
 
         function displayTransformationData(self, TransformationParameter)
             TransformationStr=helper.deconvoluteStruct(TransformationParameter);

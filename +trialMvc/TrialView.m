@@ -148,21 +148,6 @@ classdef TrialView < baseTrial.BaseTrialView
             mapButtonArray = mapButtonGroup.Children;
             mapButtonGroup.SelectedObject = mapButtonArray(end+1-ind);
         end
-            
-        function displayCurrentMap(self)
-            map = self.model.getCurrentMap();
-            %needed in case current map is empty
-            if ~isempty(map)
-            self.showMapOption(map);
-            self.plotMap(map);
-            self.controller.updateContrastForCurrentMap();
-            end
-        end
-        
-        function showMapOption(self,map)
-            optionStr = trialMvc.TrialView.convertOptionToString(map.option);
-            self.guiHandles.mapOptionText.String = optionStr;
-        end
         
         function plotMap(self,map)
             mapAxes = self.guiHandles.mapAxes;
@@ -171,14 +156,6 @@ classdef TrialView < baseTrial.BaseTrialView
             cmap = self.mapColorMap;
             switch map.type
               case 'anatomy'
-                if false
-                    tempimage=(map.data-min(min(map.data)))/(max(max(map.data))-min(min(map.data)));
-                    tempimage=adapthisteq(tempimage,'NumTiles',[16 16]);
-                    tempimage=ind2rgb(uint8(tempimage*255),gray(256));
-                    set(mapImage,'CData',tempimage);
-                else
-                    
-                end
                 colormap(mapAxes,gray);
               case 'response'
                 colormap(mapAxes,cmap);
@@ -189,7 +166,6 @@ classdef TrialView < baseTrial.BaseTrialView
               case 'import'
                 colormap(mapAxes,gray);
               otherwise
-                %colormap(mapAxes,'default');
                 colormap(mapAxes,cmap);
             end
         end

@@ -58,6 +58,22 @@ classdef BaseTrialView < handle
                               'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
         end
         
+        % Maps
+        function displayCurrentMap(self)
+            map = self.model.getCurrentMap();
+            if ~isempty(map)
+                self.plotMap(map);
+                self.showMapOption(map);
+                self.controller.updateContrastForCurrentMap();
+            end
+        end
+        
+        function showMapOption(self,map)
+            optionStr = trialMvc.TrialView.convertOptionToString(map.option);
+            self.guiHandles.mapOptionText.String = optionStr;
+        end
+        
+        % ROIs
         function loadRoiColormap(self)
             [funcDir, ~, ~]= fileparts(mfilename('fullpath'));
             neuRoiDir = fullfile(funcDir,'..');
@@ -146,8 +162,8 @@ classdef BaseTrialView < handle
                 centroids(k, :) = roi.getCentroid();
             end
             hold on;
-            self.selectedMarkers = plot(centroids(:,1), centroids(:,2),...
-                                        'r+', 'MarkerSize', 10, 'LineWidth', 1);
+            self.selectedMarkers = plot(centroids(:,1), centroids(:,2), '+',...
+                                        'color', '#77AC30', 'MarkerSize', 10, 'LineWidth', 1);
             hold off;
         end
         

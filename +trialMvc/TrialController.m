@@ -139,38 +139,8 @@ classdef TrialController < baseTrial.BaseTrialController
         end
         
         % Methods for ROI based processing
-        
-        function selectRoi_Callback(self,src,evnt)
-            selectedObj = gco;
-            if RoiFreehand.isaRoiPatch(selectedObj)
-                self.roiClicked_Callback(selectedObj);
-            elseif isequal(selectedObj, ...
-                           self.view.guiHandles.mapImage)
-                if ~isempty(self.model.selectedRoiTagArray)
-                    self.model.unselectAllRoi();
-                end
-            end
-        end
-        
         function selectAllRoi_Callback(self,src,evnt)
             self.model.selectAllRoi();
-        end
-        
-        function roiClicked_Callback(self,roiPatch)
-            ptTag = roiPatch.Tag;
-            roiTag = helper.convertTagToInd(ptTag,'roi');
-
-            selectionType = get(gcf,'SelectionType');
-            switch selectionType
-              case {'normal','alt'}
-                self.model.selectSingleRoi(roiTag);
-              case 'extend'
-                if strcmp(roiPatch.Selected,'on')
-                    self.model.unselectRoi(roiTag);
-                else
-                    self.model.selectRoi(roiTag);
-                end
-            end
         end
         
         function replaceRoiByDrawing(self)

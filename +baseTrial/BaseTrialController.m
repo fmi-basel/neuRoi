@@ -91,7 +91,6 @@ classdef BaseTrialController < handle
             self.view.RoiSaveStatus('Rois have been changed and not saved','red');
         end
 
-
         function selectRoi_Callback(self, src, evnt)
             currPt = get(self.view.guiHandles.roiAxes, 'CurrentPoint');
             % get Tag value under currPt

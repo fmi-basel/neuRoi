@@ -414,6 +414,13 @@ classdef TrialModel < baseTrial.BaseTrialModel
             self.currentMapInd = ind;
         end
         
+        function selectMapType(self, ind)
+        % SELECTMAPTYPE
+        % This is a function written to be compatible to BaseTrialController
+        % Should be optimized in the future
+            self.selectMap(ind);
+        end
+        
         function addMap(self,newMap)
             self.mapArray{end+1} = newMap;
             mapArrayLen = self.getMapArrayLength();
