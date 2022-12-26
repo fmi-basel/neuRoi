@@ -2,7 +2,7 @@ classdef NrController < handle
     properties
         model
         view
-        trialContrlArray
+        trialCtrlArray
         rootListener
         importGui
         stackCtrl
@@ -14,7 +14,7 @@ classdef NrController < handle
             self.view = NrView(mymodel,self);
 
             % nFile = self.model.getNFile();
-            self.trialContrlArray = trialMvc.TrialController.empty;
+            self.trialCtrlArray = trialMvc.TrialController.empty;
             % Listen to MATLAB root object for changing of current figure
             self.rootListener = listener(groot,'CurrentFigure','PostSet',@self.selectTrial_Callback);
         end
@@ -218,7 +218,7 @@ classdef NrController < handle
             idx = self.model.getTrialIdx(trialTag);
             self.model.selectTrial([]);
             self.model.trialArray(idx) = [];
-            self.trialContrlArray(idx) = [];
+            self.trialCtrlArray(idx) = [];
         end
         
         function fileListBox_Callback(self,src,evnt)
@@ -245,7 +245,7 @@ classdef NrController < handle
         function openTrialContrl(self,trial)
             addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
             trialContrl = trialMvc.TrialController(trial);
-            self.trialContrlArray(end+1) = trialContrl;
+            self.trialCtrlArray(end+1) = trialContrl;
             trialContrl.raiseView();
             
             if isempty(self.model.loadMapFromFile) || ~self.model.loadMapFromFile %ignores mapsAfterLoading if true
@@ -280,8 +280,8 @@ classdef NrController < handle
         end
                 
         function mainFigClosed_Callback(self,src,evnt)
-            for i=1:length(self.trialContrlArray)
-                trialContrl = self.trialContrlArray(i);
+            for i=1:length(self.trialCtrlArray)
+                trialContrl = self.trialCtrlArray(i);
                 trialContrl.mainFigClosed_Callback(1,1);
             end
             self.view.deleteFigures();

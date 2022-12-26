@@ -12,6 +12,7 @@ classdef TrialController < baseTrial.BaseTrialController
             % Initialize map display
             self.view.toggleMapButtonValidity(self.model);
             self.view.displayCurrentMap();
+            self.view.roiVisible = true;
             self.enableFreehandShortcut = true;
         end
         

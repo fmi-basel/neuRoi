@@ -110,7 +110,7 @@ classdef RoiArray < handle
         end
         
         function [newRoi, oldRoi] = updateRoiByIdx(self, idx, roi)
-        % UPDATEROIBUIDX only update ROI position
+        % UPDATEROIBYIDX only update ROI position
             oldRoi = self.roiList(idx);
             self.roiList(idx).position = roi.position;
             newRoi = self.roiList(idx);
@@ -231,7 +231,7 @@ classdef RoiArray < handle
         end
         
 
-        %% Mask convertion functions
+        %% Mask functions
         function importFromMaskImg(self, maskImg, groupName)
             self.imageSize = size(maskImg);
             tagArray = unique(maskImg);

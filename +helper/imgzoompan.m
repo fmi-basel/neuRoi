@@ -1,4 +1,4 @@
-function imgzoompan(hfig, varargin)
+function imgzoompan(hAxes1, hAxes2, varargin)
 % imgzoompan provides instant mouse zoom and pan
 %
 % function imgzoompan(hfig, varargin)
@@ -47,7 +47,7 @@ function imgzoompan(hfig, varargin)
     
 %% Modified by Bo Hu, Friedrich Miescher Institute, Basel,
 %% Switzerland
-%    for using on axis
+%    for using on both map axes and roi axes
 
 
 %  Run in current figure unless otherwise requested

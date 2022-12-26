@@ -727,7 +727,15 @@ classdef TrialModel < baseTrial.BaseTrialModel
             end
         end
         
-        % Methods for ROI-based processing
+        % Methods for ROIs
+        function tag = getNewRoiTag(self)
+            if isempty(self.roiArr.getTagList())
+                tag = 1;
+            else
+                tag = max(self.roiArr.getTagList()) + 1;
+            end
+        end
+        
         function addRoi(self, roi)
             roi.tag = self.getNewRoiTag();
             self.roiArr.addRoi(roi, 'default');

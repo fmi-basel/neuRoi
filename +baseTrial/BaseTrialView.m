@@ -46,6 +46,7 @@ classdef BaseTrialView < handle
                               @(s,e)self.controller.ScrollWheelFcnCallback(s,e));
             
             helper.imgzoompan(self.guiHandles.roiAxes,...
+                              self.guiHandles.mapAxes,...
                               'ButtonDownFcn',@(s,e) self.controller.selectRoi_Callback(s,e),...
                               'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
         end
@@ -99,7 +100,7 @@ classdef BaseTrialView < handle
                 set(self.guiHandles.roiAxes,'color','none','visible','off')
                 self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
                 colormap(self.guiHandles.roiAxes,self.roiColorMap);
-                self.setRoiVisibility();
+                self.setRoiVisibility(self.roiVisible);
             end
         end
 
@@ -107,6 +108,7 @@ classdef BaseTrialView < handle
             if isfield(self.guiHandles,'roiImg')
                 roiImgData = self.guiHandles.roiImg.CData;
                 self.setRoiImgData(roi.addMaskToImg(roiImgData));
+                self.setRoiVisibility(true);
             end
         end
         
@@ -126,7 +128,6 @@ classdef BaseTrialView < handle
                             'Tag',txtTag);
             delete(htext);
         end
-        
         
         function updateRoiPatchSelection(self,src,evnt)
             roiList = self.model.roiArr.getSelectedRois();
@@ -217,7 +218,8 @@ classdef BaseTrialView < handle
             self.updateRoiPatchSelection()
         end
         
-        function setRoiVisibility(self)
+        function setRoiVisibility(self, roiVisible)
+            self.roiVisible = roiVisible;
             if self.roiVisible
                 roiState = 'on';
             else

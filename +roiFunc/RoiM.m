@@ -82,8 +82,8 @@ classdef RoiM
         
         function position = convertFreeHandPos(freeHand)
             mask = freeHand.createMask();
-            [row,col] = find(mask==1);
-            position = [row,col];
+            [row, col] = find(mask==1);
+            position = [col, row];
         end
     end
 end

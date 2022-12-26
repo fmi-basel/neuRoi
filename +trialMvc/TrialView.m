@@ -252,25 +252,12 @@ classdef TrialView < baseTrial.BaseTrialView
             end
         end
         
-        % Methods for ROI based processing
-        function drawLastRoiPatch(self,src,evnt)
-            roi = src.getRoiByTag('end');
-            self.addRoiPatch(roi);
-        end
-        
+        % Methods for ROIs
         function redrawAllRoiPatch(self)
             self.deleteAllRoiPatch();
             roiArray = self.model.getRoiArray();
             arrayfun(@(x) self.addRoiPatch(x),roiArray);
         end
-        
-        function addRoiPatch(self,roi)
-            roiPatch = roi.createRoiPatch(self.guiHandles.roiGroup, ...
-                                          self.DEFAULT_PATCH_COLOR);
-            % Add context menu for right click
-            roiPatch.UIContextMenu = self.guiHandles.roiMenu;
-        end
-        
         
         function displayRoiTag(self,roiPatch)
             ptTag = get(roiPatch,'Tag');
@@ -287,28 +274,6 @@ classdef TrialView < baseTrial.BaseTrialView
                                'Type','text',...
                                'Tag',txtTag);
             delete(htext);
-        end
-        
-        
-        function updateRoiPatchSelection(self,src,evnt)
-            newTagArray = evnt.AffectedObject.selectedRoiTagArray;
-            for k=1:length(self.selectedRoiPatchArray)
-                roiPatch = self.selectedRoiPatchArray{k};
-                roiPatch.Selected = 'off';
-                roiTag = helper.convertTagToInd(roiPatch.Tag,'roi');
-                self.removeRoiTagText(roiTag);
-            end
-            self.selectedRoiPatchArray = {};
-            for k=1:length(newTagArray)
-                tag = newTagArray(k);
-                roiPatch = self.findRoiPatchByTag(tag);
-                roiPatch.Selected = 'on';
-                self.displayRoiTag(roiPatch);
-                uistack(roiPatch,'top') % bring the selected roi
-                                        % patch to front of the
-                                        % image and number tag
-                self.selectedRoiPatchArray{k} = roiPatch;
-            end
         end
         
         function changeRoiPatchColor(self,ptcolor,varargin)
