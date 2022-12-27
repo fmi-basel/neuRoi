@@ -341,8 +341,41 @@ classdef NrController < handle
         end
 
         function BUnwarpJCalculateButton_Callback(self,src,evnt)
-            self.model.computeBunwarpj();
-            self.view.refreshView();
+            nameOK = self.CheckBunwarpJName();
+            if nameOK
+                self.model.computeBunwarpj();
+                self.view.refreshView();
+            end
+        end
+        
+        function NameOK=CheckBunwarpJName(self)
+            if isempty(self.model.transformationName)
+                msgbox("Transformationname is empty. Please enter a valid name","modal");
+                NameOK= false;
+                return
+            else
+                files= dir(fullfile(self.model.resultDir,"BUnwarpJ"));
+                dirFlags = [files.isdir];
+                subFolders = files(dirFlags);
+                subFolderNames = {subFolders(3:end).name};
+                DoesTransforExist = ismember(subFolderNames,self.model.transformationName);
+                if sum(DoesTransforExist)==0
+                    NameOK=true;
+                    return
+                else
+                    opts.Interpreter = 'tex';
+                    opts.Default = 'No';
+                    answer = questdlg('Transformationname already exist. Do you want to overwrite the folder?',...
+                             'Overwrite transformation', ...
+                             'Yes','No', opts);
+                    if strcmp(answer, 'Yes')
+                        NameOK = true;
+                    else
+                        NameOK = false;
+                    end
+                return
+                end
+            end
         end
 
         function BUnwarpJPara_Callback(self,src,evnt)

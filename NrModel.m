@@ -143,10 +143,6 @@ classdef NrModel < handle
             parse(pa,varargin{:})
             pr = pa.Results;
             
-            self.transformParam = Bunwarpj.TransformParam();
-            self.TransformationTooltip=struct();
-            
-            
             self.trialArray = trialMvc.TrialModel.empty();
             
             self.expInfo = pr.expInfo; % expInfo.nPlane is the total number of planes in the data
@@ -185,6 +181,11 @@ classdef NrModel < handle
             self.roiTemplateFilePath = '';
             
             self.planeNum = 1; % The plane number for loading file
+
+            % Bunwarpj
+            self.referenceTrialIdx = 1;
+            self.transformParam = Bunwarpj.TransformParam();
+            self.TransformationTooltip=struct();
         end
         
         function importRawData(self,expInfo,rawDataDir,rawFileList,resultDir)
@@ -1093,7 +1094,6 @@ classdef NrModel < handle
         
         %BUnwarpJ
         function computeBunwarpj(self, varargin)
-            if self.CheckBunwarpJName()
                 self.BUnwarpJCalculated= false;
                 
                 bunwarpjDir = self.getBunwarpjDir();
@@ -1105,7 +1105,7 @@ classdef NrModel < handle
                 refTrialName = self.getFileList('trial', self.referenceTrialIdx);
                 [trialNameList, ~] = NrModel.removeReferenceFromList(trialNameList, refTrialName);
                 
-                anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'));
+                anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'), self.planeNum);
                 anatomyNameList = self.getSelectedFileList('anatomy');
                 refAnatomyName = self.getFileList('anatomy', self.referenceTrialIdx);
                 [anatomyNameList, ~] = NrModel.removeReferenceFromList(anatomyNameList, refAnatomyName);
@@ -1113,7 +1113,7 @@ classdef NrModel < handle
                 refAnatomyFile = fullfile(anatomyDir, refAnatomyName);
                
 
-                % TODO rigid alignment before bunwarpj
+                % Rigid alignment before bunwarpj
                 alignDir = fullfile(bunwarpjDir, 'alignment');
                 if ~exist(alignDir, 'dir')
                     mkdir(alignDir)
@@ -1139,12 +1139,12 @@ classdef NrModel < handle
                 
                 self.CalculatedTransformationsList{end+1} = self.transformationName;
                 self.BUnwarpJCalculated= true;
-            end 
         end
             
         function bunwarpjDir = getBunwarpjDir(self)
             bunwarpjDir = self.appendPlaneDir(fullfile(self.getDefaultDir('bunwarpj'),...
-                                                       self.transformationName));
+                                                       self.transformationName),...
+                                              self.planeNum);
         end
         
         function roiArrayStack = applyBunwarpj(self)
@@ -1172,37 +1172,7 @@ classdef NrModel < handle
             roiArrStack = Bunwarpj.transformRoiArrStack(templateRoiArr, transformStack, offsetYxList);
             save(fullfile(bunwarpjDir,"roiArrStack.mat"),"roiArrStack");
         end
-        
-        function NameOK=CheckBunwarpJName(self)
-            if isempty(self.transformationName) ||  strcmp(self.transformationName,'Change transformation name')
-                msgbox("Transformationname is empty. Please enter a valid name","modal");
-                NameOK= false;
-                return
-            else
-                files= dir(fullfile(self.resultDir,"BUnwarpJ"));
-                dirFlags = [files.isdir];
-                subFolders = files(dirFlags);
-                subFolderNames = {subFolders(3:end).name};
-                DoesTransforExist = ismember(subFolderNames,self.transformationName);
-                if sum(DoesTransforExist)==0
-                    NameOK=true;
-                    return
-                else
-                    opts.Interpreter = 'tex';
-                    opts.Default = 'No';
-                    answer = questdlg('Transformationname already exist. Do you want to overwrite the folder?',...
-                             'Overwrite transformation', ...
-                             'Yes','No', opts);
-                    if strcmp(answer, 'Yes')
-                        NameOK = true;
-                    else
-                        NameOK = false;
-                    end
-                return
-                end
-            end
-        end
-        
+                
         function inspectStack(self)
             
             if self.BUnwarpJCalculated

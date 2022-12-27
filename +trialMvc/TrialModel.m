@@ -17,7 +17,6 @@ classdef TrialModel < baseTrial.BaseTrialModel
         mapSize
         rawMovie
         
-        templateAnatomy
         roiDir
         roiFilePath
         
@@ -844,26 +843,17 @@ classdef TrialModel < baseTrial.BaseTrialModel
         end
         
         function saveRoiArray(self,filePath)
-            roiArray = self.roiArray;
-            ind = self.findMapByType('anatomy');
-            templateAnatomy = self.mapArray{ind}.data;
-            save(filePath,'roiArray');
+            roiArr = self.roiArr;
+            save(filePath,'roiArr');
         end
         
         function loadRoiArray(self,filePath,option)
             foo = load(filePath);
-            roiArray = foo.roiArray;
-            nRoi = length(roiArray);
-                if nRoi >= self.MAX_N_ROI
-                    error('Maximum number of ROIs exceeded!')
-                end
+            roiArray = foo.roiArr;
             self.insertRoiArray(roiArray,option)
-            if isfield(foo,'templateAnatomy')
-                self.templateAnatomy = foo.templateAnatomy;
-            end
         end
 
-        function insertRoiArr(self,roiArr,option)
+        function insertRoiArray(self,roiArr,option)
             if strcmp(option, 'merge')
                 arrayfun(@(x) self.addRoi(x), roiArr.getRoiList);
             elseif strcmp(option, 'replace')
@@ -880,7 +870,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
                        '(pixel size in x and y)!'])
             end
             roiArr = roiFunc.RoiArray('maskImg', maskImg);
-            self.insertRoiArr(roiArr,'replace')
+            self.insertRoiArray(roiArr,'replace')
         end
         
         function importRoisFromImageJ(self,filePath)
@@ -888,32 +878,6 @@ classdef TrialModel < baseTrial.BaseTrialModel
             roiArray = roiFunc.convertFromImageJRoi(jroiArray);
             self.insertRoiArray(roiArray,'replace');
         end
-        
-        
-        function matchRoiPos(self,roiTagArray,windowSize)
-            fitGauss = 1;
-            normFlag = 1;
-            roiIndArray = self.findRoiByTagArray(roiTagArray);
-            mapInd = self.findMapByType('anatomy');
-            inputMap = self.mapArray{mapInd}.data;
-            for ind = roiIndArray
-                self.roiArray(ind).matchPos(inputMap, ...
-                                            self.templateAnatomy,...
-                                            windowSize,...
-                                            fitGauss,...
-                                            normFlag)
-            end
-            notify(self,'roiUpdated', ...
-                   NrEvent.RoiUpdatedEvent(self.roiArray(roiIndArray)));
-        end
-        
-        % function checkRoiImageSize(self,roi)
-        %     mapSize = self.getMapSize();
-        %     if ~isequal(roi.imageSize,mapSize)
-        %         error(['Image size of ROI does not match the map size ' ...
-        %                '(pixel size in x and y)!'])
-        %     end
-        % end
         
         function ind = findRoiByTag(self,tag)
             ind = find(arrayfun(@(x) isequal(x.tag,tag), ...

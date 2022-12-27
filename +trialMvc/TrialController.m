@@ -284,20 +284,18 @@ classdef TrialController < baseTrial.BaseTrialController
             [fileName,fileDir] = uigetfile('*.mat','Load ROIs', ...
                                            self.model.roiDir);
             if fileName
-                % Ask user whether to merge with existing ROIs or
-                % replace the ROIs
-                if length(self.model.roiArray)
-                    answer = questdlg('How would you like to load new ROIs?', ...
+                % Load RoiArray will overwrite ROIs that already exists
+                % Ask user to confirm
+                if length(self.model.roiArr.getRoiList())
+                    answer = questdlg('Existing ROIs will be deleted. Would you like to proceed?', ...
                                       'Load ROIs', ...
-                                      'Cancel','Merge','Replace', ...
-                                      'Replace');
-                    if strcmp(answer,'Cancel')
+                                      'No','Yes', ...
+                                      'No');
+                    if strcmp(answer,'No')
                         return
                     end
-                    option = lower(answer);
-                else
-                    option = 'replace';
                 end
+                option = 'replace';
                 filePath = fullfile(fileDir,fileName)
                 self.model.loadRoiArray(filePath,option);
             end
