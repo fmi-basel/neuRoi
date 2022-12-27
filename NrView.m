@@ -200,7 +200,7 @@ classdef NrView < handle
                         @(s,e)self.displayLoadFileType());
             addlistener(self.model,'expInfo','PostSet',...
                         @(s,e)self.displayExpInfo());
-            addlistener(self.model,'CalculatedTransformationsList','PostSet',...
+            addlistener(self.model,'calculatedTransformationsList','PostSet',...
                         @(s,e)self.updateCalculatedTransformationsListBox());
         end
         
@@ -216,8 +216,8 @@ classdef NrView < handle
         end
 
         function updateCalculatedTransformationsListBox(self,src,event)
-            CalculatedTransformationsList = self.model.CalculatedTransformationsList;
-            set(self.guiHandles.BUnwarpJCalculatedTransformations,'String',CalculatedTransformationsList);
+            calculatedTransformationsList = self.model.calculatedTransformationsList;
+            set(self.guiHandles.BUnwarpJCalculatedTransformations,'String',calculatedTransformationsList);
         end
 
         function updateTransformationTooltip(self)

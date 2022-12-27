@@ -407,7 +407,7 @@ classdef NrController < handle
         end
         
         function BUnwarpJCalculatedTransformations_Callback(self,src,evnt)
-            self.model.CalculatedTransformationsIdx=src.Value;
+            self.model.calculatedTransformationsIdx=src.Value;
             self.model.UpdateTransformationTooltipValue();
             self.view.updateTransformationTooltip();
         end

@@ -60,8 +60,8 @@ classdef NrModel < handle
         referenceTrialIdx
         BUnwarpJCalculated
         transformationName
-        CalculatedTransformationsIdx
-        CalculatedTransformationsList
+        calculatedTransformationsIdx
+        calculatedTransformationsList
         TransformationTooltip
         
         stackModel
@@ -913,7 +913,7 @@ classdef NrModel < handle
 
         function SetupCExtractTracesDfoverf(self)
             planeString = NrModel.getPlaneString(self.planeNum);
-            CalculatedTransformationName= self.CalculatedTransformationsList(self.CalculatedTransformationsIdx);
+            CalculatedTransformationName= self.calculatedTransformationsList(self.calculatedTransformationsIdx);
             RoisStruc= load(fullfile(self.resultDir,"BUnwarpJ",CalculatedTransformationName,"Rois.mat"));
             TempCellArray=struct2cell(RoisStruc.RoiArray);
             blankingPath=fullfile(self.resultDir,strcat(nameParts{1},'_',nameParts{2},'_blankingstruct.mat'));
@@ -1133,11 +1133,11 @@ classdef NrModel < handle
                                          self.transformParam, offsetYxList,...
                                          bunwarpjDir);
                 
-                if isempty(self.CalculatedTransformationsList)
-                    self.CalculatedTransformationsIdx=1;
+                if isempty(self.calculatedTransformationsList)
+                    self.calculatedTransformationsIdx=1;
                 end
                 
-                self.CalculatedTransformationsList{end+1} = self.transformationName;
+                self.calculatedTransformationsList{end+1} = self.transformationName;
                 self.BUnwarpJCalculated= true;
         end
             
@@ -1147,8 +1147,15 @@ classdef NrModel < handle
                                               self.planeNum);
         end
         
+        function bunwarpjDir = getSelectedBunwarpjDir(self)
+            transfName = self.calculatedTransformationsList{self.calculatedTransformationsIdx};
+            bunwarpjDir = self.appendPlaneDir(fullfile(self.getDefaultDir('bunwarpj'),...
+                                                       transfName),...
+                                              self.planeNum);
+        end
+        
         function roiArrayStack = applyBunwarpj(self)
-            bunwarpjDir = self.getBunwarpjDir();
+            bunwarpjDir = self.getSelectedBunwarpjDir();
             transformMeta = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
             refTrialName = transformMeta.refTrialName;
 
@@ -1159,7 +1166,7 @@ classdef NrModel < handle
 
             
             % TODO accept arbitrary roiFile
-            roiDir = self.appendPlaneDir(self.getDefaultDir('roi'));
+            roiDir = self.appendPlaneDir(self.getDefaultDir('roi'), self.planeNum);
             roiFile = fullfile(roiDir, iopath.modifyFileName(refTrialName,'',...
                                                              self.roiFileIdentifier,"mat"));
             if ~isfile(roiFile)
@@ -1167,56 +1174,49 @@ classdef NrModel < handle
                 return
             end
             foo = load(roiFile);
-            templateRoiArr = foo.roiArray;
+            templateRoiArr = foo.roiArr;
             
             roiArrStack = Bunwarpj.transformRoiArrStack(templateRoiArr, transformStack, offsetYxList);
             save(fullfile(bunwarpjDir,"roiArrStack.mat"),"roiArrStack");
         end
                 
         function inspectStack(self)
+        % TODO make sure RoiStack is already computed
+            bunwarpjDir = self.getSelectedBunwarpjDir();
+            transformMeta = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
+            refTrialName = transformMeta.refTrialName;
             
-            if self.BUnwarpJCalculated
-                % TODO make sure RoiStack is already computed
-                bunwarpjDir = self.getBunwarpjDir();
-                transformMeta = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
-                refTrialName = transformMeta.refTrialName;
-                
-                trialNameList = self.getSelectedFileList('trial');
+            trialNameList = self.getSelectedFileList('trial');
 
-                anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'));
-                anatomyFileList = self.getSelectedFileList('anatomy');
-                anatomyStack = batch.loadStack(anatomyDir,anatomyFileList);
-                
-                % TODO precomputed response
-%                 responseArray = self.calcResponseMapArray();
-                responseStack = anatomyStack;
-                
-                % TODO 2022-10-23 Bo Hu
-                % sort out all arguments for TrialStackModel
+            anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'), self.planeNum);
+            anatomyFileList = self.getSelectedFileList('anatomy');
+            anatomyStack = batch.loadStack(anatomyDir,anatomyFileList);
+            
+            % TODO precomputed response
+            %                 responseArray = self.calcResponseMapArray();
+            responseStack = anatomyStack;
+            
+            % TODO apply CLAHE
+            % for i=1:size(anatomyArray,3)
+            %     anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
+            % end
+            
+            foo = load(fullfile(bunwarpjDir,"roiArrStack.mat"));
+            roiArrStack = foo.roiArrStack;
+            
+            transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
+            transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'inverse');
+            
+            self.stackModel = trialStack.TrialStackModel(trialNameList,...
+                                                         anatomyStack,...
+                                                         responseStack,...
+                                                         'roiArrStack', roiArrStack,...
+                                                         'transformStack', transformStack,...
+                                                         'transformInvStack', transformInvStack,...
+                                                         'doSummarizeRoiTags', true);
+            % TODO IMPORTANT, add offsetYxList
 
-                % apply CLAHE
-                % for i=1:size(anatomyArray,3)
-                %     anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
-                % end
-                
-                foo = load(fullfile(bunwarpjDir,"roiArrStack.mat"));
-                roiArrStack = foo.roiArrStack;
-                
-                transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
-                transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'inverse');
-                
-                self.stackModel = trialStack.TrialStackModel(trialNameList,...
-                                                        anatomyStack,...
-                                                        responseStack,...
-                                                        'roiArrStack', roiArrStack,...
-                                                        'transformStack', transformStack,...
-                                                        'transformInvStack', transformInvStack,...
-                                                        'doSummarizeRoiTags', true);
-                % TODO IMPORTANT, add offsetYxList
-
-                self.stackModel.contrastForAllTrial = true;  
-            end
-
+            self.stackModel.contrastForAllTrial = true;  
         end
         
         function responseArray = calcResponseMapArray(self)
@@ -1252,14 +1252,14 @@ classdef NrModel < handle
             dirFlags = [files.isdir];
             subFolders = files(dirFlags);
             subFolderNames = {subFolders(3:end).name};
-            self.CalculatedTransformationsList=subFolderNames;
+            self.calculatedTransformationsList=subFolderNames;
             if ~isempty(subFolders)
                 self.BUnwarpJCalculated=true;
             end
         end
 
         function UpdateTransformationTooltipValue(self)
-            CalculatedTransformationName= self.CalculatedTransformationsList(self.CalculatedTransformationsIdx);
+            CalculatedTransformationName= self.calculatedTransformationsList(self.calculatedTransformationsIdx);
             TransformationPath=fullfile(self.resultDir,"BUnwarpJ",CalculatedTransformationName,"TransformationParameters.mat");
             if isfile(TransformationPath)
                 parameterStruc= load(TransformationPath);

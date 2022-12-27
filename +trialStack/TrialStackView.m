@@ -25,16 +25,6 @@ classdef TrialStackView < baseTrial.BaseTrialView
             self.assignCallbacks();
             self.setRoiAlphaSlider(0.5);
             self.roiVisible = true;
-            % Save original settings for zoom
-            self.zoom.origXLim = self.guiHandles.mapAxes.XLim;
-            self.zoom.origYLim = self.guiHandles.mapAxes.YLim;
-            self.zoom.maxZoomScrollCount = 30;
-            self.zoom.scrollCount = 0;
-            
-            
-            helper.imgzoompan(self.guiHandles.mapAxes,...
-                   'ButtonDownFcn',@(s,e)self.controller.selectRoi_Callback(s,e),'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
-
         end
         
         function listenToModel(self)
