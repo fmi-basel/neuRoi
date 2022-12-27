@@ -110,9 +110,9 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         function map = getCurrentMap(self)
             map.data = self.getMapData(self.mapType,self.currentTrialIdx);
             map.type = self.mapType;
-            map.meta.trialIdx = self.currentTrialIdx;
+            map.option.trialIdx = self.currentTrialIdx;
             
-            map.meta.fileName = self.trialNameList{self.currentTrialIdx};
+            map.option.fileName = self.trialNameList{self.currentTrialIdx};
             contrastLim = self.getContrastLimForCurrentMap();
             if isempty(contrastLim)
                 contrastLim = helper.minMax(map.data);

@@ -96,6 +96,7 @@ classdef TrialView < baseTrial.BaseTrialView
             set(self.guiHandles.mainFig,'Tag',[ttag '_main_fig']);
             set(self.guiHandles.traceFig,'Tag',[ttag '_time_trace']);
         end
+        
         function displayMeta(self)
             meta = self.model.meta;
             metaStr = trialMvc.TrialView.convertOptionToString(meta);
