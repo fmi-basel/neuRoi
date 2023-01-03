@@ -1072,11 +1072,18 @@ classdef NrModel < handle
             end
         end
         
-        function fileList = getSelectedFileList(self, fileType)
+        function varargout = getSelectedFileList(self, fileType)
             if self.selectedFileIdx
                 fileList = self.getFileList(fileType, self.selectedFileIdx);
+                idxList = self.selectedFileIdx;
             else
                 fileList = self.getFileList(fileType);
+                idxList = 1:length(self.rawFileList);
+            end
+            
+            varargout{1} = fileList;
+            if nargout == 2
+                varargout{2} = idxList;
             end
         end
 
@@ -1186,7 +1193,7 @@ classdef NrModel < handle
             transformMeta = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
             refTrialName = transformMeta.refTrialName;
             
-            trialNameList = self.getSelectedFileList('trial');
+            [trialNameList, trialIdxList] = self.getSelectedFileList('trial');
 
             anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'), self.planeNum);
             anatomyFileList = self.getSelectedFileList('anatomy');
@@ -1213,7 +1220,8 @@ classdef NrModel < handle
                                                          'roiArrStack', roiArrStack,...
                                                          'transformStack', transformStack,...
                                                          'transformInvStack', transformInvStack,...
-                                                         'doSummarizeRoiTags', true);
+                                                         'doSummarizeRoiTags', true,...
+                                                         'trialIdxList', trialIdxList);
             % TODO IMPORTANT, add offsetYxList
 
             self.stackModel.contrastForAllTrial = true;  

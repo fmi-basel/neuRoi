@@ -24,14 +24,8 @@ classdef TrialController < baseTrial.BaseTrialController
 
             if isempty(evnt.Modifier)
                 switch evnt.Key
-                  case 'f'
-                    if self.enableFreehandShortcut
-                        self.addRoiByDrawing();
-                    end
                   case {'d','delete','backspace'}
                     self.deleteSelectedRoi();
-                  case 'r'
-                    self.toggleRoiVisibility();
                   case 'q'
                     self.selectMap(1);
                   case 'w'

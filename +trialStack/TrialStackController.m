@@ -5,6 +5,7 @@ classdef TrialStackController < baseTrial.BaseTrialController
             self.view = trialStack.TrialStackView(self.model,self);
             self.view.setTrialNumberandSliderLim(1,[1,self.model.nTrial]);
             self.view.displayCurrentTrial();
+            self.enableFreehandShortcut = true;
         end
         
         function keyPressCallback(self, src, evnt)

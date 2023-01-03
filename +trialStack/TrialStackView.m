@@ -141,7 +141,7 @@ classdef TrialStackView < baseTrial.BaseTrialView
                 set(self.guiHandles.roiAxes,'color','none','visible','off')
                 self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
                 colormap(self.guiHandles.roiAxes,self.roiColorMap);
-                self.setRoiVisibility();
+                self.setRoiVisibility(true);
             end
         end
         

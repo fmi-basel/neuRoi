@@ -1,6 +1,7 @@
 classdef TrialStackModel < baseTrial.BaseTrialModel
     properties
         trialNameList
+        trialIdxList
         anatomyStack
         responseStack
         nTrial
@@ -43,6 +44,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             addOptional(pa,'transformInvStack', []);
             addOptional(pa,'templateIdx', inf);
             addParameter(pa, 'doSummarizeRoiTags', true)
+            addParameter(pa, 'trialIdxList', [])
             
             parse(pa,trialNameList,...
                   anatomyStack,...
@@ -89,6 +91,10 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
                 self.doTransform = false;
             end
             
+            if length(pr.trialIdxList)
+                self.trialIdxList = pr.trialIdxList;
+            end
+            
             self.currentTrialIdx = 1;
         end
 
@@ -111,7 +117,9 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             map.data = self.getMapData(self.mapType,self.currentTrialIdx);
             map.type = self.mapType;
             map.option.trialIdx = self.currentTrialIdx;
-            
+            if self.trialIdxList
+                map.option.origTrialIdx = self.trialIdxList(self.currentTrialIdx);
+            end
             map.option.fileName = self.trialNameList{self.currentTrialIdx};
             contrastLim = self.getContrastLimForCurrentMap();
             if isempty(contrastLim)

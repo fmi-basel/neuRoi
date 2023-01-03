@@ -9,6 +9,10 @@ classdef BaseTrialController < handle
         function keyPressCallback(self, src, evnt)
             if isempty(evnt.Modifier)
                 switch evnt.Key
+                  case 'f'
+                    if self.enableFreehandShortcut
+                        self.addRoiByDrawing();
+                    end
                   case 'q'
                     self.model.selectMapType(1)
                   case 'w'
@@ -19,8 +23,8 @@ classdef BaseTrialController < handle
                     self.replaceRoiByDrawing();
                   case 'v'
                     self.enterMoveRoiMode();
-                  case {'d','delete','backspace'}
-                    self.deleteSelectedRois();
+                  case 'r'
+                    self.toggleRoiVisibility();
                   case {'equal','2'}
                     self.view.zoomFcn(-1);
                   case {'hyphen','1'}
