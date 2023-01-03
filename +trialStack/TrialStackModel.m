@@ -157,6 +157,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
     end
     
     methods
+        % Methods for ROIs
         function tag = getNewRoiTag(self)
             tag = max(self.allRoiTags) + 1;
         end

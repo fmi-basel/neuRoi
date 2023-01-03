@@ -85,6 +85,7 @@ classdef RoiArray < handle
             groupTag = self.findGroupTag(groupName);
             self.roiGroupTagList(end+1) = groupTag;
             roi.meta.groupName = groupName;
+            roi.meta.groupTag = groupTag;
             
             self.roiList(end+1) = roi;
             self.tagList(end+1) = tag;
@@ -171,6 +172,7 @@ classdef RoiArray < handle
             tags = self.tagList(idxs);
         end
 
+        % Methods for groups
         function groupNames = getGroupNames(self)
             groupNames = self.groupNames;
         end
@@ -230,7 +232,6 @@ classdef RoiArray < handle
             groupName = roi.meta.groupName;
         end
         
-
         %% Mask functions
         function importFromMaskImg(self, maskImg, groupName)
             self.imageSize = size(maskImg);
@@ -252,6 +253,21 @@ classdef RoiArray < handle
                 maskImg = min(maskImg + roi.createMask(self.imageSize)*roi.tag, roi.tag);
             end
         end
+        
+        function maskImg = convertToGroupMask(self)
+            maskImg = zeros(self.imageSize);
+            for k = 1:length(self.groupNames)
+                groupName = self.groupNames(k);
+                groupTag = self.groupTags(k);
+                rois = self.getRoisInGroup(groupName);
+                submask = zeros(self.imageSize);
+                for roi=rois
+                    submask = min(submask + roi.createMask(self.imageSize), 1);
+                end
+                maskImg = min(maskImg + submask*groupTag, groupTag);
+            end
+        end
+        
     end
 end
 

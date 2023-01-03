@@ -10,6 +10,11 @@ classdef BaseTrialView < handle
         roiColorMap
         AlphaForRoiOnePatch = 0.5
         roiVisible
+        
+    end
+    
+    properties (Access = private)
+        roiMask
     end
 
     properties (Constant)
@@ -19,9 +24,14 @@ classdef BaseTrialView < handle
 
     
     methods
+        
+        function self = BaseTrialView(mymodel, mycontroller)
+            self.model = mymodel;
+            self.controller = mycontroller;
+            self.roiMask = zeros(self.model.roiArr.imageSize);
+        end
+        
         function listenToModel(self)
-            addlistener(self.model,'roiVisible','PostSet',...
-                        @self.changeRoiVisibility);
             addlistener(self.model,'roiAdded',@self.drawLastRoiPatch);
             addlistener(self.model,'roiSelected',...
                         @self.updateRoiPatchSelection);
@@ -54,7 +64,7 @@ classdef BaseTrialView < handle
             helper.imgzoompan(self.guiHandles.mainFig,...
                               self.guiHandles.roiAxes,...
                               self.guiHandles.mapAxes,...
-                              'ButtonDownFcn',@(s,e) self.controller.selectRoi_Callback(s,e),...
+                              'ButtonDownFcn',@(s,e) self.controller.roiClicked_Callback(s,e),...
                               'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
         end
         
@@ -78,7 +88,7 @@ classdef BaseTrialView < handle
             [funcDir, ~, ~]= fileparts(mfilename('fullpath'));
             neuRoiDir = fullfile(funcDir,'..');
             cmapDir = fullfile(neuRoiDir,'colormap');
-            roiCmapPath = fullfile(cmapDir,'roiColorMapUnif.mat');
+            roiCmapPath = fullfile(cmapDir,'roicolormap.mat');
             try
                 foo = load(roiCmapPath);
                 self.roiColorMap = foo.roiColorMapUnif;
@@ -94,24 +104,15 @@ classdef BaseTrialView < handle
             self.addRoiPatch(roi);
         end
 
-        function deleteAllRoiAsOnePatch(self)
-            mapAxes = self.guiHandles.roiGroup;
-            children = mapAxes.Children;
-            delete(children);
-        end
-
         function drawAllRoisOverlay(self)
             mapAxes = self.guiHandles.mapAxes;
-            roiImgData = self.model.roiArr.convertToMask();
-            self.setRoiImgData(roiImgData)
+            self.roiMask = self.model.roiArr.convertToMask();
+            roiGroupMask = self.model.roiArr.convertToGroupMask();
+            self.setRoiImgData(roiGroupMask)
         end
 
-        function roiImgData = getRoiImgData(self)
-            if isfield(self.guiHandles,'roiImg')
-                roiImgData = self.guiHandles.roiImg.CData;
-            else
-                roiImgData = [];
-            end
+        function roiMask = getRoiMask(self)
+            roiMask = self.roiMask;
         end
         
         function setRoiImgData(self, roiImgData)
@@ -129,8 +130,9 @@ classdef BaseTrialView < handle
 
         function addRoiPatch(self,roi)
             if isfield(self.guiHandles,'roiImg')
-                roiImgData = self.guiHandles.roiImg.CData;
-                self.setRoiImgData(roi.addMaskToImg(roiImgData));
+                roiGroupMask = self.guiHandles.roiImg.CData;
+                groupTag = roi.meta.groupTag;
+                self.setRoiImgData(roi.addMaskToImg(roiGroupMask, groupTag));
                 self.setRoiVisibility(true);
             end
         end

@@ -34,7 +34,7 @@ classdef BaseTrialController < handle
         end
         
         function addRoiByDrawing(self)
-            self.model.roiVisible = true;
+            self.view.setRoiVisibility(true);
             self.enableFreehandShortcut = false;
             rawRoi = drawfreehand(self.view.guiHandles.roiAxes);
             self.addRawRoi(rawRoi);
@@ -95,14 +95,14 @@ classdef BaseTrialController < handle
             self.view.RoiSaveStatus('Rois have been changed and not saved','red');
         end
 
-        function selectRoi_Callback(self, src, evnt)
+        function roiClicked_Callback(self, src, evnt)
             currPt = get(self.view.guiHandles.roiAxes, 'CurrentPoint');
             % get Tag value under currPt
-            roiImgData = self.view.getRoiImgData();
-            tag = roiImgData(round(currPt(1,2)), round(currPt(1,1)));
+            roiMask = self.view.getRoiMask();
+            tag = roiMask(round(currPt(1,2)), round(currPt(1,1)));
             % select Roi accordingly
             if tag > 0
-                self.roiClicked_Callback(tag);
+                self.selectRoi_Callback(tag);
             else
                 if ~isempty(self.model.roiArr.getSelectedIdxs())
                     self.model.unselectAllRois();
@@ -110,7 +110,7 @@ classdef BaseTrialController < handle
             end
         end
 
-        function roiClicked_Callback(self, tag)
+        function selectRoi_Callback(self, tag)
             selectionType = get(gcf,'SelectionType');
             switch selectionType
               case {'normal','alt'}

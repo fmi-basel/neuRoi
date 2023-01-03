@@ -1,8 +1,7 @@
 classdef TrialStackView < baseTrial.BaseTrialView
     methods
         function self = TrialStackView(mymodel,mycontroller,mytransformationParameter)
-            self.model = mymodel;
-            self.controller = mycontroller;
+            self = self@baseTrial.BaseTrialView(mymodel, mycontroller);
             %self.previousTrialIdx=self.model.currentTrialIdx;
             self.mapSize = self.model.mapSize;
             self.guiHandles = trialStack.trialStackGui(self.model.mapSize);
@@ -130,21 +129,6 @@ classdef TrialStackView < baseTrial.BaseTrialView
             end
         end
 
-        function drawAllRoisOverlay(self)
-            mapAxes = self.guiHandles.mapAxes;
-            roiImgData = self.model.roiArr.convertToMask();
-            if isfield(self.guiHandles,'roiImg')
-                self.guiHandles.roiImg.CData = roiImgData;
-                self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
-            else
-                self.guiHandles.roiImg = imagesc(roiImgData,'Parent',self.guiHandles.roiAxes);
-                set(self.guiHandles.roiAxes,'color','none','visible','off')
-                self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
-                colormap(self.guiHandles.roiAxes,self.roiColorMap);
-                self.setRoiVisibility(true);
-            end
-        end
-        
         function displayError(self,errorStruct)
             self.guiHandles.errorDlg = errordlg(errorStruct.message,'TrialController');
         end
