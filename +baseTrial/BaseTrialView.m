@@ -116,15 +116,18 @@ classdef BaseTrialView < handle
         end
         
         function setRoiImgData(self, roiImgData)
+            climits = [0, 20];
             if isfield(self.guiHandles,'roiImg')
                 self.guiHandles.roiImg.CData = roiImgData;
                 self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
+                caxis(climits)
             else
                 self.guiHandles.roiImg = imagesc(roiImgData,'Parent',self.guiHandles.roiAxes);
                 set(self.guiHandles.roiAxes,'color','none','visible','off')
                 self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
                 colormap(self.guiHandles.roiAxes,self.roiColorMap);
                 self.setRoiVisibility(self.roiVisible);
+                caxis(climits) % set color range, so each color corresponds to a fixed value
             end
         end
 
