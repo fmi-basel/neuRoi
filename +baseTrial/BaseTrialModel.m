@@ -46,7 +46,7 @@ classdef BaseTrialModel < handle
         end
         
         function unselectRoi(self, tag)
-            self.roiArr.unselectRoi();
+            self.roiArr.unselectRoi(tag);
             notify(self,'roiSelected');
         end
         

@@ -113,9 +113,9 @@ classdef BaseTrialController < handle
         function selectRoi_Callback(self, tag)
             selectionType = get(gcf,'SelectionType');
             switch selectionType
-              case {'normal','alt'}
+              case 'normal'
                 self.model.selectRois([tag]);
-              case 'extend'
+              case 'alt'
                 selectedTags = self.model.roiArr.getSelectedTags();
                 if ismember(tag, selectedTags)
                     self.model.unselectRoi(tag);

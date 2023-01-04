@@ -97,7 +97,6 @@ classdef BaseTrialView < handle
             end
         end
 
-
         % Methods for ROI based processing
         function drawLastRoiPatch(self,src,evnt)
             roi = self.model.roiArr.getLastRoi();
@@ -106,25 +105,26 @@ classdef BaseTrialView < handle
 
         function drawAllRoisOverlay(self)
             mapAxes = self.guiHandles.mapAxes;
-            self.roiMask = self.model.roiArr.convertToMask();
+            roiMask = self.model.roiArr.convertToMask();
             roiGroupMask = self.model.roiArr.convertToGroupMask();
-            self.setRoiImgData(roiGroupMask)
+            self.setRoiImgData(roiMask, roiGroupMask)
         end
 
         function roiMask = getRoiMask(self)
             roiMask = self.roiMask;
         end
         
-        function setRoiImgData(self, roiImgData)
+        function setRoiImgData(self, roiMask, roiGroupMask)
+            self.roiMask = roiMask;
             climits = [0, 20];
             if isfield(self.guiHandles,'roiImg')
-                self.guiHandles.roiImg.CData = roiImgData;
-                self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
+                self.guiHandles.roiImg.CData = roiGroupMask;
+                self.guiHandles.roiImg.AlphaData = (roiGroupMask > 0) * self.AlphaForRoiOnePatch;
                 caxis(climits)
             else
-                self.guiHandles.roiImg = imagesc(roiImgData,'Parent',self.guiHandles.roiAxes);
+                self.guiHandles.roiImg = imagesc(roiGroupMask,'Parent',self.guiHandles.roiAxes);
                 set(self.guiHandles.roiAxes,'color','none','visible','off')
-                self.guiHandles.roiImg.AlphaData = (roiImgData > 0) * self.AlphaForRoiOnePatch;
+                self.guiHandles.roiImg.AlphaData = (roiGroupMask > 0) * self.AlphaForRoiOnePatch;
                 colormap(self.guiHandles.roiAxes,self.roiColorMap);
                 self.setRoiVisibility(self.roiVisible);
                 caxis(climits) % set color range, so each color corresponds to a fixed value
@@ -132,12 +132,13 @@ classdef BaseTrialView < handle
         end
 
         function addRoiPatch(self,roi)
-            if isfield(self.guiHandles,'roiImg')
-                roiGroupMask = self.guiHandles.roiImg.CData;
-                groupTag = roi.meta.groupTag;
-                self.setRoiImgData(roi.addMaskToImg(roiGroupMask, groupTag));
-                self.setRoiVisibility(true);
-            end
+            roiGroupMask = self.guiHandles.roiImg.CData;
+            groupTag = roi.meta.groupTag;
+            roiGroupMask = roi.addMaskToImg(roiGroupMask, groupTag);
+            roiMask = roi.addMaskToImg(self.roiMask);
+            
+            self.setRoiImgData(roiMask, roiGroupMask);
+            self.setRoiVisibility(true);
         end
         
         function displayRoiTag(self,roiPatch)
