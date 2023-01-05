@@ -154,7 +154,8 @@ classdef TrialStackModel < handle
 %             wantedRoi= cellfun(@(x) x.tag==RoiTag,currentRoiArray);
 %             wantedRoiIndex=find(wantedRoi);
             for i=1:numel(self.roiArrays)
-                self.roiArrays{i}(indArray)=[];
+	    	wantedRoi= find(arrayfun(@(x) x.tag==tagArray,self.roiArrays{i}));
+                self.roiArrays{i}(wantedRoi)=[];
             end
             notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
         end
