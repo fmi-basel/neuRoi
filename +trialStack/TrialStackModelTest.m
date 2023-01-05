@@ -6,12 +6,13 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
        
     methods(TestClassSetup)
         function createData(testCase)
-            stack = createStack();
+            stack = testUtils.createStack();
             templateIdx = 1;
             testCase.stackModel = trialStack.TrialStackModel(stack.trialNameList,...
                                                              stack.anatomyStack,...
                                                              stack.responseStack,...
                                                              'roiArrStack', stack.roiArrStack,...
+                                                             'offsetYxList', stack.offsetYxList,...
                                                              'transformStack', stack.transformStack,...
                                                              'transformInvStack', stack.transformInvStack,...
                                                              'doSummarizeRoiTags', true);
@@ -27,28 +28,28 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
 
             stackModel.currentTrialIdx = 1;
             position = [65,45; 65,46; 66,45; 66,46];
-            roi = roiFunc.RoiM(position);
+            roi = roiFunc.RoiM('position', position);
             stackModel.addRoi(roi); % ROI #5
             stackModel.deleteRoi(3);
             
             stackModel.currentTrialIdx = 2;
             position = [61,41; 62,41; 62,42; 63,42];
-            roi = roiFunc.RoiM(position);
+            roi = roiFunc.RoiM('position', position);
             stackModel.addRoi(roi); % ROI #6
             
             position = [64,43; 64,44; 65,43; 65,44];
-            roi = roiFunc.RoiM(position);
+            roi = roiFunc.RoiM('position', position);
             stackModel.addRoi(roi); % ROI #7
             
             position = [40,90; 40,91; 42,90; 42,91];
-            freshRoi = roiFunc.RoiM(position);
+            freshRoi = roiFunc.RoiM('position', position);
             stackModel.updateRoi(3, freshRoi);
             stackModel.deleteRoiInStack(2);
             stackModel.deleteRoiInStack(3);
             
             stackModel.currentTrialIdx = 3;
             position = [55,82; 56,82; 55,83; 56,83];
-            freshRoi = roiFunc.RoiM(position);
+            freshRoi = roiFunc.RoiM('position', position);
             stackModel.updateRoi(1, freshRoi);
             
             stackModel.currentTrialIdx = 2;

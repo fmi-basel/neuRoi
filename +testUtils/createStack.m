@@ -16,31 +16,32 @@ function stack = createStack()
                              'UniformOutput', false);
 
     imageSize = size(movieStructList{1}.anatomy);
-    transformStack = {};
-    transformStack{1} = Bunwarpj.Transformation('type', 'identity');
-    for k=2:3
-        transformStack{k} = createTransform(imageSize, affineMats{k-1}(3, 1:2));
-    end
+    offsetYxList = {};
+    transformStack = Bunwarpj.Transformation.empty();
+    transfomrInvStack = Bunwarpj.Transformation.empty();
+    offsetYxList{1} = [0, 0];
+    transformStack(1) = Bunwarpj.Transformation('type', 'identity');
+    transformInvStack(1) = Bunwarpj.Transformation('type', 'identity');
 
-    transfomrInvStack = {};
-    transformInvStack{1} = Bunwarpj.Transformation('type', 'identity');
     for k=2:3
-        transformInvStack{k} = createTransform(imageSize, -affineMats{k-1}(3, 1:2));
+        [offsetYxList{k}, transformStack(k)] = createTransform(imageSize, affineMats{k-1});
+        [~, transformInvStack(k)] = createTransform(imageSize, -affineMats{k-1});
     end
 
     stack.trialNameList = trialNameList;
     stack.anatomyStack = anatomyStack;
     stack.responseStack = responseStack;
     stack.roiArrStack = roiArrStack;
+    stack.offsetYxList = offsetYxList;
     stack.transformStack = transformStack;
     stack.transformInvStack = transformInvStack;
     stack.movieStructList = movieStructList;
 end
 
 function troiArrStack = splitRoiArrStack(roiArrStack)
-    troiArrStack = {};
+    troiArrStack = roiFunc.RoiArray.empty();
     for k=1:length(roiArrStack)
-        troiArrStack{k} = splitRoiArr(roiArrStack{k});
+        troiArrStack(k) = splitRoiArr(roiArrStack{k});
     end
 end
 
@@ -60,11 +61,16 @@ function movieStructList = createTestMovies(affineMat2, affineMat3)
     movieStructList{3}= testUtils.createMovie('ampList', [60, 50, 80, 50], 'affineMat', affineMat3);
 end
 
-function transf = createTransform(imageSize, offsetYx)
-    xcorr = repmat((1:imageSize(2)) + offsetYx(1), [imageSize(1), 1]);
-    ycorr = repmat((1:imageSize(1)) + offsetYx(2), [imageSize(2), 1]);
+function [offsetYx, transf] = createTransform(imageSize, affineMat)
+    offsetYx = affineMat(3, 1:2);
+    xcorr = repmat((1:imageSize(2)), [imageSize(1), 1]);
+    ycorr = repmat((1:imageSize(1)), [imageSize(2), 1])';
+    xycorr = cat(3, xcorr, ycorr);
+    
+    txycorr = pagemtimes(permute(xycorr, [2,3,1]), affineMat(1:2, 1:2));
+    txycorr = permute(txycorr, [3, 1, 2]);
     transf = Bunwarpj.Transformation('type', 'bunwarpj',...
-                                     'xcorr', xcorr,...
-                                     'ycorr', ycorr',...
+                                     'xcorr', txycorr(:, :, 1),...
+                                     'ycorr', txycorr(:, :, 2),...
                                      'imageSize', imageSize);
 end

@@ -99,7 +99,7 @@ classdef RoiArray < handle
         
         function updateRoi(self, tag, roi)
             idx = self.findRoi(tag);
-            self.updateRoiByIdx(roi)
+            self.updateRoiByIdx(idx, roi)
         end
         
         function [newRoi, oldRoi] = moveRoi(self, tag, offset)

@@ -19,6 +19,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         DIFF_NAME = 'diff'
 
         doTransform
+        offsetYxList
         transformStack
         transformInvStack
         templateIdx
@@ -42,6 +43,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             addOptional(pa,'roiArrStack', []);
             addOptional(pa,'transformStack', []);
             addOptional(pa,'transformInvStack', []);
+            addOptional(pa,'offsetYxList', []);
             addOptional(pa,'templateIdx', inf);
             addParameter(pa, 'doSummarizeRoiTags', true)
             addParameter(pa, 'trialIdxList', [])
@@ -86,6 +88,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
                 self.doTransform = true;
                 self.transformStack = pr.transformStack;
                 self.transformInvStack = pr.transformInvStack;
+                self.offsetYxList = pr.offsetYxList;
                 self.templateIdx = pr.templateIdx; % templateIdx == inf means template is not in the stack
             else
                 self.doTransform = false;
@@ -173,21 +176,26 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             if strcmp(groupName, self.DIFF_NAME)
                 error('Diff group should not be used for containing common ROIs of a stack!')
             end
+            % TODO TODO carefully handle the transformation!!
+            % TODO write proper test
             [rois, tags] = self.roiArr.getSelectedRoisFromGroup(self.DIFF_NAME);
-            transformInv = self.transformInvStack{self.currentTrialIdx};
+            offsetYx = self.offsetYxList{self.currentTrialIdx};
+            transformInv = self.transformInvStack(self.currentTrialIdx);
+            
             roiArr = roiFunc.RoiArray('roiList', rois, 'imageSize', self.roiArr.imageSize);
-            templateRoiArr = BUnwarpJ.transformRoiArray(roiArr, transformInv);
+            templateRoiArr = Bunwarpj.transformRoiArray(roiArr, transformInv, -offsetYx);
             templateTags = templateRoiArr.getTagList();
             self.commonRoiTags = [self.commonRoiTags, templateTags];
             for k=1:self.nTrial
-                transform = self.transformStack{k};
-                troiArr = BUnwarpJ.transformRoiArray(templateRoiArr, transform);
+                offsetYx = self.offsetYxList{k};
+                transform = self.transformStack(k);
+                troiArr = Bunwarpj.transformRoiArray(templateRoiArr, transform, offseYx);
                 % TODO handle loss of ROI after transformation
                 if k == self.currentTrialIdx
                     tags = troiArr.getTagList();
-                    self.roiArrStack{k}.putRoisIntoGroup(tags, groupName)
+                    self.roiArrStack(k).putRoisIntoGroup(tags, groupName)
                 else
-                    self.roiArrStack{k}.addRois(troiArr.getRoiList(), groupName);
+                    self.roiArrStack(k).addRois(troiArr.getRoiList(), groupName);
                 end
             end
         end
@@ -231,7 +239,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
                 if length(pidx)
                     self.partialDeletedTags(pidx) = [];
                 else
-                    roiArr = self.roiArrStack{k};
+                    roiArr = self.roiArrStack(k);
                     roi = roiArr.deleteRoi(tag);
                     roiStack{k} = roi;
                 end

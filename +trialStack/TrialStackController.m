@@ -12,17 +12,25 @@ classdef TrialStackController < baseTrial.BaseTrialController
             keyPressCallback@baseTrial.BaseTrialController(self, src, evnt); %call base function
             if strcmp(evnt.Modifier,'control')
                 switch evnt.Key
+                  case 'b'
+                    self.addRoisInStack();
                   case {'d','delete','backspace'}
                     self.deleteSelectedRoisInStack();
                 end
             end
         end
         
+        function addRoisInStack(self, src, evnt)
+        % TODO 2023-01-05
+            groupName = 'default';
+            self.model.addRoisInStack(groupName);
+            self.view.drawAllRoisOverlay();
+        end
+        
         function deleteSelectedRoisInStack(self, src, evnt)
             self.model.deleteSelectedRoisInStack();
             self.view.RoiSaveStatus('Rois have been changed and not saved','red');
         end
-        
         
         function ScrollWheelFcnCallback(self, src, evnt)
         %JE-Mouswheelscroll functionality for scrolling trough the trials

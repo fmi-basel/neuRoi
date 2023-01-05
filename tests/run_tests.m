@@ -5,12 +5,12 @@ addpath('..')
 % results = testCase.run
 % testCase = NrModelTest;
 % results = testCase.run
-% testCase = TrialStackModelTest;
-% results = testCase.run
 disp('xxxxxx')
 disp('xxxxxx')
 disp('xxxxxx')
-% testCase = trialStack.TrialStackControllerTest;
-testCase = NrControllerTest;
+testCase = trialStack.TrialStackModelTest;
 results = testCase.run
+% testCase = trialStack.TrialStackControllerTest;
+% testCase = NrControllerTest;
+% results = testCase.run
 % close all

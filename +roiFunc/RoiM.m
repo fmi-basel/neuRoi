@@ -6,12 +6,12 @@ classdef RoiM
     end
     
     methods
-        function self = RoiM(position,varargin)
+        function self = RoiM(varargin)
             pa = inputParser;
             addParameter(pa, 'position', [], @ismatrix);
             addParameter(pa, 'freeHand', [], @ismatrix);
             addParameter(pa, 'tag', '', @isnumeric);
-            parse(pa, position, varargin{:})
+            parse(pa, varargin{:})
             pr = pa.Results;
 
             if ~isempty(pr.position)
