@@ -96,13 +96,27 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             stackCtrl.deleteSelectedRois();
             
             pause(0.1);
-            mouse.mouseMove(549, 1578);
+            mouse.mouseMove(roi1p(1)-2, roi1p(2)+249);
             mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
             pause(0.1);
             mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
             pause(0.1);
             stackCtrl.deleteSelectedRoisInStack();
-
+            
+            % Add two ROIs
+            pause(0.1);
+            stackCtrl.addRoiByDrawing([73, 25; 84, 25; 84, 36; 73, 36]);
+            stackCtrl.addRoiByDrawing([93, 85; 104, 85; 104, 96; 93, 96]);
+            % Add the two ROIs in the stack
+            mouse.mouseMove(roi1p(1)+187, roi1p(2)-8);
+            mouse.keyPress(KeyEvent.VK_CONTROL);
+            mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
+            pause(0.1);
+            mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
+            pause(0.1);
+            mouse.keyRelease(KeyEvent.VK_CONTROL);
+            stackCtrl.model.roiGroupName = 'region1';
+            stackCtrl.addRoisInStack();
             
             % stackCtrl.deleteSelectedRoi from all trials;
             

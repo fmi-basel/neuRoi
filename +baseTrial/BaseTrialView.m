@@ -143,11 +143,36 @@ classdef BaseTrialView < handle
         
         function deleteRoiPatch(self, roi)
             roiGroupMask = self.guiHandles.roiImg.CData;
-            groupTag = roi.meta.groupTag;
             roiGroupMask = roi.addMaskToImg(roiGroupMask, 0);
             roiMask = roi.addMaskToImg(self.roiMask, 0);
             
             self.setRoiImgData(roiMask, roiGroupMask);
+        end
+        
+        function updateRoiPatchPosition(self,src,evnt)
+            disp('update roi in view')
+            newRoi = evnt.newRoi;
+            oldRoi = evnt.oldRoi;
+            % Remove original ROI in roiImg
+            self.deleteRoiPatch(oldRoi);
+            % Add updated ROI to roiImg
+            self.addRoiPatch(newRoi);
+            % Move selection cross
+            self.updateRoiPatchSelection()
+        end
+
+        function deleteRoiPatches(self,src,evnt)
+            rois = evnt.rois;
+            roiGroupMask = self.guiHandles.roiImg.CData;
+            roiMask = self.roiMask;
+            for k=1:length(rois)
+                % Remove ROI in roiImg
+                roi = rois(k);
+                roiGroupMask = roi.addMaskToImg(roiGroupMask, 0);
+                roiMask = roi.addMaskToImg(roiMask, 0);
+            end
+            self.setRoiImgData(roiMask, roiGroupMask);
+            self.updateRoiPatchSelection()
         end
         
         function displayRoiTag(self,roiPatch)
@@ -211,18 +236,6 @@ classdef BaseTrialView < handle
             end
         end
 
-        function updateRoiPatchPosition(self,src,evnt)
-            disp('update roi in view')
-            newRoi = evnt.newRoi;
-            oldRoi = evnt.oldRoi;
-            % Remove original ROI in roiImg
-            self.deleteRoiPatch(oldRoi);
-            % Add updated ROI to roiImg
-            self.addRoiPatch(newRoi);
-            % Move selection cross
-            self.updateRoiPatchSelection()
-        end
-        
         function changeRoiPatchTag(self,src,evnt)
             oldTag = evnt.oldTag;
             newTag = evnt.newTag;
@@ -242,18 +255,6 @@ classdef BaseTrialView < handle
             arrayfun(@(x) delete(x), roiPatchArray);
         end
 
-        function deleteRoiPatches(self,src,evnt)
-            rois = evnt.rois;
-            roiImgData = self.getRoiImgData();
-            for k=1:length(rois)
-                % Remove ROI in roiImg
-                roi = rois(k);
-                roiImgData = roi.addMaskToImg(roiImgData, 0);
-            end
-            self.setRoiImgData(roiImgData);
-            self.updateRoiPatchSelection()
-        end
-        
         function setRoiVisibility(self, roiVisible)
             self.roiVisible = roiVisible;
             if self.roiVisible

@@ -33,10 +33,15 @@ classdef BaseTrialController < handle
             end
         end
         
-        function addRoiByDrawing(self)
+        function addRoiByDrawing(self, varargin)
             self.view.setRoiVisibility(true);
             self.enableFreehandShortcut = false;
-            rawRoi = drawfreehand(self.view.guiHandles.roiAxes);
+            if length(varargin) == 1
+                rawRoi = images.roi.Freehand(self.view.guiHandles.roiAxes,...
+                                             'Position', varargin{1});
+            else
+                rawRoi = drawfreehand(self.view.guiHandles.roiAxes);
+            end
             self.addRawRoi(rawRoi);
             self.enableFreehandShortcut = true;
         end

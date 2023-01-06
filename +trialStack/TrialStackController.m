@@ -22,8 +22,7 @@ classdef TrialStackController < baseTrial.BaseTrialController
         
         function addRoisInStack(self, src, evnt)
         % TODO 2023-01-05
-            groupName = 'default';
-            self.model.addRoisInStack(groupName);
+            self.model.addRoisInStack(self.model.roiGroupName);
             self.view.drawAllRoisOverlay();
         end
         

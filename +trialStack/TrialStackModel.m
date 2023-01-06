@@ -15,6 +15,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         commonRoiTags
         allRoiTags
         partialDeletedTags
+        roiGroupName
 
         DIFF_NAME = 'diff'
 
