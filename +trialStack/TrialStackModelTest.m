@@ -22,6 +22,7 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
     methods(Test)
         function testRoi(testCase)
             stackModel = testCase.stackModel;
+            imageSize = size(stackModel.anatomyStack(:, :, 1));
 
             % add/update/delete ROI in current trial
             % apply ROI add/delete to trial stack
@@ -33,12 +34,12 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             stackModel.deleteRoi(3);
             
             stackModel.currentTrialIdx = 2;
-            position = [61,41; 62,41; 62,42; 63,42];
-            roi = roiFunc.RoiM('position', position);
+            position = [61,41; 66,41; 66,46; 61,46];
+            roi = testCase.createRoi(position(:,1), position(:,2), imageSize);
             stackModel.addRoi(roi); % ROI #6
             
-            position = [64,43; 64,44; 65,43; 65,44];
-            roi = roiFunc.RoiM('position', position);
+            position = [71,31; 76,31; 76,36; 71,36];
+            roi = testCase.createRoi(position(:,1), position(:,2), imageSize);
             stackModel.addRoi(roi); % ROI #7
             
             position = [40,90; 40,91; 42,90; 42,91];
@@ -87,7 +88,17 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
     
     methods
         function tags = getTags(testCase, trialIdx, groupName)
-            [rois, tags] = testCase.stackModel.roiArrStack{trialIdx}.getRoisInGroup(groupName);
+            [rois, tags] = testCase.stackModel.roiArrStack(trialIdx).getRoisInGroup(groupName);
         end
+        
+        function roi = createRoi(testCase, xi, yi, imageSize)
+            roiMask = poly2mask(xi, yi, imageSize(1), imageSize(2));
+            [mposY,mposX] = find(roiMask);
+            position = [mposX,mposY];
+            roi = roiFunc.RoiM('position', position);
+        end
+
     end
+    
+    
 end

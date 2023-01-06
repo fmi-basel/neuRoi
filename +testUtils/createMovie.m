@@ -39,11 +39,14 @@ for k=1:length(roiList)
     timeTraceMat(k, :) = timeTrace;
 end
 rawMovie = warpMovie(rawMovie, pr.affineMat);
+mask = warpMovie(templateMask, pr.affineMat);
+mask(~ismember(mask, [1,2,3,4])) = 0;
+
 movieStruct.rawMovie = rawMovie;
 movieStruct.anatomy = mean(rawMovie, 3);
 movieStruct.timeTraceMat = timeTraceMat;
 movieStruct.templateMask = templateMask;
-movieStruct.mask = warpMovie(templateMask, pr.affineMat);
+movieStruct.mask = mask;
 end
 
 
@@ -62,6 +65,3 @@ function warped = warpMovie(rawMovie, affineMat)
     tform = affine2d(affineMat);
     warped = movieFunc.imwarpSame(rawMovie,tform);
 end
-
-
-

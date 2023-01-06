@@ -56,10 +56,8 @@ classdef BaseTrialController < handle
             selectedIdxs = self.model.roiArr.getSelectedIdxs();
             if length(selectedIdxs) == 1
                 roi = self.model.roiArr.getSelectedRois();
-                % Remove ROI in roiImg
-                roiImgData = self.view.getRoiImgData();
-                newRoiImgData = roi.addMaskToImg(roiImgData, 0);
-                self.view.setRoiImgData(newRoiImgData);
+                % Remove ROI in view
+                self.view.deleteRoiPatch(roi);
 
                 % Draw ROI
                 figure(self.view.guiHandles.mainFig);

@@ -2,7 +2,8 @@ function roiArrStack = transformRoiArrStack(templateRoiArr, transformStack, offs
     roiMap = templateRoiArr.convertToMask();
     roiArrStack = roiFunc.RoiArray.empty();
     for k=1:length(transformStack)
-        roiArrStack(k) = Bunwarpj.transformRoiArray(roiMap, transformStack(k), offsetYxList{k});
+        tMask= Bunwarpj.applyTransformation(roiMap, transformStack(k), offsetYxList{k});
+        roiArrStack(k) = roiFunc.RoiArray('maskImg', tMask);
     end
 end
 

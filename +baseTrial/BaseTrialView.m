@@ -141,6 +141,15 @@ classdef BaseTrialView < handle
             self.setRoiVisibility(true);
         end
         
+        function deleteRoiPatch(self, roi)
+            roiGroupMask = self.guiHandles.roiImg.CData;
+            groupTag = roi.meta.groupTag;
+            roiGroupMask = roi.addMaskToImg(roiGroupMask, 0);
+            roiMask = roi.addMaskToImg(self.roiMask, 0);
+            
+            self.setRoiImgData(roiMask, roiGroupMask);
+        end
+        
         function displayRoiTag(self,roiPatch)
             ptTag = get(roiPatch,'Tag');
             tag = helper.convertTagToInd(ptTag,'roi');
@@ -207,11 +216,9 @@ classdef BaseTrialView < handle
             newRoi = evnt.newRoi;
             oldRoi = evnt.oldRoi;
             % Remove original ROI in roiImg
-            roiImgData = self.getRoiImgData();
-            roiImgData = oldRoi.addMaskToImg(roiImgData, 0);
+            self.deleteRoiPatch(oldRoi);
             % Add updated ROI to roiImg
-            roiImgData = newRoi.addMaskToImg(roiImgData);
-            self.setRoiImgData(roiImgData);
+            self.addRoiPatch(newRoi);
             % Move selection cross
             self.updateRoiPatchSelection()
         end

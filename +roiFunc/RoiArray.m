@@ -205,6 +205,7 @@ classdef RoiArray < handle
                 idx = self.findRoi(tags(k));
                 self.roiGroupTagList(idx) = groupTag;
                 self.roiList(idx).meta.groupName = groupName;
+                self.roiList(idx).meta.groupTag = groupTag;
             end
         end
         

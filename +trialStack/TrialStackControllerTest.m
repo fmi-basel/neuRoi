@@ -15,6 +15,7 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
                                                     stack.anatomyStack,...
                                                     stack.responseStack,...
                                                     'roiArrStack', stack.roiArrStack,...
+                                                    'offsetYxList', stack.offsetYxList,...
                                                     'transformStack', stack.transformStack,...
                                                     'transformInvStack', stack.transformInvStack,...
                                                     'doSummarizeRoiTags', true);
@@ -40,17 +41,17 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             rawRoi = images.roi.Freehand(stackCtrl.view.guiHandles.roiAxes,...
                                          'Position', [10, 10; 10, 20; 20, 20; 20, 10]);
             stackCtrl.addRawRoi(rawRoi);
-            roiImgData = stackCtrl.view.getRoiImgData();
+            roiMask = stackCtrl.view.getRoiMask();
             mask = testCase.stack.movieStructList{1}.mask;
             mask(11:20, 11:20) = 5;
-            testCase.verifyMse(roiImgData, mask, 0);
+            testCase.verifyMse(roiMask, mask, 0);
             
             % Move mouse to ROI #1 and select it by clicking
             pause(1.0);
             import java.awt.Robot;
             import java.awt.event.*;
             mouse = Robot;
-            roi1p = [552, 1322];
+            roi1p = [556, 1537];
             mouse.mouseMove(roi1p(1), roi1p(2));
             mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
             pause(0.1);
@@ -61,11 +62,12 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             % stackCtrl.selectRoi_Callback();
             
             % Test replace ROI
-            stackCtrl.replaceRoiByDrawing([25, 33; 25, 44; 36, 44; 36, 33]);
+            % stackCtrl.replaceRoiByDrawing([25, 33; 25, 44; 36, 44; 36, 33]);
+            stackCtrl.replaceRoiByDrawing([33, 25; 44, 25; 44, 36; 33, 36]);
             mask(find(mask==1)) = 0;
             mask(26:36, 34:44) = 1;
-            roiImgData = stackCtrl.view.getRoiImgData();
-            testCase.verifyMse(roiImgData, mask, 0);
+            roiMask = stackCtrl.view.getRoiMask();
+            testCase.verifyMse(roiMask, mask, 0);
             
             % Test moving ROI
             stackCtrl.enterMoveRoiMode();

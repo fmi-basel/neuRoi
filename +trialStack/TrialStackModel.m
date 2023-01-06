@@ -186,16 +186,16 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             templateRoiArr = Bunwarpj.transformRoiArray(roiArr, transformInv, -offsetYx);
             templateTags = templateRoiArr.getTagList();
             self.commonRoiTags = [self.commonRoiTags, templateTags];
-            for k=1:self.nTrial
-                offsetYx = self.offsetYxList{k};
-                transform = self.transformStack(k);
-                troiArr = Bunwarpj.transformRoiArray(templateRoiArr, transform, offseYx);
-                % TODO handle loss of ROI after transformation
+            
+            troiArrStack = Bunwarpj.transformRoiArrStack(templateRoiArr, self.transformStack, self.offsetYxList);
+
+            % TODO handle loss of ROI after transformation
+            for k = 1:self.nTrial
                 if k == self.currentTrialIdx
-                    tags = troiArr.getTagList();
-                    self.roiArrStack(k).putRoisIntoGroup(tags, groupName)
+                    tags = troiArrStack(k).getTagList();
+                    self.roiArrStack(k).putRoisIntoGroup(tags, groupName);
                 else
-                    self.roiArrStack(k).addRois(troiArr.getRoiList(), groupName);
+                    self.roiArrStack(k).addRois(troiArrStack(k).getRoiList(), groupName);
                 end
             end
         end
@@ -224,7 +224,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             aidx = find(self.allRoiTags == tag);
             self.allRoiTags(aidx) = [];
 
-            roiStack = {}
+            roiStack = {};
             for k=1:self.nTrial
                 trialTagPair = [k, tag];
                 
