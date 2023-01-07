@@ -184,7 +184,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             transformInv = self.transformInvStack(self.currentTrialIdx);
             
             roiArr = roiFunc.RoiArray('roiList', rois, 'imageSize', self.roiArr.imageSize);
-            templateRoiArr = Bunwarpj.transformRoiArray(roiArr, transformInv, -offsetYx);
+            templateRoiArr = Bunwarpj.transformRoiArray(roiArr, transformInv, offsetYx);
             templateTags = templateRoiArr.getTagList();
             self.commonRoiTags = [self.commonRoiTags, templateTags];
             

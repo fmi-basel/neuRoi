@@ -17,6 +17,11 @@ classdef TrialStackController < baseTrial.BaseTrialController
                   case {'d','delete','backspace'}
                     self.deleteSelectedRoisInStack();
                 end
+            else
+                switch evnt.Key
+                  case {'j','k'}
+                    self.slideTrialCallback(evnt)
+                end
             end
         end
         
@@ -29,6 +34,15 @@ classdef TrialStackController < baseTrial.BaseTrialController
         function deleteSelectedRoisInStack(self, src, evnt)
             self.model.deleteSelectedRoisInStack();
             self.view.RoiSaveStatus('Rois have been changed and not saved','red');
+        end
+        
+        function slideTrialCallback(self,evnt)
+            if strcmp(evnt.Key, 'k')
+                self.model.currentTrialIdx = min(self.model.currentTrialIdx+1, self.model.nTrial);
+            elseif strcmp(evnt.Key, 'j')
+                self.model.currentTrialIdx = max(self.model.currentTrialIdx-1, 1);
+            end
+            self.view.setTrialNumberSlider(self.model.currentTrialIdx);
         end
         
         function ScrollWheelFcnCallback(self, src, evnt)
