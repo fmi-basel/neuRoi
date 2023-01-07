@@ -17,15 +17,15 @@ function stack = createStack()
                              'UniformOutput', false);
 
     imageSize = size(movieStructList{1}.anatomy);
-    offsetYxList = {};
+    offsetYxList = zeros(3, 2);
     transformStack = Bunwarpj.Transformation.empty();
     transfomrInvStack = Bunwarpj.Transformation.empty();
-    offsetYxList{1} = [0, 0];
+    offsetYxList(1, :) = [0, 0];
     transformStack(1) = Bunwarpj.Transformation('type', 'identity');
     transformInvStack(1) = Bunwarpj.Transformation('type', 'identity');
 
     for k=2:3
-        offsetYxList{k} = affineMats{k-1}(3, 1:2);
+        offsetYxList(k, :) = affineMats{k-1}(3, 1:2); % Actuall offset seems more complicated after affine transform
         afmat = affineMats{k-1}(1:2, 1:2);
         transformStack(k) = createTransform(imageSize, afmat);
         transformInvStack(k) = createTransform(imageSize, inv(afmat));
@@ -69,7 +69,7 @@ function transf = createTransform(imageSize, afmat)
     ycorr = repmat((1:imageSize(1)), [imageSize(2), 1])';
     xycorr = cat(3, xcorr, ycorr);
     
-    txycorr = pagemtimes(permute(xycorr, [2, 3, 1]), afmat);
+    txycorr = pagemtimes(permute(xycorr, [2, 3, 1]), inv(afmat));
     txycorr = permute(txycorr, [3, 1, 2]);
     transf = Bunwarpj.Transformation('type', 'bunwarpj',...
                                      'xcorr', txycorr(:, :, 1),...

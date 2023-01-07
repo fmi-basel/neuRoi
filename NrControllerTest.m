@@ -44,12 +44,12 @@ classdef NrControllerTest < matlab.unittest.TestCase
             % Convert template mask to RoiArray
             roiDir = myexp.getDefaultDir('roi');
             roiFile = fullfile(roiDir, iopath.modifyFileName(rawFileList{1}, '', '_RoiArray', 'mat'));
-            roiArray = roiFunc.RoiArray('maskImg', templateMask);
+            roiArr = roiFunc.RoiArray('maskImg', templateMask);
             roiDir = myexp.getDefaultDir('roi');
             if ~exist(roiDir, 'dir')
                 mkdir(roiDir)
             end
-            save(roiFile, 'roiArray')
+            save(roiFile, 'roiArr')
 
             myexp.processRawData();
 
@@ -90,19 +90,42 @@ classdef NrControllerTest < matlab.unittest.TestCase
             src = struct('String', 'transf1');
             mycon.BUnwarpJTransformationName_Callback(src);
             
-            button.Tag = 'Norm_CLAHE_radiobutton';
-            evnt.NewValue = button;
+            % button.Tag = 'Norm_CLAHE_radiobutton';
+            % evnt.NewValue = button;
             % TODO also test hist eq
-            mycon.BUnwarpJNormTypeGroup_Callback(1, evnt)
-            mycon.BUnwarpJCalculateButton_Callback();
+            % mycon.BUnwarpJNormTypeGroup_Callback(1, evnt)
+            % mycon.BUnwarpJCalculateButton_Callback();
             
-            myexp.applyBunwarpj();
+            % myexp.applyBunwarpj();
+            myexp.calculatedTransformationsList = {'transf1'};
+            myexp.calculatedTransformationsIdx = 1;
+            
             myexp.BUnwarpJCalculated = true;
             mycon.BUnwarpJInspectTrialsButton_Callback();
             
             stackCtrl = mycon.stackCtrl;
             stackCtrl.view.setTrialNumberSlider(2);
             stackCtrl.TrialNumberSlider_Callback();
+            
+            
+            % Add two ROIs
+            import java.awt.Robot;
+            import java.awt.event.*;
+            mouse = Robot;
+            roi1p = [556, 1537];
+            pause(0.1);
+            stackCtrl.addRoiByDrawing([73, 25; 84, 25; 84, 36; 73, 36]);
+            stackCtrl.addRoiByDrawing([93, 85; 104, 85; 104, 96; 93, 96]);
+            % Add the two ROIs in the stack
+            mouse.mouseMove(roi1p(1)+187, roi1p(2)-8);
+            mouse.keyPress(KeyEvent.VK_CONTROL);
+            mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
+            pause(0.1);
+            mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
+            pause(0.1);
+            mouse.keyRelease(KeyEvent.VK_CONTROL);
+            stackCtrl.model.roiGroupName = 'default';
+            stackCtrl.addRoisInStack();
         end
 
         % TODO test for multiplane data

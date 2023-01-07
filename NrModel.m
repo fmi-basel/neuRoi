@@ -579,9 +579,9 @@ classdef NrModel < handle
                     trialOption.zrange = [planeNum,inf];
                 end
                 [~,filePrefix] = batch.calcAnatomyFromFile(self.rawDataDir, ...
-                                                       rawFileList,...
-                                                       outSubDir, ...
-                                                       trialOption);
+                                                           rawFileList,...
+                                                           outSubDir, ...
+                                                           trialOption);
             elseif strcmp(param.inFileType,'binned')
                 binDir = self.binConfig.outDir;
                 if self.expInfo.nPlane > 1
@@ -1183,7 +1183,7 @@ classdef NrModel < handle
             foo = load(roiFile);
             templateRoiArr = foo.roiArr;
             
-            roiArrStack = Bunwarpj.transformRoiArrStack(templateRoiArr, transformStack, offsetYxList);
+            roiArrStack = Bunwarpj.transformRoiArrStack(templateRoiArr, transformStack, -offsetYxList);
             save(fullfile(bunwarpjDir,"roiArrStack.mat"),"roiArrStack");
         end
                 

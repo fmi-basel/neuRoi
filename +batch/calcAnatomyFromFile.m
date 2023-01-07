@@ -31,7 +31,7 @@ for k=1:nFile
     disp(sprintf('Loading %dth file:',k))
     disp(filePath)
     trialOptionCell = helper.structToNameValPair(trialOption);
-    trial = TrialModel('filePath', filePath, trialOptionCell{:});
+    trial = trialMvc.TrialModel('filePath', filePath, trialOptionCell{:});
     map = trial.calculateAndAddNewMap('anatomy');
     if k == 1
         mapSize = size(map.data);
@@ -43,5 +43,8 @@ for k=1:nFile
         outFilePath = fullfile(outDir,outFileName);
         movieFunc.saveTiff(movieFunc.convertToUint(map.data),outFilePath);
     end
+end
+
+
 end
 

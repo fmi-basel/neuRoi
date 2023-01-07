@@ -180,7 +180,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             % TODO TODO carefully handle the transformation!!
             % TODO write proper test
             [rois, tags] = self.roiArr.getSelectedRoisFromGroup(self.DIFF_NAME);
-            offsetYx = self.offsetYxList{self.currentTrialIdx};
+            offsetYx = self.offsetYxList(self.currentTrialIdx, :);
             transformInv = self.transformInvStack(self.currentTrialIdx);
             
             roiArr = roiFunc.RoiArray('roiList', rois, 'imageSize', self.roiArr.imageSize);
@@ -188,7 +188,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             templateTags = templateRoiArr.getTagList();
             self.commonRoiTags = [self.commonRoiTags, templateTags];
             
-            troiArrStack = Bunwarpj.transformRoiArrStack(templateRoiArr, self.transformStack, self.offsetYxList);
+            troiArrStack = Bunwarpj.transformRoiArrStack(templateRoiArr, self.transformStack, -self.offsetYxList);
 
             % TODO handle loss of ROI after transformation
             for k = 1:self.nTrial
