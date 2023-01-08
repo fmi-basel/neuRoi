@@ -91,7 +91,7 @@ classdef BaseTrialView < handle
             roiCmapPath = fullfile(cmapDir,'roicolormap.mat');
             try
                 foo = load(roiCmapPath);
-                self.roiColorMap = foo.roiColorMapUnif;
+                self.roiColorMap = foo.roicolormap;
             catch ME
                 self.roiColorMap = 'lines';
             end
