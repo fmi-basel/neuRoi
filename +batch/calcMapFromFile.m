@@ -20,7 +20,7 @@ for k=1:nFile
     disp(sprintf('Loading %dth file:',k))
     disp(filePath)
     trialOptionCell = helper.structToNameValPair(pr.trialOption);
-    trial = TrialModel(filePath,trialOptionCell{:});
+    trial = trialMvc.TrialModel('filePath', filePath,trialOptionCell{:});
         
     if ~isempty(pr.mapOption)
         mapOption = pr.mapOption;
@@ -56,3 +56,6 @@ end
 mapMeta = pr;
 metaFilePath = fullfile(pr.outDir,'mapMeta.json');
 helper.saveStructAsJson(mapMeta,metaFilePath);
+
+end
+

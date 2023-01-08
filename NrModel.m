@@ -756,37 +756,18 @@ classdef NrModel < handle
                 error('inFileType should be either raw or binned!')
             end
             
-            % odorList = self.expInfo.odorList;
-            % % TODO accept user provided fileOdorList
-            % if ~isempty(odorList)
-            %     trialTable = batch.getTrialTable(inFileList, ...
-            %                                      odorList);
-            % else
-            %     trialTable = table(inFileList');
-            % end
-            
-            % if strcmpi(pr.sortBy,'odor')
-            %     trialTable = sortrows(trialTable,'Odor');
-            % end
-            
-            % if ~isempty(pr.odorDelayList)
-            %     trialTable = batch.getWindowDelayTable(trialTable, ...
-            %                          odorList,pr.odorDelayList);
-            %     delayList =  trialTable.Delay;
-            % else
-            %     delayList = [];
-            % end
-                
-            % if nargout == 2
-            %     varargout{1} = trialTable;
-            % end
-
             delayList = [];
             if pr.saveMap
-                outDir = myexp.getDefaultDir('response_map');
+                if strcmp(mapType, 'response')
+                    outDir = self.getDefaultDir('response_map');
+                elseif strcmp(mapType, 'responseMax')
+                    outDir = self.getDefaultDir('response_max_map');
+                end
+                
                 if ~exist(outDir,'dir')
                     mkdir(outDir)
                 end
+                
                 if multiPlane
                     outSubDir = fullfile(outDir, ...
                                 NrModel.getPlaneString(planeNum));
@@ -801,14 +782,14 @@ classdef NrModel < handle
             end
                 
             mapArray = batch.calcMapFromFile(inSubDir,...
-                                      inFileList,...
-                                      mapType,...
-                                      'mapOption',mapOption,...
-                                      'windowDelayList',...
-                                      delayList,...
-                                      'trialOption',trialOption,...
-                                      'outDir',outSubDir,...
-                                      'outFileType',pr.outFileType);
+                                             inFileList,...
+                                             mapType,...
+                                             'mapOption',mapOption,...
+                                             'windowDelayList',...
+                                             delayList,...
+                                             'trialOption',trialOption,...
+                                             'outDir',outSubDir,...
+                                             'outFileType',pr.outFileType);
         end
         
         function offsetYx = getTrialOffsetYx(self,fileIdx,planeNum)
@@ -1007,8 +988,9 @@ classdef NrModel < handle
         end
         
         function dd = getDefaultDir(self,dirName)
-            dirNameList = {'binned','anatomy','alignment',...
-                           'response_map','roi','mask',...
+            dirNameList = {'binned', 'anatomy', 'alignment',...
+                           'response_map', 'response_max_map'...
+                           'roi','mask',...
                            'motion_corr','df_rgb',...
                            'stardist_mask','trial_stack',...
                            'bunwarpj'};
@@ -1066,6 +1048,14 @@ classdef NrModel < handle
                     prefix = self.anatomyConfig.filePrefix;
                     appendix = '';
                     ext = 'tif';
+                  case 'response'
+                    prefix = 'response_';
+                    appendix = '';
+                    ext = 'mat';
+                  case 'responseMax'
+                    prefix = 'responseMax_';
+                    appendix = '';
+                    ext = 'mat';
                 end
                 fileList = iopath.modifyFileName(rawFileList, ...
                                                  prefix,appendix,ext);
@@ -1188,7 +1178,6 @@ classdef NrModel < handle
         end
                 
         function inspectStack(self)
-        % TODO make sure RoiStack is already computed
             bunwarpjDir = self.getSelectedBunwarpjDir();
             transformMeta = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
             refTrialName = transformMeta.refTrialName;
@@ -1199,17 +1188,25 @@ classdef NrModel < handle
             anatomyFileList = self.getSelectedFileList('anatomy');
             anatomyStack = batch.loadStack(anatomyDir,anatomyFileList);
             
-            % TODO precomputed response
-            %                 responseArray = self.calcResponseMapArray();
-            responseStack = anatomyStack;
+            try
+                responseDir = self.appendPlaneDir(self.getDefaultDir('response_max_map'), self.planeNum);
+                responseFileList = self.getSelectedFileList('responseMax');
+                responseStack = batch.loadStack(responseDir,responseFileList);
+            catch exception
+                responseStack = self.calcResponseMaxMapArray(true);
+            end
             
             % TODO apply CLAHE
             % for i=1:size(anatomyArray,3)
             %     anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
             % end
-            
-            foo = load(fullfile(bunwarpjDir,"roiArrStack.mat"));
-            roiArrStack = foo.roiArrStack;
+
+            try
+                foo = load(fullfile(bunwarpjDir,"roiArrStack.mat"));
+                roiArrStack = foo.roiArrStack;
+            catch exception
+                roiArrayStack = self.applyBunwarpj();
+            end
             
             transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
             transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'inverse');
@@ -1230,20 +1227,36 @@ classdef NrModel < handle
             self.stackModel.contrastForAllTrial = true;  
         end
         
-        function responseArray = calcResponseMapArray(self)
+        function responseArray = calcResponseMapArray(self, saveMap)
             fileIdx = self.selectedFileIdx;
             planeNum = self.planeNum;
             inFileType = 'raw';
             mapType = 'response';
             mapOption = self.responseOption;
-            saveMap = false;
             trialOption = self.trialOptionRaw;
             responseArray= self.calcMapBatch(inFileType,...
                                              mapType,mapOption,...
                                              'trialOption',trialOption,...
                                              'sortBy','odor',...
                                              'planeNum',planeNum,...
-                                             'fileIdx',fileIdx);
+                                             'fileIdx',fileIdx,...
+                                             'saveMap', saveMap);
+        end
+
+        function responseMaxArray = calcResponseMaxMapArray(self, saveMap)
+            fileIdx = self.selectedFileIdx;
+            planeNum = self.planeNum;
+            inFileType = 'raw';
+            mapType = 'responseMax';
+            mapOption = self.responseMaxOption;
+            trialOption = self.trialOptionRaw;
+            responseMaxArray= self.calcMapBatch(inFileType,...
+                                             mapType,mapOption,...
+                                             'trialOption',trialOption,...
+                                             'sortBy','odor',...
+                                             'planeNum',planeNum,...
+                                             'fileIdx',fileIdx,...
+                                             'saveMap', saveMap);
         end
         
         function NewParameter= CreateRawFileListInParameter(self, OldParameter, transformationName)

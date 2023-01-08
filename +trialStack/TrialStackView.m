@@ -29,7 +29,7 @@ classdef TrialStackView < baseTrial.BaseTrialView
         function listenToModel(self)
             listenToModel@baseTrial.BaseTrialView(self); %call base function
             addlistener(self.model,'currentTrialIdx','PostSet',@self.displayCurrentTrial);
-            addlistener(self.model,'mapType','PostSet',@self.displayCurrentMap);
+            addlistener(self.model,'mapType','PostSet',@(s,e) self.displayCurrentMap());
         end
         
         function assignCallbacks(self)
