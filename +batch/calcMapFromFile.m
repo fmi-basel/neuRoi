@@ -12,10 +12,10 @@ addParameter(pa,'outFileType','mat')
 parse(pa,inDir,fileNameList,mapType,varargin{:})
 pr = pa.Results;
 
-nFile = length(pr.fileNameList)
+nFile = length(pr.fileNameList);
 
 for k=1:nFile
-    fileName = pr.fileNameList{k}
+    fileName = pr.fileNameList{k};
     filePath = fullfile(pr.inDir,fileName);
     disp(sprintf('Loading %dth file:',k))
     disp(filePath)
@@ -48,7 +48,7 @@ for k=1:nFile
             movieFunc.saveTiff(movieFunc.convertToUint(map.data), ...
                                outFilePath);
         elseif strcmp(pr.outFileType,'mat')
-            save(outFilePath)
+            save(outFilePath, 'map');
         end
     end
 end

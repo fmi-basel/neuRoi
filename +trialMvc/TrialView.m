@@ -56,10 +56,6 @@ classdef TrialView < baseTrial.BaseTrialView
                @(s,e)self.controller.mapButtonSelected_Callback(s,e));
             set(self.guiHandles.mainFig,'CloseRequestFcn',...
                @(s,e)self.controller.mainFigClosed_Callback(s,e));
-            set(self.guiHandles.contrastMinSlider,'Callback',...
-               @(s,e)self.controller.contrastSlider_Callback(s,e));
-            set(self.guiHandles.contrastMaxSlider,'Callback',...
-               @(s,e)self.controller.contrastSlider_Callback(s,e));
             
             set(self.guiHandles.roiMenuEntry1,'Callback',...
                 @(~,~)self.controller.enterMoveRoiMode())
@@ -168,55 +164,6 @@ classdef TrialView < baseTrial.BaseTrialView
                 colormap(mapAxes,gray);
               otherwise
                 colormap(mapAxes,cmap);
-            end
-        end
-        
-        % Methods for changing contrast
-        function changeMapContrast(self,contrastLim)
-        % Usage: myview.changeMapContrast(contrastLim), contrastLim
-        % is a 1x2 array [cmin cmax]
-            caxis(self.guiHandles.mapAxes,contrastLim);
-        end
-        
-        function setDataLimAndContrastLim(self,dataLim,contrastLim)
-            contrastSliderArr= ...
-                self.guiHandles.contrastSliderGroup.Children;
-            for k=1:2
-                cs = contrastSliderArr(end+1-k);
-                set(cs,'Min',dataLim(1),'Max',dataLim(2),...
-                       'Value',contrastLim(k));
-            end
-        end
-
-        function dataLim = getContrastSliderDataLim(self)
-            contrastSliderArr= ...
-                self.guiHandles.contrastSliderGroup.Children;
-            dataLim(1) = contrastSliderArr(1).Min;
-            dataLim(2) = contrastSliderArr(1).Max;
-        end
-        
-        function setContrastSliderDataLim(self,dataLim)
-            contrastSliderArr= ...
-                self.guiHandles.contrastSliderGroup.Children;
-            for k=1:2
-                contrastSliderArr(end+1-k).Min = dataLim(1);
-                contrastSliderArr(end+1-k).Max = dataLim(2);
-            end
-        end
-        
-        function contrastLim = getContrastLim(self)
-            contrastSliderArr= ...
-                self.guiHandles.contrastSliderGroup.Children;
-            for k=1:2
-                contrastLim(k) = contrastSliderArr(end+1-k).Value;
-            end
-        end
-        
-        function setContrastLim(self,contrastLim)
-            contrastSliderArr= ...
-                self.guiHandles.contrastSliderGroup.Children;
-            for k=1:2
-                contrastSliderArr(end+1-k).Value = contrastLim(k);
             end
         end
         

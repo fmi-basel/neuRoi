@@ -22,7 +22,6 @@ function stack = loadStack(inDir, fileNameArray)
             stack(:,:,k) = loadFile(filePath, fileExt);
         end
     end
-
 end
 
 function data = loadFile(filePath, fileExt)

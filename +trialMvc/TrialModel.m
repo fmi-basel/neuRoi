@@ -448,7 +448,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
             self.addMap(map);
         end
         
-        function saveContrastLimToCurrentMap(self,contrastLim)
+        function saveContrastLim(self,contrastLim)
             self.mapArray{self.currentMapInd}.contrastLim = ...
                 contrastLim;
         end
