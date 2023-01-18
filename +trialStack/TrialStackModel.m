@@ -1,4 +1,9 @@
 classdef TrialStackModel < baseTrial.BaseTrialModel
+    properties (Constant)
+        DIFF_NAME = 'diff'
+    end
+
+    
     properties
         trialNameList
         trialIdxList
@@ -17,8 +22,9 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         allRoiTags
         partialDeletedTags
         roiGroupName
-
-        DIFF_NAME = 'diff'
+        
+        roiDir
+        roiFilePath
 
         doTransform
         offsetYxList
@@ -49,6 +55,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             addOptional(pa,'templateIdx', inf);
             addParameter(pa, 'doSummarizeRoiTags', true)
             addParameter(pa, 'trialIdxList', [])
+            addParameter(pa, 'roiDir', '')
             
             parse(pa,trialNameList,...
                   anatomyStack,...
@@ -103,6 +110,9 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             end
             
             self.currentTrialIdx = 1;
+            self.roiGroupName = 'default';
+            
+            self.roiDir = pr.roiDir;
         end
 
         function set.currentTrialIdx(self, trialIdx)
@@ -310,8 +320,14 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         function undoUpdateRoi()
         end
         
+        function saveRoiArrStack(self, filePath)
+            roiArrStack = self.roiArrStack;
+            save(filePath, 'roiArrStack');
+            self.roiFilePath = filePath;
+        end
     end
     
+    % Methods for initializing roiStack
     methods
         function [commonTags, allTags] = summarizeRoiTags(self, roiArrStack)
             tagListStack = arrayfun(@(x) x.getTagList(), roiArrStack,...

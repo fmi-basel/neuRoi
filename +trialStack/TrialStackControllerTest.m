@@ -126,16 +126,9 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             % undo move ROI
             % undo redraw ROI
         
-        %     stackCtrl.model.currentTrialIdx = 2;
-        %     stackCtrl.drawRoi();
-
-        %     stackCtrl.model.currentTrialIdx = 1;
-        %     stackCtrl.selectRoi();
-        %     stackCtrl.addRoisToGroup();
-        
-        %     stackCtrl.model.currentTrialIdx = 2;
-        %     % verify roi tags and roi map in view
+            % verify roi tags and roi map in view
         end
+        
     end
 
     methods

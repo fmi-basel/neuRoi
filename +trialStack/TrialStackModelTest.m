@@ -1,12 +1,18 @@
 classdef TrialStackModelTest < matlab.unittest.TestCase
     % Tests the TrialModel class
     properties
+        tmpDir
         stackModel
     end
        
     methods(TestClassSetup)
         function createData(testCase)
             stack = testUtils.createStack();
+            tmpDir = 'tmp';
+            if ~exist(tmpDir, 'dir')
+                mkdir(tmpDir)
+            end
+            
             templateIdx = 1;
             testCase.stackModel = trialStack.TrialStackModel(stack.trialNameList,...
                                                              stack.anatomyStack,...
@@ -16,6 +22,8 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
                                                              'transformStack', stack.transformStack,...
                                                              'transformInvStack', stack.transformInvStack,...
                                                              'doSummarizeRoiTags', true);
+            testCase.tmpDir = tmpDir;
+            testCase.addTeardown(@rmdir, tmpDir, 's')
         end
     end
 
@@ -83,6 +91,12 @@ classdef TrialStackModelTest < matlab.unittest.TestCase
             tags = testCase.getTags(3, 'region2');
             testCase.verifyEqual(tags, [4]);
             % updated roi 1
+        end
+        
+        function testSaveRoiArrStack(testCase)
+            filePath = fullfile(testCase.tmpDir, 'roiArrStack.mat');
+            testCase.stackModel.saveRoiArrStack(filePath);
+            testCase.verifyEqual(exist(filePath, 'file'), 2)
         end
     end
     

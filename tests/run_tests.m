@@ -8,10 +8,10 @@ addpath('..')
 disp('xxxxxx')
 disp('xxxxxx')
 disp('xxxxxx')
-% testCase = trialStack.TrialStackModelTest;
-% results = testCase.run
+testCase = trialStack.TrialStackModelTest;
+results = testCase.run
 % testCase = trialStack.TrialStackControllerTest;
 % results = testCase.run
-testCase = NrControllerTest;
-results = testCase.run
+% testCase = NrControllerTest;
+% results = testCase.run
 % close all

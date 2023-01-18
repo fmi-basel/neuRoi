@@ -57,14 +57,22 @@ classdef TrialStackController < baseTrial.BaseTrialController
             self.model.roiFileIdentifier=src.String;
         end
 
-        function SaveRoiNormal_Callback(self,src,evnt)
-            self.model.SaveRoiNormal();
-            self.view.RoiSaveStatus('Rois saved','green');
-        end
-
-        function ExportRois_Callback(self,src,evnt)
-            self.model.ExportRois();
-            self.view.RoiSaveStatus('Rois exported','green');
+        function saveRoiStack_Callback(self,src,evnt)
+        % TODO make this work
+            if self.model.roiFilePath
+                self.model.saveRoiStack(self.model.roiFilePath);
+            else
+                defFileName = 'roiArrStack.mat';
+                defFilePath = fullfile(self.model.roiDir, defFileName);
+                [fileName, fileDir] = uiputfile('*.mat', 'Save ROIs stack', defFilePath);
+                if fileName
+                    self.model.roiDir = fileDir;
+                    filePath = fullfile(fileDir, fileName);
+                    self.model.saveRoiStack(filePath);
+                end
+            end
+            % TODO indicate in GUI the non-saved status
+            % self.view.RoiSaveStatus('Rois saved','green');
         end
         
         function EditCheckbox_Callback(self,src,evnt)

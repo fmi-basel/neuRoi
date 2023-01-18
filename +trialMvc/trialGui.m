@@ -10,7 +10,7 @@ function handles = trialGui(varargin)
     end
 
     handles.mainFig = figure('Position',[600,300,750,650]);
-    deleteDefaultFigureMenu(handles.mainFig);
+    helper.deleteDefaultFigureMenu(handles.mainFig);
     
     handles.fileMenu = uimenu(handles.mainFig,'Text','File');
     handles.saveRoiMenu = uimenu(handles.fileMenu,'Text',....
@@ -103,18 +103,3 @@ function button = createMapButton(buttonGroup,ind)
                        'Position',position);
 
 end
-
-function deleteDefaultFigureMenu(fig)
-    set(0,'showhiddenhandles','on')
-    tagArray = {'figMenuHelp','figMenuWindow','figMenuDesktop','figMenuTools',...
-'figMenuInsert','figMenuView','figMenuEdit','figMenuFile'};
-    for k=1:length(tagArray)
-        tag = tagArray{k};
-        hobj = findobj(fig,'Tag',tag);
-        delete(hobj)
-    end
-    set(0,'showhiddenhandles','off')
-
-    
-end
-

@@ -823,8 +823,8 @@ classdef NrModel < handle
             end
         end
                 
-        function [timeTraceMat,roiArray] = ...
-                extractTimeTrace(self,fileIdx,roiFilePath,planeNum)
+        function [timeTraceMat,roiArray] = extractTimeTrace(self,fileIdx,...
+                                                            roiFilePath,planeNum)
             if ~exist('planeNum','var')
                 planeNum = 1;
             end
@@ -1219,7 +1219,8 @@ classdef NrModel < handle
                                                          'transformInvStack', transformInvStack,...
                                                          'offsetYxList', offsetYxList,...
                                                          'doSummarizeRoiTags', true,...
-                                                         'trialIdxList', trialIdxList);
+                                                         'trialIdxList', trialIdxList,...
+                                                         'roiDir', bunwarpjDir);
             self.stackModel.contrastForAllTrial = true;  
         end
         
