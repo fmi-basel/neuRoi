@@ -34,6 +34,8 @@ classdef TrialStackController < handle
         function keyPressCallback(self, src, evnt)
             if isempty(evnt.Modifier)
                 switch evnt.Key
+                  case 'r'
+                    self.toggleRoiVisibility();
                   case {'j','k'}
                     self.slideTrialCallback(evnt)
                   case 'q'
@@ -46,6 +48,50 @@ classdef TrialStackController < handle
                     self.enterMoveRoiMode();
                   case {'d','delete','backspace'}
                     self.deleteSelectedRoi();
+                end
+            end
+        end
+
+        function roiSelectOption_Callback(self,src,evnt)
+            oldSelection=self.view.guiHandles.roiListbox.Value;
+             if self.model.EditCheckbox
+                 if src.Value==1
+                    self.model.unselectAllRoi();
+                    self.view.redrawAllRoiPatch();
+                    self.model.selectedRoiTagArray= arrayfun(@(x) str2num(self.view.guiHandles.roiListbox.String{x}), oldSelection);
+                 else
+                
+                 end
+                 self.model.roiListboxOptionIdx=src.Value;
+                 self.view.guiHandles.roiListbox.Value=oldSelection;
+                 self.roiListbox_Callback(self.view.guiHandles.roiListbox, []);%To seect/show the selection
+             
+             else
+                 self.model.roiListboxOptionIdx=src.Value;
+             end
+        end
+
+        function roiListbox_Callback(self,src,evnt)
+            if self.model.EditCheckbox
+                 if self.model.roiListboxOptionIdx==1
+                     self.model.selectMultiRoi(arrayfun(@(x) str2num(src.String{x}), src.Value));
+                 else
+                     self.model.unselectAllRoi();
+                     selectedRois=arrayfun(@(x) str2num(self.view.guiHandles.roiListbox.String{x}), self.view.guiHandles.roiListbox.Value);
+                     self.view.redrawMultipleRoiPatch(selectedRois);
+                     self.model.selectedRoiTagArray= arrayfun(@(x) str2num(src.String{x}), src.Value);
+                    if length(selectedRois)==1
+                        disp(sprintf('ROI #%d selected',selectedRois))
+                    else
+                        disp('Multiple Rois selected')
+                    end
+                 end
+            else
+                if self.model.roiListboxOptionIdx==1
+                    %you cannot select rois while one patch option is on
+                else
+                    selectedRois=arrayfun(@(x) str2num(self.view.guiHandles.roiListbox.String{x}), self.view.guiHandles.roiListbox.Value);
+                    self.view.redrawMultipleRoiAsOnePatch(selectedRois);
                 end
             end
         end
@@ -217,6 +263,15 @@ classdef TrialStackController < handle
                 end
             end
         end
+
+        function toggleRoiVisibility(self)
+            if self.model.roiVisible
+                self.model.roiVisible = false;
+            else
+                self.model.roiVisible = true;
+            end
+            % self.model.roiVisible = ~self.model.roiVisible;
+        end
         
         function moveRoiKeyPressCallback(self,src,evnt)
             if isempty(evnt.Modifier) && strcmp(evnt.Key,'escape')
@@ -236,16 +291,33 @@ classdef TrialStackController < handle
 
         
         function EditCheckbox_Callback(self,src,evnt)
+            oldSelection=self.view.guiHandles.roiListbox.Value;
+            self.model.unselectAllRoi();
             self.model.EditCheckbox=src.Value;
             self.view.ChangePatchMode();
+            self.view.guiHandles.roiListbox.Value=oldSelection;
+            self.roiListbox_Callback(self.view.guiHandles.roiListbox, []);%To select/show the selection
+            
         end
         
         function TrialNumberSlider_Callback(self,src,evnt)
         %JE-added scrolling through trials via slider
+            oldSelection=arrayfun(@(x) str2num(self.view.guiHandles.roiListbox.String{x}), self.view.guiHandles.roiListbox.Value);
             NewTrialNumber=round(self.view.getTrialnumberSlider);
             if NewTrialNumber~=self.model.currentTrialIdx %To prevent looping with identical Idx
                 self.model.currentTrialIdx=NewTrialNumber;
             end
+            selectedRoi=[];
+            for i=1:numel(oldSelection)
+                wantedRoi= find(cellfun(@(x) str2num(x)==oldSelection(i),self.view.guiHandles.roiListbox.String));
+                if isempty(wantedRoi)
+                    disp(sprintf('ROI #%d does not exist in this trial',oldSelection(i)))
+                else
+                    selectedRoi=[selectedRoi wantedRoi];
+                end
+            end
+            self.view.guiHandles.roiListbox.Value=selectedRoi;
+            self.roiListbox_Callback(self.view.guiHandles.roiListbox, []);%To select/show the selection
         end
 
         function RoiAlphaSlider_Callback(self,src,evnt)

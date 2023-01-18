@@ -29,6 +29,11 @@ classdef TrialModel < handle
         loadMapFromFile %Mainly for SetupC mode
         loadedMapsize %needed because setupC doesn't load rawmovie when opening trial
 
+        selectedRoiGroupIdx
+        roiGroups
+
+        roiList
+        
     end
         
     properties (Access = private)
@@ -62,6 +67,9 @@ classdef TrialModel < handle
         roiSelectionCleared
         
         trialDeleted
+        
+        roiGroupChanged
+        roiGroupSelectionChangedEvent
     end
     
     methods
@@ -181,6 +189,8 @@ classdef TrialModel < handle
 
             if pr.loadMapFromFile
                 self.loadMapFromFile = pr.loadMapFromFile;
+            else
+                self.loadMapFromFile =0;
             end
             % User specified frame rate
             self.meta.frameRate = pr.frameRate;
@@ -198,7 +208,7 @@ classdef TrialModel < handle
             % Initialize map array
             self.mapArray = {};
             
-            if ~self.loadMapFromFile
+            if ~self.loadMapFromFile 
                 % Calculate anatomy map
                 self.calculateAndAddNewMap('anatomy');
             else
@@ -213,6 +223,7 @@ classdef TrialModel < handle
             mapSize = getMapSize(self);
             self.roiArray = RoiFreehand.empty();
             self.roiTagMax = 0;
+
             
         end
         
@@ -458,7 +469,7 @@ classdef TrialModel < handle
         function importMap(self,mapFilePath)
             map.type = 'import';
             [~,map.option.fileName,~] = fileparts(mapFilePath);
-            
+            local
             TifLink = Tiff(mapFilePath, 'r');
             map.data = TifLink.read();
             self.addMap(map);
@@ -736,6 +747,58 @@ classdef TrialModel < handle
         end
         
         % Methods for ROI-based processing
+        function newcolor= changeRoiGroupColor(self)
+            newcolor = uisetcolor;
+            self.roiGroups(self.selectedRoiGroupIdx).color=newcolor;
+           
+        end
+        
+
+        function addRoiGroup(self,groupName,groupColor)
+            if length(self.mapArray)>0
+                newGroup=roiFunc.RoiGroup(size(self.mapArray(1)),groupColor,groupName);
+                self.roiGroups=[self.roiGroups; newGroup];
+                self.selectedRoiGroupIdx=length( self.roiGroups);
+            else
+                newGroup=roiFunc.RoiGroup([512 512],groupColor,groupName);
+                self.roiGroups=[self.roiGroups; newGroup];
+                self.selectedRoiGroupIdx=length( self.roiGroups);
+            end
+
+            notify(self,'roiGroupChanged')
+        end
+
+        function deleteRoiGroup(self,groupIdx)
+             if groupIdx=='selection'
+                groupIdx=self.selectedRoiGroupIdx;
+             end
+             self.roiGroups(groupIdx)=[];
+             notify(self,'roiGroupChanged')
+             self.selectedRoiGroupIdx=self.selectedRoiGroupIdx-1;
+             tempGroup=self.roiGroups(self.selectedRoiGroupIdx);
+            
+            notify(self,'roiGroupSelectionChangedEvent',NrEvent.RoiGroupEvent(self.selectedRoiGroupIdx,tempGroup.groupName,tempGroup.color))
+        end
+    
+        function roiGroupSelectionChanged (self, groupIdx)
+            if groupIdx=='end'
+                groupIdx=length(self.roiGroups);
+            end
+            self.selectedRoiGroupIdx=groupIdx;
+            tempGroup=self.roiGroups(groupIdx);
+            
+            notify(self,'roiGroupSelectionChangedEvent',NrEvent.RoiGroupEvent(groupIdx,tempGroup.groupName,tempGroup.color))
+        end
+
+        function selectedRoisTags= selectRoiGroupRois(self, groupIdx)
+            selectedGroup=self.roiGroups(groupIdx);
+            selectedRois = arrayfun(@(x) strcmp( x.roiGroup,selectedGroup.groupName), self.roiArray);
+            selectedRois=self.roiArray(selectedRois);
+            selectedRoisTags=arrayfun(@(x) x.tag, selectedRois);
+            self.selectMultiRoi(selectedRoisTags);
+
+        end
+
         % TODO set roiArray to private
         function addRoi(self,varargin)
         % ADDROI add ROI to ROI array
@@ -767,8 +830,10 @@ classdef TrialModel < handle
                 roi.tag = self.roiTagMax+1;
             end
             self.roiTagMax = roi.tag;
+            roi.roiGroup=self.roiGroups(self.selectedRoiGroupIdx).groupName;
             self.roiArray(end+1) = roi;
             
+        
             notify(self,'roiAdded')
         end
         
@@ -831,6 +896,20 @@ classdef TrialModel < handle
             notify(self,'roiSelectionCleared');
         end
         
+        function selectMultiRoi(self, tagArray)
+            self.unselectAllRoi();
+            self.selectedRoiTagArray= tagArray;
+            for k=1:length(tagArray)
+                tag = tagArray(k); 
+                notify(self,'roiSelected',NrEvent.RoiEvent(tag));
+            end
+            if length(tagArray)==1
+                disp(sprintf('ROI #%d selected',tagArray))
+            else
+                disp('Multiple Rois selected')
+            end
+        end
+
         function updateRoi(self,tag,varargin)
             ind = self.findRoiByTag(tag);
             oldRoi = self.roiArray(ind);

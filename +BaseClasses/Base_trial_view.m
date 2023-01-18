@@ -67,12 +67,14 @@ classdef Base_trial_view < handle
             children = mapAxes.Children;
             delete(children);
         end
-
-        function redrawAllRoiAsOnePatch(self)
+        
+        function redrawMultipleRoiAsOnePatch(self,roiArrayToDraw)
             mapAxes = self.guiHandles.roiGroup;
             children = mapAxes.Children;
             delete(children);
             roiArray = self.model.getRoiArray();
+            selectedRois=arrayfun(@(x)logical(sum(ismember(roiArrayToDraw,x.tag))), roiArray);
+            roiArray =roiArray (selectedRois);
             parentAxes = self.guiHandles.roiGroup.Parent;
             maxlength=0;
             for i = 1:length(roiArray)
@@ -98,21 +100,69 @@ classdef Base_trial_view < handle
             set(roiPatch,'LineStyle','none');
             
             set(roiPatch,'Tag',"AllRois");
+        end
+
+        function redrawAllRoiAsOnePatch(self)
+            self.guiHandles.roiListbox.String=[];
+            mapAxes = self.guiHandles.roiGroup;
+            children = mapAxes.Children;
+            delete(children);
+            roiArray = self.model.getRoiArray();
+            parentAxes = self.guiHandles.roiGroup.Parent;
+            maxlength=0;
+            for i = 1:length(roiArray)
+                dimension=size(roiArray(i).position);
+                if dimension(1)>maxlength
+                    maxlength=dimension(1);
+                end
+            end
+            Xcoor=nan(maxlength,length(roiArray));
+            Ycoor=nan(maxlength,length(roiArray));
+            for i = 1:length(roiArray)
+                axesPos =getAxesPosition(parentAxes,roiArray(i).position);
+                Xcoor(1:length(axesPos(:,1)),i)=axesPos(:,1);
+                Ycoor(1:length(axesPos(:,2)),i)=axesPos(:,2);
+                self.guiHandles.roiListbox.String=[self.guiHandles.roiListbox.String; {num2str(roiArray(i).tag)}];
+                self.guiHandles.roiListbox.Value=length(self.guiHandles.roiListbox.String);
+            end
+            
+
+            Xcoor= fillmissing(Xcoor,'previous',1); %need to replace nan with previous values, patch should work with nan but i got some error with display so i just replace them
+            Ycoor= fillmissing(Ycoor,'previous',1);
+           
+            roiPatch = patch(Xcoor,Ycoor,'red','Parent',self.guiHandles.roiGroup);
+            set(roiPatch,'FaceAlpha',self.AlphaForRoiOnePatch);
+            set(roiPatch,'LineStyle','none');
+            
+            set(roiPatch,'Tag',"AllRois");
 
             %roiPatch.UIContextMenu = self.guiHandles.roiMenu;
         end
 
+        function redrawMultipleRoiPatch(self, roiArrayToDraw)
+            self.deleteAllRoiPatch();
+            roiArray = self.model.getRoiArray();
+            roisToDraw=arrayfun(@(x)logical(sum(ismember(roiArrayToDraw,x.tag))), roiArray);
+            roisToDraw=roiArray(roisToDraw);
+            arrayfun(@(x) self.addRoiPatch(x,0),roisToDraw);
+        end
+
          function redrawAllRoiPatch(self)
+            self.guiHandles.roiListbox.String=[];
             self.deleteAllRoiPatch();
             roiArray = self.model.getRoiArray();
             arrayfun(@(x) self.addRoiPatch(x),roiArray);
         end
 
-         function addRoiPatch(self,roi)
+         function addRoiPatch(self,roi,addToList)
             roiPatch = roi.createRoiPatch(self.guiHandles.roiGroup, ...
                                           self.DEFAULT_PATCH_COLOR);
             % Add context menu for right click
             roiPatch.UIContextMenu = self.guiHandles.roiMenu;
+            if ~exist("addToList","var") || addToList==1
+                self.guiHandles.roiListbox.String=[self.guiHandles.roiListbox.String; {num2str(roi.tag)}];
+                self.guiHandles.roiListbox.Value=length(self.guiHandles.roiListbox.String);
+            end
          end
           function displayRoiTag(self,roiPatch)
             ptTag = get(roiPatch,'Tag');
