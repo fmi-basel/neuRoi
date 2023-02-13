@@ -81,17 +81,17 @@ classdef NrModel < handle
     methods
         function self = NrModel(varargin)
             pa = inputParser;
-            addParameter(pa,'rawDataDir','',@ischar);
+            addParameter(pa,'rawDataDir','',@helper.isText);
             addParameter(pa,'rawFileList','',@iscell);
-            addParameter(pa,'resultDir','',@ischar);
-            addParameter(pa,'precalculatedMapDir','',@ischar);    
+            addParameter(pa,'resultDir','',@helper.isText);
+            addParameter(pa,'precalculatedMapDir','',@helper.isText);    
             defaultExpInfo.frameRate = 1;
             defaultExpInfo.nPlane = 1;
             defaultExpInfo.mapSize = [512, 512];
             addParameter(pa,'expInfo',defaultExpInfo,@isstruct);
-            % addParameter(pa,'alignFilePath','',@ischar)
-            addParameter(pa,'roiDir','',@ischar);
-            addParameter(pa,'loadFileType','raw',@ischar);
+            % addParameter(pa,'alignFilePath','',@helper.isText)
+            addParameter(pa,'roiDir','',@helper.isText);
+            addParameter(pa,'loadFileType','raw',@helper.isText);
             defaultTrialOptionRaw = struct('process',true,...
                                 'noSignalWindow',[1 12], ...
                                 'intensityOffset',-30);
@@ -231,7 +231,8 @@ classdef NrModel < handle
             addParameter(pa,'subtractScan',false);
             addParameter(pa,'noSignalWindow',1);
             addParameter(pa,'mcWithinTrial',false);
-            addParameter(pa,'mcBetweenTrial',true);
+            addParameter(pa,'computeAnatomy',true);
+            addParameter(pa,'mcBetweenTrial',false);
             addParameter(pa,'mcBTTemplateIdx',1);
             addParameter(pa,'binning',false);
             addParameter(pa,'binDir','');
@@ -262,9 +263,9 @@ classdef NrModel < handle
                     self.binMovieBatch(binParam,pr.binDir,planeNum);
                 end
             end
-            
-            % Motion correction between trials
-            if pr.mcBetweenTrial
+
+            % Compute and save anatomy images
+            if pr.computeAnatomy || pr.mcBetweenTrial
                 if pr.binning
                     anatomyParam.inFileType = 'binned';
                     anatomyParam.trialOption = [];
@@ -276,7 +277,10 @@ classdef NrModel < handle
                 for planeNum=1:self.expInfo.nPlane
                     self.calcAnatomyBatch(anatomyParam,planeNum);
                 end
-
+            end
+            
+            % Motion correction between trials
+            if pr.mcBetweenTrial
                 templateRawName = self.rawFileList{pr.mcBTTemplateIdx};
                 for planeNum=1:self.expInfo.nPlane
                     self.alignTrialBatch(templateRawName,...
@@ -661,7 +665,7 @@ classdef NrModel < handle
         function alignTrialBatch(self,templateRawName,varargin)
             pa = inputParser;
             addParameter(pa,'planeNum',1,@isnumeric);
-            addParameter(pa,'fileIdx','all',@(x) ischar(x)|ismatrix(x));
+            addParameter(pa,'fileIdx','all',@(x) helper.isText(x)|ismatrix(x));
             addParameter(pa,'alignOption',{},@iscell);
             parse(pa,varargin{:})
             pr = pa.Results;
@@ -677,7 +681,7 @@ classdef NrModel < handle
                                            anatomyPrefix,'','tif');
             
 
-            if ischar(pr.fileIdx)
+            if helper.isText(pr.fileIdx)
                 rawFileList = self.rawFileList;
             else
                 rawFileList = self.rawFileList(pr.fileIdx);
@@ -757,10 +761,10 @@ classdef NrModel < handle
             pa = inputParser;
             addParameter(pa,'trialOption',[]);
             addParameter(pa,'planeNum',1,@isnumeric);
-            addParameter(pa,'sortBy','none',@ischar);
+            addParameter(pa,'sortBy','none',@helper.isText);
             addParameter(pa,'odorDelayList',[],@ismatrix);
             addParameter(pa,'saveMap',false);
-            addParameter(pa,'outFileType','mat',@ischar);
+            addParameter(pa,'outFileType','mat',@helper.isText);
             addParameter(pa,'fileIdx',0,@ismatrix);
             parse(pa,varargin{:})
             pr = pa.Results;

@@ -75,7 +75,7 @@ classdef TrialModel < handle
     methods
         function self = TrialModel(varargin)
             pa = inputParser;
-            addParameter(pa,'filePath','', @ischar);
+            addParameter(pa,'filePath','', @helper.isText);
             addParameter(pa,'mockMovie',struct([]), @isstruct);
             addParameter(pa,'zrange',[1 inf], @ismatrix);
             addParameter(pa,'nFramePerStep',1)
@@ -163,15 +163,15 @@ classdef TrialModel < handle
                     end
                 end
                 
-                if pr.roiDir
+                if ~isempty(pr.roiDir)
                     self.roiDir = pr.roiDir;
                 end
             
-                if pr.jroiDir
+                if ~isempty(pr.jroiDir)
                     self.jroiDir = pr.jroiDir;
                 end
                 
-                if pr.maskDir
+                if ~isempty(pr.maskDir)
                     self.maskDir = pr.maskDir;
                 end
               
