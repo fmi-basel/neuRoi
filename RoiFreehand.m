@@ -6,6 +6,7 @@ classdef RoiFreehand
         posErr
         type
         AlphaValue =0.5
+        roiGroup
     end
     
     methods
@@ -33,6 +34,7 @@ classdef RoiFreehand
             end
             self.position = position;
             self.AlphaValue=0.5;
+            self.roiGroup="Default";
         end
         
         function mask = createMask(self,imageSize)

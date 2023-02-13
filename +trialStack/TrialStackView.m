@@ -44,17 +44,19 @@ classdef TrialStackView < BaseClasses.Base_trial_view
         
         function listenToModel(self)
             listenToModel@BaseClasses.Base_trial_view(self); %call base function
+%             addlistener(self.model,'selectedRoiTagArray','PostSet',...
+%                         @self.updateRoiPatchSelection);
             addlistener(self.model,'currentTrialIdx','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'mapType','PostSet',@self.selectAndDisplayMap);
             addlistener(self.model,'loadNewRois',@(~,~)self.redrawAllRoiPatch());
             addlistener(self.model,'roiUpdated',...
                         @self.updateRoiPatchPosition);
-            addlistener(self.model,'roiSelected',...
-                        @self.updateTimeTraceDisplay);
-            addlistener(self.model,'roiUnSelected',...
-                        @self.updateTimeTraceDisplay);
-            addlistener(self.model,'roiSelectionCleared',...
-                        @self.updateTimeTraceDisplay);
+%             addlistener(self.model,'roiSelected',...
+%                         @self.updateTimeTraceDisplay);
+%             addlistener(self.model,'roiUnSelected',...
+%                         @self.updateTimeTraceDisplay);
+%             addlistener(self.model,'roiSelectionCleared',...
+%                         @self.updateTimeTraceDisplay);
             addlistener(self.model,'NewRoiFileIdentifier',...
                         @self.UpdateRoiFileIdentifier);
             
@@ -84,10 +86,15 @@ classdef TrialStackView < BaseClasses.Base_trial_view
                               @(s,e)self.controller.ExportRois_Callback(s,e));
             set(self.guiHandles.RoiFileIdentifierEdit,'Callback',...
                               @(s,e)self.controller.RoiFileIdentifierEdit_Callback(s,e));
+            set(self.guiHandles.roiListbox,'Callback',...
+                              @(s,e)self.controller.roiListbox_Callback(s,e));
+             set(self.guiHandles.roiSelectOption,'Callback',...
+                              @(s,e)self.controller.roiSelectOption_Callback(s,e));
 
+            
         end
 
-        function UpdateRoiFileIdentifier(self,src,evnt)
+              function UpdateRoiFileIdentifier(self,src,evnt)
             set(self.guiHandles.RoiFileIdentifierEdit,'String',self.model.roiFileIdentifier);
         end
 
@@ -176,9 +183,18 @@ classdef TrialStackView < BaseClasses.Base_trial_view
             if self.model.EditCheckbox
                 self.model.SaveRoiArrayInRoiArrays();
                 self.model.unselectAllRoi();
-                self.redrawAllRoiPatch();
+                selectedRois=arrayfun(@(x) str2num(self.guiHandles.roiListbox.String{x}), self.guiHandles.roiListbox.Value);
+                if self.model.roiListboxOptionIdx==1
+                    self.redrawAllRoiPatch();
+                    self.model.selectMultiRoi(selectedRois);
+                else
+                    self.redrawMultipleRoiPatch(selectedRois);
+                end
             else
-                self.redrawAllRoiAsOnePatch();
+                if self.model.roiListboxOptionIdx==1
+                    self.redrawAllRoiAsOnePatch();
+                else
+                end
             end
 %             self.previousTrialIdx=self.model.currentTrialIdx;
         end
