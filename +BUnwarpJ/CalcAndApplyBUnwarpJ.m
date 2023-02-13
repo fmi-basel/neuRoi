@@ -70,8 +70,8 @@ if ~exist('BUnwarpJParameters','var')
     transformationGridStart =0;
     transformationGridEnd =2;
 else
-    transformationGridStart = BUnwarpJParameters.transformationGridStart;
-    transformationGridEnd = BUnwarpJParameters.transformationGridEnd;
+    transformationGridStart = BUnwarpJParameters.TransformationGridStart;
+    transformationGridEnd = BUnwarpJParameters.TransformationGridEnd;
 end
 
 %%Change this according to your imagej
@@ -281,7 +281,7 @@ end
 if OutputFreehandROI
     for k=1:size(transformedMasks, 1)
         [filepath,name,ext] = fileparts(trialImages(k));
-        roiArray = convertMaskToRoiArray(mask)
+        roiArray = roiFunc.convertMaskToRoiArray(squeeze(transformedMasks(k, :, :)));
         roiArrayList(k).roi=roiArray;
         roiArrayList(k).trial=name;
     end

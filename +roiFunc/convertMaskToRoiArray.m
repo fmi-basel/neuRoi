@@ -1,9 +1,9 @@
 function roiArray = convertMaskToRoiArray(mask)
     roiArray = RoiFreehand.empty();
     for j=1:max(max(mask))
-        [col,row]=find(mask==j); %not needed anymore
+        [col,row]=find(mask==j);
         if ~isempty(row)
-            poly = roiFunc.mask2polyNew(OutputMask==j);
+            poly = roiFunc.mask2polyNew(mask==j);
             if length(poly) > 1
                 % TODO If the mask corresponds multiple polygon,
                 % for simplicity,

@@ -405,8 +405,7 @@ classdef TrialController < handle
             if self.model.roiFilePath
                 self.model.saveRoiArray(self.model.roiFilePath);
             else
-                defFileName = [self.model.fileBaseName ...
-                               '_RoiArray.mat'];
+                defFileName = strcat(self.model.fileBaseName, '_RoiArray.mat');
                 defFilePath = fullfile(self.model.roiDir,defFileName);
                 [fileName,fileDir] = uiputfile('*.mat','Save ROIs',defFilePath);
                 if fileName

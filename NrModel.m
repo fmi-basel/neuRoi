@@ -1155,6 +1155,7 @@ classdef NrModel < handle
                 %add Trasnformationname to list;sve calculated rois to load
                 %them later; clear variables
                 if isempty(self.CalculatedTransformationsList)
+                    self.CalculatedTransformationsList = {};
                     self.CalculatedTransformationsIdx=1;
                 end
                 self.CalculatedTransformationsList(length(self.CalculatedTransformationsList)+1)={TransformName};
