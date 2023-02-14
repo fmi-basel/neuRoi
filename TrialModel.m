@@ -1010,27 +1010,7 @@ classdef TrialModel < handle
                 error(['Image size of mask does not match the map size ' ...
                        '(pixel size in x and y)!'])
             end
-            tagArray = unique(maskImg);
-            roiArray = RoiFreehand.empty();
-            for k=1:length(tagArray)
-                tag = tagArray(k);
-                if tag ~= 0
-                    mask = maskImg == tag;
-                    poly = roiFunc.mask2poly(mask);
-                    if length(poly) > 1
-                        % TODO If the mask corresponds multiple polygon,
-                        % for simplicity,
-                        % take the largest polygon
-                        warning(sprintf('ROI %d has multiple components, only taking the largest one.',tag))
-                        pidx = find([poly.Length] == max([poly.Length]));
-                        poly = poly(pidx);
-                    end
-                    position = [poly.X',poly.Y'];
-                    roi = RoiFreehand(position);
-                    roi.tag = double(tag);
-                    roiArray(end+1) = roi;
-                end
-            end
+            roiArray = roiFunc.convertMaskToRoiArray(maskImg);
             self.insertRoiArray(roiArray,'replace')
         end
         
