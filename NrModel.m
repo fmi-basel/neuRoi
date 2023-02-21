@@ -1149,7 +1149,7 @@ classdef NrModel < handle
                                               self.planeNum);
         end
         
-        function roiArrayStack = applyBunwarpj(self)
+        function roiArrStack = applyBunwarpj(self)
             bunwarpjDir = self.getSelectedBunwarpjDir();
             transformMeta = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
             refTrialName = transformMeta.refTrialName;
@@ -1203,7 +1203,7 @@ classdef NrModel < handle
                 foo = load(fullfile(bunwarpjDir,"roiArrStack.mat"));
                 roiArrStack = foo.roiArrStack;
             catch exception
-                roiArrayStack = self.applyBunwarpj();
+                roiArrStack = self.applyBunwarpj();
             end
             
             transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
