@@ -1,8 +1,7 @@
 classdef TrialView < baseTrial.BaseTrialView
     methods
         function self = TrialView(mymodel,mycontroller)
-            self.model = mymodel;
-            self.controller = mycontroller;
+            self = self@baseTrial.BaseTrialView(mymodel, mycontroller);
             
             self.mapSize = self.model.getMapSize();
             self.guiHandles = trialMvc.trialGui(self.mapSize);
