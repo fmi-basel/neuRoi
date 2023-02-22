@@ -29,8 +29,9 @@ classdef TrialModel < handle
         loadMapFromFile %Mainly for SetupC mode
         loadedMapsize %needed because setupC doesn't load rawmovie when opening trial
 
-        selectedRoiGroupIdx
-        roiGroups
+         %Comment out JE 22.02.2023: get the roigroup out
+%         selectedRoiGroupIdx
+%         roiGroups
 
         roiList
         
@@ -68,8 +69,9 @@ classdef TrialModel < handle
         
         trialDeleted
         
-        roiGroupChanged
-        roiGroupSelectionChangedEvent
+         %Comment out JE 22.02.2023: get the roigroup out
+%         roiGroupChanged
+%         roiGroupSelectionChangedEvent
     end
     
     methods
@@ -748,57 +750,58 @@ classdef TrialModel < handle
         end
         
         % Methods for ROI-based processing
-        function newcolor= changeRoiGroupColor(self)
-            newcolor = uisetcolor;
-            self.roiGroups(self.selectedRoiGroupIdx).color=newcolor;
-           
-        end
-        
+         %Comment out JE 22.02.2023: get the roigroup out
+%         function newcolor= changeRoiGroupColor(self)
+%             newcolor = uisetcolor;
+%             self.roiGroups(self.selectedRoiGroupIdx).color=newcolor;
+%            
+%         end
+%         
+% 
+%         function addRoiGroup(self,groupName,groupColor)
+%             if length(self.mapArray)>0
+%                 newGroup=roiFunc.RoiGroup(size(self.mapArray(1)),groupColor,groupName);
+%                 self.roiGroups=[self.roiGroups; newGroup];
+%                 self.selectedRoiGroupIdx=length( self.roiGroups);
+%             else
+%                 newGroup=roiFunc.RoiGroup([512 512],groupColor,groupName);
+%                 self.roiGroups=[self.roiGroups; newGroup];
+%                 self.selectedRoiGroupIdx=length( self.roiGroups);
+%             end
+% 
+%             notify(self,'roiGroupChanged')
+%         end
+% 
+%         function deleteRoiGroup(self,groupIdx)
+%              if groupIdx=='selection'
+%                 groupIdx=self.selectedRoiGroupIdx;
+%              end
+%              self.roiGroups(groupIdx)=[];
+%              notify(self,'roiGroupChanged')
+%              self.selectedRoiGroupIdx=self.selectedRoiGroupIdx-1;
+%              tempGroup=self.roiGroups(self.selectedRoiGroupIdx);
+%             
+%             notify(self,'roiGroupSelectionChangedEvent',NrEvent.RoiGroupEvent(self.selectedRoiGroupIdx,tempGroup.groupName,tempGroup.color))
+%         end
+%     
+%         function roiGroupSelectionChanged (self, groupIdx)
+%             if groupIdx=='end'
+%                 groupIdx=length(self.roiGroups);
+%             end
+%             self.selectedRoiGroupIdx=groupIdx;
+%             tempGroup=self.roiGroups(groupIdx);
+%             
+%             notify(self,'roiGroupSelectionChangedEvent',NrEvent.RoiGroupEvent(groupIdx,tempGroup.groupName,tempGroup.color))
+%         end
 
-        function addRoiGroup(self,groupName,groupColor)
-            if length(self.mapArray)>0
-                newGroup=roiFunc.RoiGroup(size(self.mapArray(1)),groupColor,groupName);
-                self.roiGroups=[self.roiGroups; newGroup];
-                self.selectedRoiGroupIdx=length( self.roiGroups);
-            else
-                newGroup=roiFunc.RoiGroup([512 512],groupColor,groupName);
-                self.roiGroups=[self.roiGroups; newGroup];
-                self.selectedRoiGroupIdx=length( self.roiGroups);
-            end
-
-            notify(self,'roiGroupChanged')
-        end
-
-        function deleteRoiGroup(self,groupIdx)
-             if groupIdx=='selection'
-                groupIdx=self.selectedRoiGroupIdx;
-             end
-             self.roiGroups(groupIdx)=[];
-             notify(self,'roiGroupChanged')
-             self.selectedRoiGroupIdx=self.selectedRoiGroupIdx-1;
-             tempGroup=self.roiGroups(self.selectedRoiGroupIdx);
-            
-            notify(self,'roiGroupSelectionChangedEvent',NrEvent.RoiGroupEvent(self.selectedRoiGroupIdx,tempGroup.groupName,tempGroup.color))
-        end
-    
-        function roiGroupSelectionChanged (self, groupIdx)
-            if groupIdx=='end'
-                groupIdx=length(self.roiGroups);
-            end
-            self.selectedRoiGroupIdx=groupIdx;
-            tempGroup=self.roiGroups(groupIdx);
-            
-            notify(self,'roiGroupSelectionChangedEvent',NrEvent.RoiGroupEvent(groupIdx,tempGroup.groupName,tempGroup.color))
-        end
-
-        function selectedRoisTags= selectRoiGroupRois(self, groupIdx)
-            selectedGroup=self.roiGroups(groupIdx);
-            selectedRois = arrayfun(@(x) strcmp( x.roiGroup,selectedGroup.groupName), self.roiArray);
-            selectedRois=self.roiArray(selectedRois);
-            selectedRoisTags=arrayfun(@(x) x.tag, selectedRois);
-            self.selectMultiRoi(selectedRoisTags);
-
-        end
+%         function selectedRoisTags= selectRoiGroupRois(self, groupIdx)
+%             selectedGroup=self.roiGroups(groupIdx);
+%             selectedRois = arrayfun(@(x) strcmp( x.roiGroup,selectedGroup.groupName), self.roiArray);
+%             selectedRois=self.roiArray(selectedRois);
+%             selectedRoisTags=arrayfun(@(x) x.tag, selectedRois);
+%             self.selectMultiRoi(selectedRoisTags);
+% 
+%         end
 
         % TODO set roiArray to private
         function addRoi(self,varargin)
@@ -831,7 +834,8 @@ classdef TrialModel < handle
                 roi.tag = self.roiTagMax+1;
             end
             self.roiTagMax = roi.tag;
-            roi.roiGroup=self.roiGroups(self.selectedRoiGroupIdx).groupName;
+             %Comment out JE 22.02.2023: get the roigroup out
+%             roi.roiGroup=self.roiGroups(self.selectedRoiGroupIdx).groupName;
             self.roiArray(end+1) = roi;
             
         

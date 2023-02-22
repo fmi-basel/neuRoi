@@ -52,10 +52,10 @@ classdef TrialView < handle
             
             helper.imgzoompan(self.guiHandles.mapAxes,...
                    'ButtonDownFcn',@(s,e)self.controller.selectRoi_Callback(s,e),'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
-            
-            self.model.addRoiGroup('Default','red');
-            self.model.addRoiGroup('test','blue');
-            self.model.addRoiGroup('test2','green');
+            %Comment out JE 22.02.2023: get the roigroup out
+%             self.model.addRoiGroup('Default','red');
+%             self.model.addRoiGroup('test','blue');
+%             self.model.addRoiGroup('test2','green');
         end
         
         function listenToModel(self)
@@ -86,10 +86,11 @@ classdef TrialView < handle
                         @self.updateTimeTraceDisplay);
             addlistener(self.model,'roiSelectionCleared',...
                         @self.updateTimeTraceDisplay);
-            addlistener(self.model,'roiGroupChanged',...
-                        @self.roiGroupChanged);
-            addlistener(self.model,'roiGroupSelectionChangedEvent',...
-                        @self.roiGroupSelectionChanged);
+            %Comment out JE 22.02.2023: get the roigroup out
+%             addlistener(self.model,'roiGroupChanged',...
+%                         @self.roiGroupChanged);
+%             addlistener(self.model,'roiGroupSelectionChangedEvent',...
+%                         @self.roiGroupSelectionChanged);
 
         end
         
@@ -134,29 +135,30 @@ classdef TrialView < handle
             set(self.guiHandles.syncTraceCheckbox,'Callback',...
             @(s,e)self.controller.syncTrace_Callback(s,e));
     
-            set(self.guiHandles.multiTrialButton,'Callback',...
-            @(s,e)self.controller.multiTrialButton_Callback(s,e));
+%             set(self.guiHandles.multiTrialButton,'Callback',...
+%             @(s,e)self.controller.multiTrialButton_Callback(s,e));
             
             set(self.guiHandles.TrialNumberSlider,'Callback',...
             @(s,e)self.controller.TrialNumberSlider_Callback(s,e));
-
-            set(self.guiHandles.roiGroupColorButton,'Callback',...
-            @(s,e)self.controller.roiGroupColorButton_Callback(s,e));
-
-            set(self.guiHandles.roiGroupAddButton,'Callback',...
-            @(s,e)self.controller.roiGroupAddButton_Callback(s,e));
-
-            set(self.guiHandles.roiGroupDeleteButton,'Callback',...
-            @(s,e)self.controller.roiGroupDeleteButton_Callback(s,e));
-
-            set(self.guiHandles.roiGroupListbox,'Callback',...
-            @(s,e)self.controller.roiGroupListbox_Callback(s,e));
+            
+            %Comment out JE 22.02.2023: get the roigroup out...
+%             set(self.guiHandles.roiGroupColorButton,'Callback',...
+%             @(s,e)self.controller.roiGroupColorButton_Callback(s,e));
+% 
+%             set(self.guiHandles.roiGroupAddButton,'Callback',...
+%             @(s,e)self.controller.roiGroupAddButton_Callback(s,e));
+% 
+%             set(self.guiHandles.roiGroupDeleteButton,'Callback',...
+%             @(s,e)self.controller.roiGroupDeleteButton_Callback(s,e));
+% 
+%             set(self.guiHandles.roiGroupListbox,'Callback',...
+%             @(s,e)self.controller.roiGroupListbox_Callback(s,e));
 
             set(self.guiHandles.roiListbox,'Callback',...
             @(s,e)self.controller.roiListbox_Callback(s,e));
 
-            set(self.guiHandles.roiListboxSelectionGroup,'Callback',...
-            @(s,e)self.controller.roiListboxSelectionGroup_Callback(s,e));
+%             set(self.guiHandles.roiListboxSelectionGroup,'Callback',...
+%             @(s,e)self.controller.roiListboxSelectionGroup_Callback(s,e));
 
         end
         
@@ -164,24 +166,25 @@ classdef TrialView < handle
             self.guiHandles.roiListbox.Value=selectedRoisTags;
         end
 
-        function roiGroupChanged(self,src,evnt)
-            roiGroupNameList= arrayfun(@(x) x.groupName, self.model.roiGroups, 'UniformOutput', false);
-            self.guiHandles.roiGroupListbox.String=roiGroupNameList;
-            self.guiHandles.roiListboxSelectionGroup.String=roiGroupNameList;
-        end
-
-        function roiGroupSelectionChanged(self,src,evnt)
-            self.guiHandles.roiGroupListbox.Value=evnt.groupIdx;%is this needed?
-            self.changeRoiGroupColorButton(evnt.color);
-        end
-        
-        function changeRoiGroupColorButton(self, newcolor)
-            self.guiHandles.roiGroupColorButton.BackgroundColor=newcolor;
-            if length(self.guiHandles.roiListbox.String)>0
-                self.controller.redrawSelectedRoiGroup();
-            else
-            end
-        end
+        %Comment out JE 22.02.2023: get the roigroup out...
+%         function roiGroupChanged(self,src,evnt)
+%             roiGroupNameList= arrayfun(@(x) x.groupName, self.model.roiGroups, 'UniformOutput', false);
+%             self.guiHandles.roiGroupListbox.String=roiGroupNameList;
+%             self.guiHandles.roiListboxSelectionGroup.String=roiGroupNameList;
+%         end
+% 
+%         function roiGroupSelectionChanged(self,src,evnt)
+%             self.guiHandles.roiGroupListbox.Value=evnt.groupIdx;%is this needed?
+%             self.changeRoiGroupColorButton(evnt.color);
+%         end
+%         
+%         function changeRoiGroupColorButton(self, newcolor)
+%             self.guiHandles.roiGroupColorButton.BackgroundColor=newcolor;
+%             if length(self.guiHandles.roiListbox.String)>0
+%                 self.controller.redrawSelectedRoiGroup();
+%             else
+%             end
+%         end
         
         function displayTitle(self)
             set(self.guiHandles.mainFig,'Name', ...
@@ -356,19 +359,22 @@ classdef TrialView < handle
             for roi =multipleRoiArray
                 roiPatch = self.findRoiPatchByTag(roi.tag);
                 delete(roiPatch);
-                idx=find(ismember(self.guiHandles.roiGroupListbox.String,roi.roiGroup));
-                roiPatch = roi.createRoiPatch(self.guiHandles.roiGroup, ...
-                                            self.model.roiGroups(idx).color);
+                %Comment out JE 22.02.2023: get the roigroup out
+%                 idx=find(ismember(self.guiHandles.roiGroupListbox.String,roi.roiGroup));
+%                 roiPatch = roi.createRoiPatch(self.guiHandles.roiGroup, ...
+%                                             self.model.roiGroups(idx).color);
+                roiPatch = roi.createRoiPatch(self.guiHandles.roiGroup, self.DEFAULT_PATCH_COLOR);
                 % Add context menu for right click
                 roiPatch.UIContextMenu = self.guiHandles.roiMenu;
             end
         end
         
         function addRoiPatch(self,roi)
-            idx=find(ismember(self.guiHandles.roiGroupListbox.String,roi.roiGroup));
+             %Comment out JE 22.02.2023: get the roigroup out...
+%             idx=find(ismember(self.guiHandles.roiGroupListbox.String,roi.roiGroup));
             roiPatch = roi.createRoiPatch(self.guiHandles.roiGroup, ...
-                                            self.model.roiGroups(idx).color);
-                                          %self.DEFAULT_PATCH_COLOR);
+                                          self.DEFAULT_PATCH_COLOR);
+                                            %self.model.roiGroups(idx).color);
             % Add context menu for right click
             roiPatch.UIContextMenu = self.guiHandles.roiMenu;
             %Add roi to the listbox
