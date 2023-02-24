@@ -1,9 +1,11 @@
 function imagejPaths = getImagejPaths()
-    imagejDir = '/home/hubo/Software/Fiji.app/';
-    imagejPaths = {};
-    imagejPaths{end+1} = fullfile(imagejDir, 'plugins', 'bUnwarpJ_-2.6.13.jar');
-    imagejPaths{end+1} = fullfile(imagejDir, 'jars', 'ij-1.53q.jar');
-    imagejPaths{end+1} = fullfile(imagejDir, 'plugins', 'mpicbg_-1.4.1.jar');
-    imagejPaths{end+1} = fullfile(imagejDir, 'jars', 'mpicbg-1.4.1.jar');
+    currPath = mfilename('fullpath');
+    [currDir, ~, ~] = fileparts(currPath);
+    neuRoiDir = fullfile(currDir, '..');
+
+    ini = helper.IniConfig();
+    ini.ReadFile(fullfile(neuRoiDir, 'config.ini'));
+
+    imagejPaths = ini.GetValues('[bunwarpj]');
 end
 

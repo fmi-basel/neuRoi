@@ -1180,9 +1180,15 @@ classdef NrModel < handle
                     NameOK=true;
                     return
                 else
-                    msgbox("Transformationname already exist. Please enter a valid name","modal");
-                    NameOK= false;
-                return
+                    answer = questdlg("Transformationname already exist. Do you want to overwrite?",...
+                                      "neuRoi bunwarpj",...
+                                      "Yes", "Cancel", "Cancel");
+                    if strcmp(answer, "Yes")
+                        NameOK = true;
+                    else
+                        NameOK= false;
+                        return
+                    end
                 end
             end
         end

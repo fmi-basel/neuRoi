@@ -6,3 +6,5 @@ moveit2.m
 /demos/scratch.m
 # Matlab autosave files
 *.asv
+# User configuration file
+config.ini
