@@ -330,6 +330,44 @@ classdef TrialStackView < BaseClasses.Base_trial_view
                 contrastSliderArr(end+1-k).Value = contrastLim(k);
             end
         end
+        function zoomFcn(self,scrollChange)
+                opt.Magnify = 1.1;
+                opt.XMagnify = 1.0;
+                opt.YMagnify = 1.0;
+                imgWidth = self.mapSize(2);
+                imgHeight = self.mapSize(1);
+    
+                if ((self.zoom.scrollCount - scrollChange) <= ...
+                    self.zoom.maxZoomScrollCount)
+    
+                    axish = gca;
+                    % calculate the new XLim and YLim
+                    cpaxes = mean(axish.CurrentPoint);
+                    newXLim = (axish.XLim - cpaxes(1)) * (opt.Magnify * opt.XMagnify)^scrollChange + cpaxes(1);
+                    newYLim = (axish.YLim - cpaxes(2)) * (opt.Magnify * opt.YMagnify)^scrollChange + cpaxes(2);
+    
+                    newXLim = floor(newXLim);
+                    newYLim = floor(newYLim);
+                    % Check for image border location
+                    if (newXLim(1) >= 0 && newXLim(2) <= imgWidth && newYLim(1) >= 0 && newYLim(2) <= imgHeight)
+                        axish.XLim = newXLim;
+                        axish.YLim = newYLim;
+                        self.zoom.scrollCount = self.zoom.scrollCount - scrollChange;
+                    else
+                        axish.XLim = self.zoom.origXLim;
+                        axish.YLim = self.zoom.origYLim;
+                        self.zoom.scrollCount = 0;
+                    end
+                end
+            end
+        
+            function zoomReset(self)
+                axish = gca;
+                axish.XLim = self.zoom.origXLim;
+                axish.YLim = self.zoom.origYLim;
+                self.zoom.scrollCount = 0;
+            end
+
     end
     
 end

@@ -48,6 +48,19 @@ classdef TrialStackController < handle
                     self.enterMoveRoiMode();
                   case {'d','delete','backspace'}
                     self.deleteSelectedRoi();
+                  case {'equal','2'}
+                    self.view.zoomFcn(-1);
+                  case {'hyphen','1'}
+                    self.view.zoomFcn(1);
+                end
+             elseif strcmp(evnt.Modifier,'control')
+                switch evnt.Key
+                  case 'a'
+                    self.selectAllRoi_Callback();
+                  % case 'q'
+                  %   self.loadRoiArray();
+                  case '1'
+                    self.view.zoomReset();
                 end
             end
         end
@@ -181,6 +194,10 @@ classdef TrialStackController < handle
                     self.model.selectRoi(roiTag);
                 end
             end
+        end
+
+        function selectAllRoi_Callback(self,src,evnt)
+            self.model.selectAllRoi();
         end
 
         function enterMoveRoiMode(self)
