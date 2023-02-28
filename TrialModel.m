@@ -213,7 +213,8 @@ classdef TrialModel < handle
             
             if ~self.loadMapFromFile 
                 % Calculate anatomy map
-                self.calculateAndAddNewMap('anatomy');
+                option.UseCLAHE=true;
+                self.calculateAndAddNewMap('anatomy',option);
             else
                 
             end
@@ -626,10 +627,22 @@ classdef TrialModel < handle
                 defaultNFrameLimit = [1 size(self.rawMovie,3)];
                 nFrameLimit = defaultNFrameLimit;
                 sigma = 0;
+                UseCLAHE=false;
             elseif nargin == 2
                 mopt = varargin{1};
-                nFrameLimit = mopt.nFrameLimit;
-                sigma = mopt.sigma;
+                if isfield(mopt,"nFrameLimit")
+                    nFrameLimit = mopt.nFrameLimit;
+                    sigma = mopt.sigma;
+                else
+                    defaultNFrameLimit = [1 size(self.rawMovie,3)];
+                    nFrameLimit = defaultNFrameLimit;
+                    sigma = 0;
+                end
+                if isfield(mopt,"UseCLAHE")
+                    UseCLAHE=mopt.UseCLAHE; 
+                else
+                    UseCLAHE=false;
+                end
             else
                 error('Wrong usage!')
                 help TrialModel.calcAnatomy
@@ -652,6 +665,12 @@ classdef TrialModel < handle
                 mapOption.sigma = sigma;
             end
             mapOption.nFrameLimit = nFrameLimit;
+            
+            if UseCLAHE
+                maxValue=max(mapData,[],"all");
+                mapData=adapthisteq(mapData/maxValue);
+            end
+
         end
         
         function vecFrame = convertFromSecToFrame(self,vecSec)
