@@ -32,6 +32,7 @@ classdef NrController < handle
                 model.trialArray = TrialModel.empty;
                 self.model = model;
                 self.view.model = self.model;
+                self.model.LoadCalculatedTransformation();
                 self.view.refreshView();
             else
                 error('Invalid experiment file!')
@@ -160,6 +161,9 @@ classdef NrController < handle
         function addMapButton_Callback(self,src,evnt)
             mapType = self.getMapTypeFromButton(src, ...
                                                 'addMapButton');
+%             if mapType=="SetupCAnatomy"
+%                 mapType="anatomy"
+%             end 
             self.model.addMapCurrTrial(mapType)
         end
         
@@ -230,6 +234,18 @@ classdef NrController < handle
             planeNum = self.model.planeNum;
             trial = self.model.loadTrialFromList(fileIdx,fileType,planeNum);
             self.openTrialContrl(trial);
+%             if self.model.setupMode== 1
+%                 trial = self.model.loadTrialFromList(fileIdx,fileType,planeNum);
+%                 self.openTrialContrl(trial);
+%             elseif self.model.setupMode== 3
+%                 if self.model.loadMapFromFile
+%                     trial=  self.model.loadTrialFromList(fileIdx,fileType,planeNum);
+%                 else
+%                     %need to be checked!!
+%                     trial = self.model.loadTrialFromList(fileIdx,fileType,planeNum);
+%                 end
+%                 self.openTrialContrl(trial);
+%             end
         end
         
         function openAdditionalTrial(self,filePath,varargin)
@@ -244,17 +260,29 @@ classdef NrController < handle
             self.trialContrlArray(end+1) = trialContrl;
             trialContrl.raiseView();
             
-            mapsAfterLoading = self.model.mapsAfterLoading;
-            if length(mapsAfterLoading)
-                for k = 1:length(mapsAfterLoading)
-                    mapType = mapsAfterLoading{k};
-                    self.model.addMapCurrTrial(mapType);
+            if isempty(self.model.loadMapFromFile) || ~self.model.loadMapFromFile %ignores mapsAfterLoading if true
+                mapsAfterLoading = self.model.mapsAfterLoading;
+                if length(mapsAfterLoading)
+                    for k = 1:length(mapsAfterLoading)
+                        mapType = mapsAfterLoading{k};
+                        self.model.addMapCurrTrial(mapType);
+                    end
                 end
-            end
-            
-            if self.model.loadTemplateRoi
-                roiFilePath = self.model.roiTemplateFilePath;
-                trial.loadRoiArray(roiFilePath,'replace')
+                
+                if self.model.loadTemplateRoi
+                    roiFilePath = self.model.roiTemplateFilePath;
+                    trial.loadRoiArray(roiFilePath,'replace')
+                end
+            else
+                %TempMapFolder = fullfile(self.model.precalculatedMapDir,trial.name);
+                %TempMapFolder = 'C:/Data/eckhjan/test/SetupC/TestExperiment/SetupC/1';
+                TempMapFolder = fullfile(self.model.resultDir,'SetupC',self.model.getPlaneString(self.model.planeNum),trial.name);
+                if exist("TempMapFolder")==7
+                    error(strcat("Precalculated Map Folder",string(TempMapFolder)," doesn't exist"));
+                else
+                    self.model.LoadMapsFromFileCurrTrial(TempMapFolder);
+                    trialContrl.view.SetupParaAfterMapsLoaded(trialContrl.model.loadedMapsize);
+                end
             end
         end
         
@@ -280,6 +308,112 @@ classdef NrController < handle
                 delete(self.view)
             end
         end
+
+        % Callbacks for SetupC parameters
+
+        function rmaxSlidingWindowSetupCText_Callback(self,src,evnt)
+            rmaxSlidingWindowStr = src.String;
+            rmaxSlidingWindow = str2num(rmaxSlidingWindowStr);
+            self.model.SetupCMaxResponseOption.slidingWindowSize= rmaxSlidingWindow;
+        
+        end
+
+        function SetupCPercentileText_Callback(self,src,evnt)
+            SetupCPercentileStr = src.String;
+            SetupCPercentile = str2num(SetupCPercentileStr);
+            self.model.SetupCResponseOption.lowerPercentile= SetupCPercentile;
+            self.model.SetupCMaxResponseOption.lowerPercentile= SetupCPercentile;
+        end
+
+       function SetupCSkippingText_Callback(self,src,evnt)
+        SkippingStr = src.String;
+        Skipping = str2num(SkippingStr);
+        self.model.SetupCResponseOption.skipping= Skipping;
+        self.model.SetupCCorrOption.skipping= Skipping;
+        self.model.SetupCMaxResponseOption.skipping= Skipping;
+        self.model.SetupCAnatomyOption.skipping= Skipping;
+       end
+
+        function SetupCoffsetText_Callback(self,src,evnt)
+        offsetStr = src.String;
+        offset = str2num(offsetStr);
+        self.model.SetupCAnatomyOption.offset= offset;
+        self.model.SetupCResponseOption.offset= offset;
+        self.model.SetupCMaxResponseOption.offset= offset;
+        end
+
+        function SetupCExtractTracesDfoverfButton_Callback(self,src,evnt)
+            self.model.SetupCExtractTracesDfoverf();
+        
+        end
+
+        % Callbacks for BUnwaprJ
+        function BUnwarpJReferencetrial_Callback(self,src,evnt)
+            self.model.ReferenceTrialIdx=src.Value;
+        end
+
+        function BUnwarpJCalculateButton_Callback(self,src,evnt)
+            self.model.CalculateBUnwarpJ();
+            self.view.refreshView();
+        end
+
+        function BUnwarpJPara_Callback(self,src,evnt)
+            TempParameter=thirdPartyTools.structdlg.StructDlg(self.model.BUnwarpJParameter,'BUnwarpJ parameter');
+            self.model.BUnwarpJParameter=TempParameter;
+        end
+
+        function BUnwarpJCLAHEPara_Callback(self,src,evnt)
+            TempParameter=thirdPartyTools.structdlg.StructDlg(self.model.CLAHEParameter,'CLAHE parameter');
+            self.model.CLAHEParameter=TempParameter;
+        end
+
+        function BUnwarpJUseSIFT_Callback(self,src,evnt)
+            self.model.UseSFITForBUnwarpJ= src.Value;
+        end
+
+        function BUnwarpJSIFTPara_Callback(self,src,evnt)
+            TempParameter=thirdPartyTools.structdlg.StructDlg(self.model.SIFTParameter,'SIFT parameter');
+            self.model.SIFTParameter=TempParameter;
+        end
+        %obsolete since CKAHE added
+%         function BUnwarpJUseHistNorm_Callback(self,src,evnt) 
+%             self.model.UseHistEqualForBUnwarpJ= src.Value;
+%         end
+
+        function BUnwarpJInspectTrialsButton_Callback(self,src,evnt)
+            self.model.InspectBUnwarpJ();
+        end
+
+        function BUnwarpJTransformationName_Callback(self,src,evnt)
+            self.model.TransformationName=src.String;
+        end
+        
+        function BUnwarpJCalculatedTransformations_Callback(self,src,evnt)
+            self.model.CalculatedTransformationsIdx=src.Value;
+            self.model.UpdateTransformationTooltipValue();
+            self.view.updateTransformationTooltip();
+        end
+        
+        function BUnwarpJNormTypeGroup_Callback(self,src,evnt)
+            button = evnt.NewValue;
+            tag = button.Tag;
+            if strcmp(tag,'Norm_HistoEqu_radiobutton')
+                self.model.UseHistEqualForBUnwarpJ = 1;
+                self.model.UseCLAHEForBUnwarpJ = 0;
+            elseif strcmp(tag,'Norm_CLAHE_radiobutton')
+                self.model.UseHistEqualForBUnwarpJ = 0;
+                self.model.UseCLAHEForBUnwarpJ = 1;     
+            else
+                self.model.UseHistEqualForBUnwarpJ = 0;
+                self.model.UseCLAHEForBUnwarpJ = 0;
+            end
+        end
+
+        function RoiIdentfierText_Callback(self,src,evnt)
+            self.model.roiFileIdentifier=src.String;
+        end
+        
+
     end
     
     methods (Static)

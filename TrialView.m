@@ -52,6 +52,10 @@ classdef TrialView < handle
             
             helper.imgzoompan(self.guiHandles.mapAxes,...
                    'ButtonDownFcn',@(s,e)self.controller.selectRoi_Callback(s,e),'ImgHeight',self.mapSize(1),'ImgWidth',self.mapSize(2));
+            %Comment out JE 22.02.2023: get the roigroup out
+%             self.model.addRoiGroup('Default','red');
+%             self.model.addRoiGroup('test','blue');
+%             self.model.addRoiGroup('test2','green');
         end
         
         function listenToModel(self)
@@ -82,6 +86,12 @@ classdef TrialView < handle
                         @self.updateTimeTraceDisplay);
             addlistener(self.model,'roiSelectionCleared',...
                         @self.updateTimeTraceDisplay);
+            %Comment out JE 22.02.2023: get the roigroup out
+%             addlistener(self.model,'roiGroupChanged',...
+%                         @self.roiGroupChanged);
+%             addlistener(self.model,'roiGroupSelectionChangedEvent',...
+%                         @self.roiGroupSelectionChanged);
+
         end
         
         function assignCallbacks(self)
@@ -94,8 +104,8 @@ classdef TrialView < handle
             set(self.guiHandles.contrastMaxSlider,'Callback',...
                @(s,e)self.controller.contrastSlider_Callback(s,e));
             
-            % set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
-            %     @(s,e)self.controller.selectRoi_Callback(s,e));
+%             set(self.guiHandles.mainFig,'WindowButtonDownFcn',...
+%                 @(s,e)self.controller.selectRoi_Callback(s,e));
 
             set(self.guiHandles.roiMenuEntry1,'Callback',...
                 @(~,~)self.controller.enterMoveRoiMode())
@@ -114,6 +124,8 @@ classdef TrialView < handle
 
             set(self.guiHandles.importMapMenu,'Callback',...
                 @(~,~)self.controller.importMapCallback());
+            set(self.guiHandles.removeOverlapRoiMenu,'Callback',...
+                @(~,~)self.controller.removeOverlapRoiMenuCallback());
 
             set(self.guiHandles.traceFig,'WindowKeyPressFcn',...
                 @(s,e)self.controller.keyPressCallback(s,e));
@@ -122,7 +134,57 @@ classdef TrialView < handle
             
             set(self.guiHandles.syncTraceCheckbox,'Callback',...
             @(s,e)self.controller.syncTrace_Callback(s,e));
+    
+%             set(self.guiHandles.multiTrialButton,'Callback',...
+%             @(s,e)self.controller.multiTrialButton_Callback(s,e));
+            
+            set(self.guiHandles.TrialNumberSlider,'Callback',...
+            @(s,e)self.controller.TrialNumberSlider_Callback(s,e));
+            
+            %Comment out JE 22.02.2023: get the roigroup out...
+%             set(self.guiHandles.roiGroupColorButton,'Callback',...
+%             @(s,e)self.controller.roiGroupColorButton_Callback(s,e));
+% 
+%             set(self.guiHandles.roiGroupAddButton,'Callback',...
+%             @(s,e)self.controller.roiGroupAddButton_Callback(s,e));
+% 
+%             set(self.guiHandles.roiGroupDeleteButton,'Callback',...
+%             @(s,e)self.controller.roiGroupDeleteButton_Callback(s,e));
+% 
+%             set(self.guiHandles.roiGroupListbox,'Callback',...
+%             @(s,e)self.controller.roiGroupListbox_Callback(s,e));
+
+            set(self.guiHandles.roiListbox,'Callback',...
+            @(s,e)self.controller.roiListbox_Callback(s,e));
+
+%             set(self.guiHandles.roiListboxSelectionGroup,'Callback',...
+%             @(s,e)self.controller.roiListboxSelectionGroup_Callback(s,e));
+
         end
+        
+         function selectRoisInRoiList(self, selectedRoisTags)
+            self.guiHandles.roiListbox.Value=selectedRoisTags;
+        end
+
+        %Comment out JE 22.02.2023: get the roigroup out...
+%         function roiGroupChanged(self,src,evnt)
+%             roiGroupNameList= arrayfun(@(x) x.groupName, self.model.roiGroups, 'UniformOutput', false);
+%             self.guiHandles.roiGroupListbox.String=roiGroupNameList;
+%             self.guiHandles.roiListboxSelectionGroup.String=roiGroupNameList;
+%         end
+% 
+%         function roiGroupSelectionChanged(self,src,evnt)
+%             self.guiHandles.roiGroupListbox.Value=evnt.groupIdx;%is this needed?
+%             self.changeRoiGroupColorButton(evnt.color);
+%         end
+%         
+%         function changeRoiGroupColorButton(self, newcolor)
+%             self.guiHandles.roiGroupColorButton.BackgroundColor=newcolor;
+%             if length(self.guiHandles.roiListbox.String)>0
+%                 self.controller.redrawSelectedRoiGroup();
+%             else
+%             end
+%         end
         
         function displayTitle(self)
             set(self.guiHandles.mainFig,'Name', ...
@@ -137,6 +199,17 @@ classdef TrialView < handle
             meta = self.model.meta;
             metaStr = TrialView.convertOptionToString(meta);
             set(self.guiHandles.metaText,'String',metaStr);
+        end
+
+        %Mehtod for setup parameters when loading maps from file
+        function SetupParaAfterMapsLoaded(self, NewMapsize)
+            self.mapSize = NewMapsize;
+            self.guiHandles.mapAxes.YLim=[0 NewMapsize(1)];
+            self.guiHandles.mapAxes.XLim=[0 NewMapsize(2)];
+            self.zoom.origXLim = self.guiHandles.mapAxes.XLim;
+            self.zoom.origYLim = self.guiHandles.mapAxes.YLim;
+            self.zoom.maxZoomScrollCount = 30;
+            self.zoom.scrollCount = 0;
         end
         
         % Methods for displaying maps
@@ -177,9 +250,12 @@ classdef TrialView < handle
             
         function displayCurrentMap(self)
             map = self.model.getCurrentMap();
+            %needed in case current map is empty
+            if ~isempty(map)
             self.showMapOption(map);
             self.plotMap(map);
             self.controller.updateContrastForCurrentMap();
+            end
         end
         
         function showMapOption(self,map)
@@ -194,6 +270,14 @@ classdef TrialView < handle
             cmap = self.mapColorMap;
             switch map.type
               case 'anatomy'
+                if false
+                    tempimage=(map.data-min(min(map.data)))/(max(max(map.data))-min(min(map.data)));
+                    tempimage=adapthisteq(tempimage,'NumTiles',[16 16]);
+                    tempimage=ind2rgb(uint8(tempimage*255),gray(256));
+                    set(mapImage,'CData',tempimage);
+                else
+                    
+                end
                 colormap(mapAxes,gray);
               case 'response'
                 colormap(mapAxes,cmap);
@@ -204,7 +288,8 @@ classdef TrialView < handle
               case 'import'
                 colormap(mapAxes,gray);
               otherwise
-                colormap(mapAxes,'default');
+                %colormap(mapAxes,'default');
+                colormap(mapAxes,cmap);
             end
         end
         
@@ -264,16 +349,37 @@ classdef TrialView < handle
         end
         
         function redrawAllRoiPatch(self)
+            self.guiHandles.roiListbox.String=[];
             self.deleteAllRoiPatch();
             roiArray = self.model.getRoiArray();
             arrayfun(@(x) self.addRoiPatch(x),roiArray);
         end
+
+        function redrawMultipleRoiPatch(self,multipleRoiArray)
+            for roi =multipleRoiArray
+                roiPatch = self.findRoiPatchByTag(roi.tag);
+                delete(roiPatch);
+                %Comment out JE 22.02.2023: get the roigroup out
+%                 idx=find(ismember(self.guiHandles.roiGroupListbox.String,roi.roiGroup));
+%                 roiPatch = roi.createRoiPatch(self.guiHandles.roiGroup, ...
+%                                             self.model.roiGroups(idx).color);
+                roiPatch = roi.createRoiPatch(self.guiHandles.roiGroup, self.DEFAULT_PATCH_COLOR);
+                % Add context menu for right click
+                roiPatch.UIContextMenu = self.guiHandles.roiMenu;
+            end
+        end
         
         function addRoiPatch(self,roi)
+             %Comment out JE 22.02.2023: get the roigroup out...
+%             idx=find(ismember(self.guiHandles.roiGroupListbox.String,roi.roiGroup));
             roiPatch = roi.createRoiPatch(self.guiHandles.roiGroup, ...
                                           self.DEFAULT_PATCH_COLOR);
+                                            %self.model.roiGroups(idx).color);
             % Add context menu for right click
             roiPatch.UIContextMenu = self.guiHandles.roiMenu;
+            %Add roi to the listbox
+            self.guiHandles.roiListbox.String=[self.guiHandles.roiListbox.String; {num2str(roi.tag)}];
+            self.guiHandles.roiListbox.Value=length(self.guiHandles.roiListbox.String);
         end
         
         
@@ -372,6 +478,8 @@ classdef TrialView < handle
             for k=1:length(tagArray)
                 roiPatch = self.findRoiPatchByTag(tagArray(k))'
                 delete(roiPatch);
+                ind=find(self.guiHandles.roiListbox.String==num2str(tagArray(k)));
+                self.guiHandles.roiListbox.String(ind)=[];
             end
         end
         

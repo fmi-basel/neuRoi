@@ -12,6 +12,7 @@ Download the source code. Then add the directory of the source code to MATLAB pa
 Required MATLAB packages:
 * DSP System Toolbox
 * Image Processing Toolbox
+* Curve Fitting Toolbox
 
 ## Documentation & Wiki
 

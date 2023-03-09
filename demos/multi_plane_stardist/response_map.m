@@ -12,7 +12,6 @@ expFilePath = sprintf(['/home/hubo/Projects/Ca_imaging/results/%s/' ...
                     'experiment_%s.mat'],expSubDir,expName);
 foo = load(expFilePath);
 myexp = foo.self;
-% myexp.expInfo.odorList =  {'phe','trp','arg','tca','gca','tdca','acsf','spont'};
 disp(myexp.expInfo)
 %% Get trial table
 myexp.arrangeTrialTable()

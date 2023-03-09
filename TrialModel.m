@@ -24,6 +24,17 @@ classdef TrialModel < handle
         
         jroiDir
         maskDir
+
+        setupMode %1=SetupA; 3=SetupC/VR
+        loadMapFromFile %Mainly for SetupC mode
+        loadedMapsize %needed because setupC doesn't load rawmovie when opening trial
+
+         %Comment out JE 22.02.2023: get the roigroup out
+%         selectedRoiGroupIdx
+%         roiGroups
+
+        roiList
+        
     end
         
     properties (Access = private)
@@ -57,12 +68,17 @@ classdef TrialModel < handle
         roiSelectionCleared
         
         trialDeleted
+        
+         %Comment out JE 22.02.2023: get the roigroup out
+%         roiGroupChanged
+%         roiGroupSelectionChangedEvent
     end
     
     methods
-        function self = TrialModel(filePath,varargin)
+        function self = TrialModel(varargin)
             pa = inputParser;
-            addRequired(pa,'filePath',@ischar);
+            addParameter(pa,'filePath','', @helper.isText);
+            addParameter(pa,'mockMovie',struct([]), @isstruct);
             addParameter(pa,'zrange',[1 inf], @ismatrix);
             addParameter(pa,'nFramePerStep',1)
             addParameter(pa,'process',false);
@@ -78,8 +94,11 @@ classdef TrialModel < handle
             addParameter(pa,'jroiDir',pwd());
             addParameter(pa,'maskDir',pwd());
             addParameter(pa,'syncTimeTrace',false);
+            addParameter(pa,'setupMode',1);
+            addParameter(pa,'loadMapFromFile',false);
+            addParameter(pa,'loadedMapsize',false);
             
-            parse(pa,filePath,varargin{:})
+            parse(pa,varargin{:})
             pr = pa.Results;
             
             self.filePath = pr.filePath;
@@ -94,62 +113,88 @@ classdef TrialModel < handle
                                            'motionCorrDir',pr.motionCorrDir,...
                                            'nFramePerStep',pr.mcNFramePerStep);
             
-            if ~exist(self.filePath,'file')
-                error(sprintf('The movie file %s does not exist!',self.filePath))
-                % [~,self.fileBaseName,~] = fileparts(filePath);
-                % self.name = self.fileBaseName;
-                % self.meta = struct('width',12,...
-                %                    'height',10,...
-                %                    'totalNFrame',5);
-                % self.rawMovie = rand(self.meta.height,...
-                %                      self.meta.width,...
-                %                      self.meta.totalNFrame);
-            else
-                [~,self.fileBaseName,~] = fileparts(self.filePath);
-                self.name = ...
-                    TrialModel.getDefaultTrialName(self.fileBaseName,pr.zrange,pr.nFramePerStep);
-                
-                % Read data from file
-                self.meta = movieFunc.readMeta(self.filePath);
-                self.loadMovie(self.filePath,self.loadMovieOption);
-                
-                if self.preprocessOption.process
-                    disp('Processing image: no signal window:')
-                    disp(self.preprocessOption.noSignalWindow)
-                    self.preprocessMovie(self.preprocessOption.noSignalWindow);
+            if isempty(self.filePath)
+                if ~isempty(pr.mockMovie)
+                    self.name = pr.mockMovie.name;
+                    self.meta = pr.mockMovie.meta;
+                    self.rawMovie = pr.mockMovie.rawMovie;
+                else
+                    error('Please provide a valid mock movie.')
                 end
-                
-                if self.motionCorrOption.motionCorr
-                    offsetYxFileName = sprintf('%s_%s.mat','mcOffsetYx',self.fileBaseName);
-                    self.motionCorrOption.offsetYxFile = ...
-                        fullfile(self.motionCorrOption.motionCorrDir,offsetYxFileName);
-                    try
-                        foo = load(self.motionCorrOption.offsetYxFile);
-                    catch ME
-                        disp(['Error occurred when loading motion ' ...
-                              'correction offset.'])
-                        rethrow(ME)
+            else
+                if ~exist(self.filePath,'file')
+                    msg = sprintf('The movie file %s does not exist!',self.filePath)
+                    error(msg)
+                end
+                [~,self.fileBaseName,fileExtension] = fileparts(self.filePath);
+               
+                %Check if file is Tiff(SetupA) or .mat(SetupC)
+                if fileExtension==".tif"
+                    self.name = ...
+                    TrialModel.getDefaultTrialName(self.fileBaseName,pr.zrange,pr.nFramePerStep);
+                    % Read data from file
+                    self.meta = movieFunc.readMeta(self.filePath);
+                    self.loadMovie(self.filePath,self.loadMovieOption);
+                    
+                    if self.preprocessOption.process
+                        disp('Processing image: no signal window:')
+                        disp(self.preprocessOption.noSignalWindow)
+                        self.preprocessMovie(self.preprocessOption.noSignalWindow);
                     end
                     
-                    self.motionCorrOption.offsetYx = foo.offsetYx;
-                    self.correctMotionYx(self.motionCorrOption.offsetYx,...
-                                         self.motionCorrOption.nFramePerStep);
+                    if self.motionCorrOption.motionCorr
+                        offsetYxFileName = sprintf('%s_%s.mat','mcOffsetYx',self.fileBaseName);
+                        self.motionCorrOption.offsetYxFile = ...
+                            fullfile(self.motionCorrOption.motionCorrDir,offsetYxFileName);
+                        try
+                            foo = load(self.motionCorrOption.offsetYxFile);
+                        catch ME
+                            disp(['Error occurred when loading motion ' ...
+                                  'correction offset.'])
+                            rethrow(ME)
+                        end
+                        
+                        self.motionCorrOption.offsetYx = foo.offsetYx;
+                        self.correctMotionYx(self.motionCorrOption.offsetYx,...
+                                             self.motionCorrOption.nFramePerStep);
+                    end
+                elseif fileExtension==".mat"
+                     self.name =self.fileBaseName;
+                    if pr.loadMapFromFile
+                    else
+                    end
                 end
                 
-                if pr.roiDir
+                if ~isempty(pr.roiDir)
                     self.roiDir = pr.roiDir;
                 end
             
-                if pr.jroiDir
+                if ~isempty(pr.jroiDir)
                     self.jroiDir = pr.jroiDir;
                 end
                 
-                if pr.maskDir
+                if ~isempty(pr.maskDir)
                     self.maskDir = pr.maskDir;
                 end
+              
 
             end
-            
+
+            if pr.loadedMapsize
+                self.loadedMapsize=pr.loadedMapsize;
+            else
+                self.loadedMapsize=[0 0];
+            end
+
+            if pr.setupMode
+                self.setupMode = pr.setupMode;
+            end
+
+            if pr.loadMapFromFile
+                self.loadMapFromFile = pr.loadMapFromFile;
+            else
+                self.loadMapFromFile =0;
+            end
             % User specified frame rate
             self.meta.frameRate = pr.frameRate;
             
@@ -165,21 +210,105 @@ classdef TrialModel < handle
             
             % Initialize map array
             self.mapArray = {};
-
-            % Calculate anatomy map
-            self.calculateAndAddNewMap('anatomy');
+            
+            if ~self.loadMapFromFile 
+                % Calculate anatomy map
+                option.UseCLAHE=true;
+                self.calculateAndAddNewMap('anatomy',option);
+            else
+                
+            end
 
             % Whether to syncronize time trace while selecting ROIs
             self.syncTimeTrace = pr.syncTimeTrace;
             
             % Initialize ROI array
             self.roiVisible = true;
-            mapSize = getMapSize(self);
+            mapSize = self.getMapSize();
             self.roiArray = RoiFreehand.empty();
             self.roiTagMax = 0;
+
             
         end
         
+        function removeRoiOverlap(self)
+            RoiMask=self.CreateMaskFromRoiArrayNoOverlap();
+            NewRoiArray=self.CreateRoiArrayFromMask(RoiMask);
+            self.roiArray=NewRoiArray;
+            tagArray = self.getAllRoiTag();
+            self.roiTagMax = max(tagArray);
+            notify(self,'roiArrayReplaced');
+        end
+
+        function NewRoiArray=CreateRoiArrayFromMask(self,OutputMask)
+
+            NewRoiArray = RoiFreehand.empty();
+            for j=1:max(max(OutputMask))
+                [col,row]=find(OutputMask==j); %not needed anymore
+                if ~isempty(row)
+                    %from TrialModel
+%                      poly = roiFunc.mask2poly(OutputMask==j);
+                     mask=OutputMask==j;
+                     BW3 = imresize(mask,3,'nearest');
+                     B3 = bwboundaries(BW3);
+                     B3 = B3{1};
+                
+                     poly.X = ((B3(:,2) + 1)/3)';
+                     poly.Y = ((B3(:,1) + 1)/3)';
+                
+                     poly.Length=length(poly.X);
+                     poly.Fill=1;
+
+                     if length(poly) > 1
+                         % TODO If the mask corresponds multiple polygon,
+                         % for simplicity,
+                         % take the largest polygon
+                         warning(sprintf('ROI %d has multiple components, only taking the largest one.',j))
+                         pidx = find([poly.Length] == max([poly.Length]));
+                         poly = poly(pidx);
+                     end
+                     xposition=poly.X;
+                     yposition=poly.Y;
+                     position = [xposition',yposition'];
+                     newroi = RoiFreehand(position);
+    
+                     %newroi = RoiFreehand([row,col]); old and wrong- need
+                     %contour of roi, not all pixel values
+                     newroi.tag = j;
+                     NewRoiArray(end+1) = newroi;
+                     %TransformedMasks(i,j+1)=newroi;
+                else
+    %                  tempString=strcat("lost roi detected: roi number: " ,int2str(j)," in trial: ", int2str(i));
+    %                  disp(tempString);
+                end
+            end
+
+        end
+
+        function RoiMap=CreateMaskFromRoiArrayNoOverlap(self)
+            
+            width =self.loadedMapsize(1);
+            height=self.loadedMapsize(2);
+
+            nRoi= length(self.roiArray);
+
+            RoiMap = zeros( width,height, 'uint16');
+        
+            for i=1:nRoi
+                newroi=self.roiArray(i);
+                binaryImage =double(newroi.tag)* newroi.createMask([ width,height]);
+                RoiMap= RoiMap+ uint16(binaryImage);
+                RoiMap((RoiMap>newroi.tag))=0;
+            end
+        end
+
+        function loadMatAsRawMovie(self,filePath)
+            %Specific for SetupC data: Raw file is a .mat file containing
+            %a variable called stack 
+            TempData= load(filePath);
+            self.rawMovie=TempData.stack;
+        end
+
         function loadMovie(self,filePath,loadMovieOption)
             if self.loadMovieOption.zrange(2) == inf
                 self.loadMovieOption.zrange(2) = self.meta.totalNFrame;
@@ -231,7 +360,11 @@ classdef TrialModel < handle
         end
 
         function mapSize = getMapSize(self)
-            mapSize = size(self.rawMovie(:,:,1));
+            if self.loadMapFromFile
+                mapSize=self.loadedMapsize;
+            else
+                mapSize = size(self.rawMovie(:,:,1));
+            end
         end
         
         function map = getMapByInd(self,ind)
@@ -243,13 +376,50 @@ classdef TrialModel < handle
         end
         
         function map = getCurrentMap(self)
-            map = self.mapArray{self.currentMapInd};
+            %if needed in case no map was calculated
+            if ~isempty(self.currentMapInd)
+                map = self.mapArray{self.currentMapInd};
+            else
+                map=null(1);
+            end
         end
         
         function map = calculateAndAddNewMap(self,mapType,varargin)
+            if isempty(self.rawMovie)
+               if self.setupMode==3 %SetupC
+               self.loadMatAsRawMovie(self.filePath);
+               else
+                   %TODO but unlikly to happen or be useful
+               end
+            end
             map.type = mapType;
             [map.data,map.option] = self.calculateMap(mapType,varargin{:});
             self.addMap(map);
+        end
+
+        function LoadAndAddMapFromFile(self, mapFile)
+            %load mapstruct; contain map itself plus options
+            newmapStruct = load(mapFile);
+            newmapFields = fields(newmapStruct(1));
+            [containOptions, newmmapOptionsIndex]=ismember('options',newmapFields);
+            if containOptions
+                newmmapOptions=getfield(newmapStruct,'options');
+                newmapFields(newmmapOptionsIndex)=[];
+            else
+                newmmapOptions.options=strcat('No Options available. Name of the file:',{' '}, string(newmapFields{1}));
+            end
+            newmap.option=newmmapOptions;
+            newmap.data=getfield(newmapStruct,newmapFields{1});
+            if strcmp( newmapFields{1}, 'anatomy')
+                tempimage=(newmap.data-min(min(newmap.data)))/(max(max(newmap.data))-min(min(newmap.data)));
+                tempimage=adapthisteq(tempimage,'NumTiles',[16 16]);
+                %tempimage=ind2rgb(uint8(tempimage*255),gray(256));
+                newmap.data=tempimage;
+            end
+            newmap.type=newmapFields{1};
+            self.loadedMapsize=size(newmap.data);
+            
+            self.addMap(newmap);
         end
         
         function mapInd = findMapByType(self,mapType)
@@ -303,7 +473,7 @@ classdef TrialModel < handle
         function importMap(self,mapFilePath)
             map.type = 'import';
             [~,map.option.fileName,~] = fileparts(mapFilePath);
-            
+            local
             TifLink = Tiff(mapFilePath, 'r');
             map.data = TifLink.read();
             self.addMap(map);
@@ -324,10 +494,91 @@ classdef TrialModel < handle
                 [mapData,mapOption] = self.calcResponseMax(varargin{:});
               case 'localCorrelation'
                 [mapData,mapOption] = self.calcLocalCorrelation(varargin{:});
+              case 'SetupCAnatomy'
+                   [mapData,mapOption] = self.calcAnatomy();
+              case 'SetupCResponse'
+                   [mapData,mapOption] = self.calcSetupCResponse(varargin{:});
+              case 'SetupCResponseMax'
+                   [mapData,mapOption] = self.calcSetupCResponseMax(varargin{:});
+              case 'SetupCCorr'
+                   [mapData,mapOption] = self.calcSetupCCorr(varargin{:});
             end
         end
+        
+        %SetupCTab calculations
+        function [mapData,mapOption] = calcSetupCCorr(self, ...
+                                                            varargin)
+            if nargin == 2
+                if isstruct(varargin{1})
+                    mapOption = varargin{1};
+                    tileSize=mapOption.tileSize;
+                    skippingNumber=mapOption.skipping;
+                else
+                    mapOption.tileSize = varargin{1};
+                    skippingNumber=0;
+                end
+            elseif nargin == 3
+                tileSize = varargin{1};
+                skippingNumber = varargin{2};
+            else
+                error('Wrong Usage!');
+            end
+            if skippingNumber>0
+                subRawMovie=self.rawMovie(:,:,1:skippingNumber:end);
+            else
+                subRawMovie=self.rawMovie;
+            end
 
-        function [mapData,mapOption] = calcAnatomy(self,varargin)
+            mapData = movieFunc.computeLocalCorrelation(subRawMovie,tileSize);
+        end
+        
+
+        function [mapData,mapOption]=calcSetupCResponseMax(self,varargin)
+            if nargin == 2
+                mapOption = varargin{1};
+                offset = mapOption.offset;
+                lowerPercentile = mapOption.lowerPercentile;
+                skippingNumber = mapOption.skipping;
+                slidingWindowSize = mapOption.slidingWindowSize;
+            elseif nargin == 5
+		        offset = varargin{1};
+		        slidingWindowSize = varargin{2};
+                lowerPercentile = varargin{3};
+                skippingNumber = varargin{4};
+            else
+                error('Wrong Usage!')
+            end
+            
+            % Convert unit of window from second to frame number
+            slidingWindowSizeFrame = self.convertFromSecToFrame(slidingWindowSize);
+        
+            mapData = movieFunc.dFoverFMax(self.rawMovie,offset,...
+                                           [],...
+                                           slidingWindowSizeFrame,...
+                                           lowerPercentile,...
+                                           skippingNumber);
+            
+        end
+
+
+        function [mapData,mapOption] = calcSetupCResponse(self,varargin)
+             if nargin == 2
+                mapOption = varargin{1};
+                offset = mapOption.offset;
+                lowerPercentile = mapOption.lowerPercentile;
+                skippingNumber = mapOption.skipping;
+            elseif nargin == 4
+                offset = varargin{1};
+                lowerPercentile = varargin{2};
+                skippingNumber = varargin{3};
+            else
+                error('Wrong usage!')
+                help TrialModel.calcResponse
+            end
+            mapData=movieFunc.dFoverF(self.rawMovie,offset,[],[],lowerPercentile,skippingNumber);
+        end
+
+        function [mapData,mapOption] = calcSetupCAnatomy(self,varargin)
         % Method to calculate anatomy map
         % Usage: anatomyMap = nrmodel.calcAnatomy([nFrameLimit])
         % nFrameLimit: 1x2 array of two integers that specify the
@@ -341,6 +592,57 @@ classdef TrialModel < handle
                 mopt = varargin{1};
                 nFrameLimit = mopt.nFrameLimit;
                 sigma = mopt.sigma;
+            else
+                error('Wrong usage!')
+                help TrialModel.calcSetupCAnatomy
+            end
+            if ~(length(nFrameLimit) && nFrameLimit(2)>= ...
+                 nFrameLimit(1))
+                error(['nFrameLimit should be an 1x2 integer array with ' ...
+                       '2nd element bigger that the 1st one.']);
+            end
+            if nFrameLimit(1)<1 || nFrameLimit(2)>size(self.rawMovie,3)
+                error(sprintf(['nFrameLimit [%d, %d] exceeded ' ...
+                               'the frame number of the movie %d'],[nFrameLimit, size(self.rawMovie,3)]));
+            end
+
+            mapData = mean(self.rawMovie(:,:,nFrameLimit(1): ...
+                                            nFrameLimit(2)),3);
+
+            if sigma
+                mapData = conv2(mapData,fspecial('gaussian',[3 3], sigma),'same');
+                mapOption.sigma = sigma;
+            end
+            mapOption.nFrameLimit = nFrameLimit;
+
+        end
+
+        function [mapData,mapOption] = calcAnatomy(self,varargin)
+        % Method to calculate anatomy map
+        % Usage: anatomyMap = nrmodel.calcAnatomy([nFrameLimit])
+        % nFrameLimit: 1x2 array of two integers that specify the
+        % beginning and end number of frames used to calculate the
+        % anatomy.
+            if nargin == 1
+                defaultNFrameLimit = [1 size(self.rawMovie,3)];
+                nFrameLimit = defaultNFrameLimit;
+                sigma = 0;
+                UseCLAHE=false;
+            elseif nargin == 2
+                mopt = varargin{1};
+                if isfield(mopt,"nFrameLimit")
+                    nFrameLimit = mopt.nFrameLimit;
+                    sigma = mopt.sigma;
+                else
+                    defaultNFrameLimit = [1 size(self.rawMovie,3)];
+                    nFrameLimit = defaultNFrameLimit;
+                    sigma = 0;
+                end
+                if isfield(mopt,"UseCLAHE")
+                    UseCLAHE=mopt.UseCLAHE; 
+                else
+                    UseCLAHE=false;
+                end
             else
                 error('Wrong usage!')
                 help TrialModel.calcAnatomy
@@ -363,6 +665,12 @@ classdef TrialModel < handle
                 mapOption.sigma = sigma;
             end
             mapOption.nFrameLimit = nFrameLimit;
+            
+            if UseCLAHE
+                maxValue=max(mapData,[],"all");
+                mapData=adapthisteq(mapData/maxValue);
+            end
+
         end
         
         function vecFrame = convertFromSecToFrame(self,vecSec)
@@ -461,6 +769,59 @@ classdef TrialModel < handle
         end
         
         % Methods for ROI-based processing
+         %Comment out JE 22.02.2023: get the roigroup out
+%         function newcolor= changeRoiGroupColor(self)
+%             newcolor = uisetcolor;
+%             self.roiGroups(self.selectedRoiGroupIdx).color=newcolor;
+%            
+%         end
+%         
+% 
+%         function addRoiGroup(self,groupName,groupColor)
+%             if length(self.mapArray)>0
+%                 newGroup=roiFunc.RoiGroup(size(self.mapArray(1)),groupColor,groupName);
+%                 self.roiGroups=[self.roiGroups; newGroup];
+%                 self.selectedRoiGroupIdx=length( self.roiGroups);
+%             else
+%                 newGroup=roiFunc.RoiGroup([512 512],groupColor,groupName);
+%                 self.roiGroups=[self.roiGroups; newGroup];
+%                 self.selectedRoiGroupIdx=length( self.roiGroups);
+%             end
+% 
+%             notify(self,'roiGroupChanged')
+%         end
+% 
+%         function deleteRoiGroup(self,groupIdx)
+%              if groupIdx=='selection'
+%                 groupIdx=self.selectedRoiGroupIdx;
+%              end
+%              self.roiGroups(groupIdx)=[];
+%              notify(self,'roiGroupChanged')
+%              self.selectedRoiGroupIdx=self.selectedRoiGroupIdx-1;
+%              tempGroup=self.roiGroups(self.selectedRoiGroupIdx);
+%             
+%             notify(self,'roiGroupSelectionChangedEvent',NrEvent.RoiGroupEvent(self.selectedRoiGroupIdx,tempGroup.groupName,tempGroup.color))
+%         end
+%     
+%         function roiGroupSelectionChanged (self, groupIdx)
+%             if groupIdx=='end'
+%                 groupIdx=length(self.roiGroups);
+%             end
+%             self.selectedRoiGroupIdx=groupIdx;
+%             tempGroup=self.roiGroups(groupIdx);
+%             
+%             notify(self,'roiGroupSelectionChangedEvent',NrEvent.RoiGroupEvent(groupIdx,tempGroup.groupName,tempGroup.color))
+%         end
+
+%         function selectedRoisTags= selectRoiGroupRois(self, groupIdx)
+%             selectedGroup=self.roiGroups(groupIdx);
+%             selectedRois = arrayfun(@(x) strcmp( x.roiGroup,selectedGroup.groupName), self.roiArray);
+%             selectedRois=self.roiArray(selectedRois);
+%             selectedRoisTags=arrayfun(@(x) x.tag, selectedRois);
+%             self.selectMultiRoi(selectedRoisTags);
+% 
+%         end
+
         % TODO set roiArray to private
         function addRoi(self,varargin)
         % ADDROI add ROI to ROI array
@@ -492,8 +853,11 @@ classdef TrialModel < handle
                 roi.tag = self.roiTagMax+1;
             end
             self.roiTagMax = roi.tag;
+             %Comment out JE 22.02.2023: get the roigroup out
+%             roi.roiGroup=self.roiGroups(self.selectedRoiGroupIdx).groupName;
             self.roiArray(end+1) = roi;
             
+        
             notify(self,'roiAdded')
         end
         
@@ -537,7 +901,7 @@ classdef TrialModel < handle
         function tagArray = getAllRoiTag(self)
         % TODO remove uniform false
         % Debug tag data type (uint16 or double)
-            tagArray = arrayfun(@(x) x.tag, self.roiArray);
+            tagArray = arrayfun(@(x) uint16(x.tag), self.roiArray);
         end
         
         function selectAllRoi(self)
@@ -556,6 +920,20 @@ classdef TrialModel < handle
             notify(self,'roiSelectionCleared');
         end
         
+        function selectMultiRoi(self, tagArray)
+            self.unselectAllRoi();
+            self.selectedRoiTagArray= tagArray;
+            for k=1:length(tagArray)
+                tag = tagArray(k); 
+                notify(self,'roiSelected',NrEvent.RoiEvent(tag));
+            end
+            if length(tagArray)==1
+                disp(sprintf('ROI #%d selected',tagArray))
+            else
+                disp('Multiple Rois selected')
+            end
+        end
+
         function updateRoi(self,tag,varargin)
             ind = self.findRoiByTag(tag);
             oldRoi = self.roiArray(ind);
@@ -655,27 +1033,7 @@ classdef TrialModel < handle
                 error(['Image size of mask does not match the map size ' ...
                        '(pixel size in x and y)!'])
             end
-            tagArray = unique(maskImg);
-            roiArray = RoiFreehand.empty();
-            for k=1:length(tagArray)
-                tag = tagArray(k);
-                if tag ~= 0
-                    mask = maskImg == tag;
-                    poly = roiFunc.mask2poly(mask);
-                    if length(poly) > 1
-                        % TODO If the mask corresponds multiple polygon,
-                        % for simplicity,
-                        % take the largest polygon
-                        warning(sprintf('ROI %d has multiple components, only taking the largest one.',tag))
-                        pidx = find([poly.Length] == max([poly.Length]));
-                        poly = poly(pidx);
-                    end
-                    position = [poly.X',poly.Y'];
-                    roi = RoiFreehand(position);
-                    roi.tag = double(tag);
-                    roiArray(end+1) = roi;
-                end
-            end
+            roiArray = roiFunc.convertMaskToRoiArray(maskImg);
             self.insertRoiArray(roiArray,'replace')
         end
         

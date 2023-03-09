@@ -4,19 +4,21 @@ addpath('../../../neuRoi')
 clear all
 close all force
 %% Step01 Load experiment configuration from file
-rootPaths = load('../../../paths/rootPaths.mat'); % this file should be changed for different computers of simply change the path variable here
+rootPaths = load('../../../paths/rootPaths.mat'); % this file should be changed for different computers by simply change the path variable here
 expName = '2021-09-02-DpOBEM-JH18';
 regionName = 'Dp';
 expSubDir = fullfile(expName,regionName);
 expFileName = sprintf('experiment_%s.mat',expName);
-expFilePath = fullfile(rootPaths.projectDir,'results',expSubDir,expFileName);
+expFilePath = fullfile(rootPaths.extHardDisk, 'Ca_imaging','results',expSubDir,expFileName);
 % load the experiment configuration as NrModel object
 foo = load(expFilePath);
 myexp = foo.self;
-
 disp(myexp.expInfo)
-% this is newly added for storing StarDist predicted masks 
-myexp.maskDir =  myexp.getDefaultDir('stardist_mask');
+
+% myexp.expInfo.odorList =  {'phe','trp','arg','tca','gca','tdca','acsf','spont'};
+% myexp.expInfo.frameRate = 30;
+% this is newly added for storing StarDist predicted masks
+% myexp.maskDir =  myexp.getDefaultDir('stardist_mask');
 %% Step02 (optional) Sepcify options for opening a trial
 myexp.roiDir = myexp.getDefaultDir('roi');
 myexp.loadFileType = 'raw';

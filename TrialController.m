@@ -59,6 +59,89 @@ classdef TrialController < handle
                 end
             end
         end
+
+
+        function TrialNumberSlider_Callback(self,src,evnt)
+            self.model.changeTrialNumber(newTrialnumber);
+        end
+
+         %Comment out JE 22.02.2023: get the roigroup out
+%         function roiGroupColorButton_Callback(self,src,evnt)
+%             newColor=self.model.changeRoiGroupColor();
+%             self.view.changeRoiGroupColorButton(newColor);
+%         end
+%         function roiGroupAddButton_Callback(self,src,evnt)
+%             %s.Color={'red'};
+%             s.Name={'newGroup'};
+%             s.Color = {'{red}|green|blue|yellow|cyan|magenta'};
+%             userinput= thirdPartyTools.structdlg.StructDlg(s,'Please specify the new roigroup');
+%             if ~isempty(userinput)
+%                 self.model.addRoiGroup(userinput.Name,userinput.Color);
+%             end
+%             self.model.roiGroupSelectionChanged('end');
+%         end
+%         function roiGroupListbox_Callback(self,src,evnt)
+%             self.model.roiGroupSelectionChanged(src.Value);
+%             
+%             if self.view.guiHandles.roiGroupSelectionCheckbox.Value==1
+%                 selectedRoisTags=self.model.selectRoiGroupRois(src.Value);
+%                 %self.view.selectRoisInRoiList(selectedRoisTags);
+%             end
+%         end
+%         function roiGroupDeleteButton_Callback(self,src,evnt)
+%             self.model.deleteRoiGroup('selection');
+%         end
+%         
+% 
+%         function multiTrialButton_Callback(self)
+%             self.model.enableMultiTrial();
+%         end
+        function roiListbox_Callback(self,src,evnt)
+            self.model.selectMultiRoi(arrayfun(@(x) str2num(src.String{x}), src.Value));
+             %Comment out JE 22.02.2023: get the roigroup out
+%             self.view.guiHandles.roiListboxSelectionGroup.Enable='on';
+%             selectedRois= self.model.roiArray(src.Value);
+%             groupIdx=find(arrayfun(@(x) strcmp(x, selectedRois(1).roiGroup), self.view.guiHandles.roiGroupListbox.String));
+%             if length(src.Value)==1
+%                 self.view.guiHandles.roiListboxSelectionGroup.Value=groupIdx;
+%             else
+%                                 
+%                 equalGroups=arrayfun(@(x) strcmp(x.roiGroup,selectedRois(1).roiGroup), selectedRois);
+%                 
+%                 if sum(equalGroups)==length(selectedRois)
+%                     self.view.guiHandles.roiListboxSelectionGroup.Value=groupIdx;
+%                 else
+%                     self.view.guiHandles.roiListboxSelectionGroup.Enable='off';
+%                 end
+%             end
+        end
+
+%         function roiListboxSelectionGroup_Callback(self,src,evnt)
+%             tempGroup=self.view.guiHandles.roiListboxSelectionGroup.String{self.view.guiHandles.roiListboxSelectionGroup.Value};
+%             roiIdx=self.view.guiHandles.roiListbox.Value;
+%             for i = roiIdx
+%                 self.model.roiArray(i).roiGroup=tempGroup;
+%             end
+%             selectedRois=self.model.roiArray(roiIdx);
+%             self.model.unselectAllRoi();
+%             self.view.redrawMultipleRoiPatch(selectedRois);
+%             self.model.selectMultiRoi(arrayfun(@(x) x.tag, selectedRois));
+%         end
+
+        function redrawSelectedRoiGroup(self)
+            selectedRoisTags=self.model.selectRoiGroupRois(self.view.guiHandles.roiGroupListbox.Value);
+            multipleRoiArray=zeros(1,length(self.model.roiArray), 'logical');
+            for i=selectedRoisTags
+                multipleRoiArray=multipleRoiArray+arrayfun(@(x) x.tag==i, self.model.roiArray);
+            end
+            multipleRoiArray=self.model.roiArray(logical(multipleRoiArray));
+            self.view.redrawMultipleRoiPatch(multipleRoiArray);
+        end
+       
+
+        function removeOverlapRoiMenuCallback(self)
+            self.model.removeRoiOverlap();
+        end
                         
         function selectMap(self,ind)
             self.model.selectMap(ind);
@@ -325,8 +408,7 @@ classdef TrialController < handle
             if self.model.roiFilePath
                 self.model.saveRoiArray(self.model.roiFilePath);
             else
-                defFileName = [self.model.fileBaseName ...
-                               '_RoiArray.mat'];
+                defFileName = strcat(self.model.fileBaseName, '_RoiArray.mat');
                 defFilePath = fullfile(self.model.roiDir,defFileName);
                 [fileName,fileDir] = uiputfile('*.mat','Save ROIs',defFilePath);
                 if fileName

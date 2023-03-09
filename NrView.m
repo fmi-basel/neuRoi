@@ -23,7 +23,9 @@ classdef NrView < handle
             self.updateFileListBox();
             self.displayResponseOption();
             self.displayResponseMaxOption();
+           % self.displaySetupCOption();
             self.displayExpInfo();
+            self.updateCalculatedTransformationsListBox();
         end
         
         function assignCallbacks(self)
@@ -107,6 +109,79 @@ classdef NrView < handle
             set(self.guiHandles.updateResponseMaxMapButton,'Callback',...
             @(s,e) self.controller.updateMapButton_Callback(s,e));
 
+            % Callbacks fo BUnwaprJ
+            set(self.guiHandles.BUnwarpJCalculateButton,'Callback',...
+            @(s,e)self.controller.BUnwarpJCalculateButton_Callback(s,e));
+
+            set(self.guiHandles.BUnwarpJReferencetrial,'Callback',...
+            @(s,e)self.controller.BUnwarpJReferencetrial_Callback(s,e));
+
+            set(self.guiHandles.BUnwarpJUseSIFT,'Callback',...
+            @(s,e)self.controller.BUnwarpJUseSIFT_Callback(s,e));
+            %obsolete since CLAHE added
+%             set(self.guiHandles.BUnwarpJUseHistNorm,'Callback',...
+%             @(s,e)self.controller.BUnwarpJUseHistNorm_Callback(s,e));
+
+            set(self.guiHandles.BUnwarpJInspectTrialsButton,'Callback',...
+            @(s,e)self.controller.BUnwarpJInspectTrialsButton_Callback(s,e));
+
+            set(self.guiHandles.BUnwarpJTransformationName,'Callback',...
+            @(s,e)self.controller.BUnwarpJTransformationName_Callback(s,e));
+
+            set(self.guiHandles.BUnwarpJCalculatedTransformations,'Callback',...
+            @(s,e)self.controller.BUnwarpJCalculatedTransformations_Callback(s,e));
+            
+            set(self.guiHandles.BUnwarpJNormTypeGroup,'SelectionChangedFcn',...
+            @(s,e)self.controller.BUnwarpJNormTypeGroup_Callback(s,e));
+
+            set(self.guiHandles.BUnwarpJPara,'Callback',...
+            @(s,e)self.controller.BUnwarpJPara_Callback(s,e));
+            
+            set(self.guiHandles.BUnwarpJCLAHEPara,'Callback',...
+            @(s,e)self.controller.BUnwarpJCLAHEPara_Callback(s,e));
+
+            set(self.guiHandles.BUnwarpJSIFTPara,'Callback',...
+            @(s,e)self.controller.BUnwarpJSIFTPara_Callback(s,e));
+
+            set(self.guiHandles.RoiIdentfierText,'Callback',...
+            @(s,e)self.controller.RoiIdentfierText_Callback(s,e));
+
+            %Callbacks for SetupC tab
+          
+            set(self.guiHandles.SetupCaddResponseMapButton,'Callback',...
+            @(s,e) self.controller.addMapButton_Callback(s,e));
+
+            set(self.guiHandles.SetupCupdateResponseMapButton,'Callback',...
+            @(s,e) self.controller.updateMapButton_Callback(s,e));
+
+            set(self.guiHandles.SetupCaddMaxResponseMapButton,'Callback',...
+            @(s,e) self.controller.addMapButton_Callback(s,e));
+
+            set(self.guiHandles.SetupCMaxupdateResponseMapButton,'Callback',...
+            @(s,e) self.controller.updateMapButton_Callback(s,e));
+
+            set(self.guiHandles.SetupCaddCorrMapButton,'Callback',...
+            @(s,e) self.controller.addMapButton_Callback(s,e));
+
+            set(self.guiHandles.SetupCupdateCorrMapButton,'Callback',...
+            @(s,e) self.controller.updateMapButton_Callback(s,e));
+
+            set(self.guiHandles.SetupCPercentileText,'Callback',...
+                @(s,e)self.controller.SetupCPercentileText_Callback(s,e));
+
+            set(self.guiHandles.SetupCSkippingText,'Callback',...
+                @(s,e)self.controller.SetupCSkippingText_Callback(s,e));
+            
+            set(self.guiHandles.SetupCoffsetText,'Callback',...
+                @(s,e)self.controller.SetupCoffsetText_Callback(s,e));
+
+            set(self.guiHandles.rmaxSlidingWindowSetupCText,'Callback',...
+                @(s,e)self.controller.rmaxSlidingWindowSetupCText_Callback(s,e));
+            
+            set(self.guiHandles.SetupCExtractTracesDfoverfButton,'Callback',...
+                @(s,e)self.controller.SetupCExtractTracesDfoverfButton_Callback(s,e));
+            
+
         end
         
         function listenToModel(self)
@@ -121,6 +196,10 @@ classdef NrView < handle
                         @(s,e)self.displayLoadFileType());
             addlistener(self.model,'expInfo','PostSet',...
                         @(s,e)self.displayExpInfo());
+            addlistener(self.model,'CalculatedTransformationsList','PostSet',...
+                        @(s,e)self.updateCalculatedTransformationsListBox());
+           
+
 
         end
         
@@ -132,8 +211,24 @@ classdef NrView < handle
                 [~,fileNameArray{k},~] = fileparts(filePath);
             end
             set(self.guiHandles.fileListBox,'String',fileNameArray);
+            set(self.guiHandles.BUnwarpJReferencetrial,'String',fileNameArray);
+        end
+
+        function updateCalculatedTransformationsListBox(self,src,event)
+            CalculatedTransformationsList = self.model.CalculatedTransformationsList;
+            set(self.guiHandles.BUnwarpJCalculatedTransformations,'String',CalculatedTransformationsList);
+        end
+
+        function updateTransformationTooltip(self)
+            %UPDATETRANSFORMATIONTOOLTIP Sets parameters to tooltip
+            %Upates the tooltip of the selected calculated transformation to the tooltip with formatting.
+            TransformationTooltip = self.model.TransformationTooltip;
+            StringForTooltip=strrep(evalc('disp(TransformationTooltip)'), sprintf('\n'), '<br />');
+            set(self.guiHandles.BUnwarpJCalculatedTransformations,'tooltipString',['<html><pre><font face="courier new">' StringForTooltip '</font>']); %alternative format: only evalc('disp(TransformationTooltip)'); check https://undocumentedmatlab.com/articles/multi-line-tooltips
         end
         
+        
+
         function displayExpInfo(self)
             expInfo = self.model.expInfo;
             self.guiHandles.frameRateEdit.String = num2str(expInfo.frameRate);
@@ -195,6 +290,18 @@ classdef NrView < handle
             self.guiHandles.rmaxSlidingWindowText.String = ...
             num2str(self.model.responseMaxOption.slidingWindowSize);
         end
+
+        function displaySetupCOption(self)
+            self.guiHandles.SetupCOffsetText.String = ...
+                num2str(self.model.SetupCOption.offset);
+            self.guiHandles.SetupCPercentileText.String = ...
+                num2str(self.model.responseMaxOption);
+            self.guiHandles.SetupCSkippingText.String = ...
+                num2str(self.model.responseMaxOption);
+%             self.guiHandles.rmaxSlidingWindowText.String = ...
+%             num2str(self.model.responseMaxOption.slidingWindowSize);
+        end
+
 
         
         function toggleLoadRangeText(self,state)

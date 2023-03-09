@@ -1,10 +1,10 @@
 # Temporary test files
-/test
+/tests/tmp/
 # Move it
 moveit2.m
 # Scrach in demo
 /demos/scratch.m
-# Temporarily ignore NoRMCorre
-/NoRMCorre
-# Matlab autosave file
+# Matlab autosave files
 *.asv
+# User configuration file
+config.ini
