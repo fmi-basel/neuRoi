@@ -1104,11 +1104,8 @@ classdef NrModel < handle
             fns(ismember(fns, excludeFieldNames)) = [];
             for fn = fieldnames(self)'
                 s.(fn{1}) = self.(fn{1});
-            end
-            
-            for ef = excludeFieldNames
-                s.(ef) = [];
-            end
+            end  
+            s.trialArray = TrialModel.empty;
         end
 
         %BUnwarpJ
