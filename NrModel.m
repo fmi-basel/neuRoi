@@ -933,6 +933,10 @@ classdef NrModel < handle
             traceResult.roiFilePath = roiFilePath;
             traceResult.rawFilePath = trial.filePath;
             save(resFilePath,'traceResult')
+            
+            % Close the loaded trial to free up memory
+            idx = length(self.trialArray);
+            self.deleteTrial(idx);
         end
         
         function extractTimeTraceBatch(self,fileIdxList, ...
@@ -1095,8 +1099,15 @@ classdef NrModel < handle
         end
         
         function s = saveobj(self)
+            excludeFieldNames = {'trialArray'};
+            fns = fieldnames(self)';
+            fns(ismember(fns, excludeFieldNames)) = [];
             for fn = fieldnames(self)'
                 s.(fn{1}) = self.(fn{1});
+            end
+            
+            for ef = excludeFieldNames
+                s.(ef) = [];
             end
         end
 
