@@ -1,4 +1,4 @@
-function binConfig = binMovieFromFile(inDir,inFileList,outDir,shrinkFactors,depth,trialOption)
+function binConfig = binMovieFromFile(inDir,inFileList,outDir,shrinkFactors,depth,method,trialOption)
 % BINMOVIEFROMFILE bin movies from files in a directory
 %     Args:
 %         inDir (char): input directory
@@ -32,9 +32,9 @@ for k=1:nFile
     disp(fileName)
     filePath = fullfile(inDir,fileName);
     trialOptionCell = helper.structToNameValPair(trialOption);
-    trial = TrialModel(filePath,trialOptionCell{:});
+    trial = TrialModel('filePath', filePath,trialOptionCell{:});
     binned = movieFunc.binMovie(trial.rawMovie,shrinkFactors, ...
-                                'mean');
+                                method);
     
     outFileName = iopath.modifyFileName(fileName,outFilePrefix,'','tif');
     outFilePath = fullfile(outDir,outFileName);

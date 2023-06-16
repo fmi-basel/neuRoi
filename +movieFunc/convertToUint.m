@@ -13,14 +13,18 @@ if ~exist('depth','var')
     depth = 8;
 end
 
-if ~exist('zlim','var')
-    zlim = [min(A(:)), max(A(:))];
+if exist('zlim','var')
+    A = mat2gray(double(A),double(zlim));
+    if depth == 16
+        scaler = (2^16 -1);
+    else
+        scaler = 255;
+    end
+    A = scaler*A;
 end
 
-A = mat2gray(double(A),double(zlim));
-
 if depth == 16
-    A = uint16((2^16 -1)* A);
+    A = uint16(A);
 else
-    A = uint8(255*A);
+    A = uint8(A);
 end
