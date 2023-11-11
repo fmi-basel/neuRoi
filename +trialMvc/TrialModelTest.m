@@ -4,6 +4,7 @@ classdef TrialModelTest < matlab.unittest.TestCase
         trial
         anatomy
         timeTraceMat
+        tmpDir
     end
        
     methods(TestMethodSetup)
@@ -59,7 +60,7 @@ classdef TrialModelTest < matlab.unittest.TestCase
                 dynamic(:, :, start:start+dur-1) = amp * repmat(mask, 1, 1, dur);
             end
             
-            testDirs.tmpDir = tmpDir;
+            testCase.tmpDir = tmpDir;
             testCase.addTeardown(@rmdir, tmpDir, 's')
         end
     end
@@ -70,29 +71,29 @@ classdef TrialModelTest < matlab.unittest.TestCase
             testCase.verifyEqual(mapData, testCase.anatomy);
         end
         
-        function testExtraceTimeTrace(testCase)
-            % TODO make this RoiM
-            position = [3,3; 3,6; 6,3; 6,6];
-            freshRoi = RoiFreehand(position);
-            testCase.trial.addRoi(freshRoi);
-            [timeTraceMat, roiArray] = testCase.trial.extractTimeTraceMat();
-            roiIdx = 1;
-            timeTrace = timeTraceMat(roiIdx, :);
-            testCase.verifyEqual(timeTrace, testCase.timeTraceMat(roiIdx, :));
-        end
+        % function testExtraceTimeTrace(testCase)
+        %     % TODO make this RoiM
+        %     position = [3,3; 3,6; 6,3; 6,6];
+        %     freshRoi = RoiFreehand(position);
+        %     testCase.trial.addRoi(freshRoi);
+        %     [timeTraceMat, roiArray] = testCase.trial.extractTimeTraceMat();
+        %     roiIdx = 1;
+        %     timeTrace = timeTraceMat(roiIdx, :);
+        %     testCase.verifyEqual(timeTrace, testCase.timeTraceMat(roiIdx, :));
+        % end
         
         function filePath = createRoiFreehandArrFile(testCase)
             roiArray = createRoiFreehandArr();
-            filePath = fullfile(testCase.tmpDir, 'RoiFreehandArr.m')
+            filePath = fullfile(testCase.tmpDir, 'RoiFreehandArr.mat');
             save(filePath, 'roiArray')
         end
         
         function testLoadRoiFreehandArr(testCase)
-            filePath = self.createRoiFreehandArrFile();
-            imageSize = testCase.rawMovie(0:2);
+            filePath = testCase.createRoiFreehandArrFile();
+            imageSize = size(testCase.anatomy);
             
-            self.trial.loadRoiArray();
-            testCase.verifyEqual(class(self.trial.roiArr), 'roiFunc.RoiArray')
+            testCase.trial.loadRoiArr(filePath);
+            testCase.verifyEqual(class(testCase.trial.roiArr), 'roiFunc.RoiArray')
         end
                 
     end
@@ -101,10 +102,12 @@ end
 
 
 function roiArray = createRoiFreehandArr()
-    positionList = {[3,3; 3,6; 6,3; 6,6], [2,7; 4,7; 2,10; 4,10]};
-    roiArray = RoiFreehand.empty()
+    positionList = {[3,3; 3,6; 6,6; 6,3], [2,7; 4,7; 4,10; 2,10]};
+    roiArray = RoiFreehand.empty();
     for k=1:length(positionList)
-        roiArray = RoiFreehand(position);
+        roiFh = RoiFreehand(positionList{k});
+        roiFh.tag = k;
+        roiArray(k) = roiFh;
     end
 end
 

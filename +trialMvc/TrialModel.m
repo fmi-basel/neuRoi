@@ -759,41 +759,6 @@ classdef TrialModel < baseTrial.BaseTrialModel
             self.selectMultipleRoiByTag(tagArray)
         end
         
-        function selectMultipleRoiByTag(self, tagArray)
-            self.unselectAllRoi();
-            self.selectedRoiTagArray = tagArray;
-            for k=1:length(tagArray)
-                tag = tagArray(k);
-                notify(self,'roiSelected',NrEvent.RoiEvent(tag));
-            end
-            disp('Multiple ROIs selected')
-        end
-
-        function selectMultipleRoiByIdx(self, idxArray)
-            self.unselectAllRoi();
-            allTagArray = self.getAllRoiTag();
-            tagArray = allTagArray(idxArray);
-            self.selectMultipleRoiByTag(tagArray)
-        end
-        
-        function unselectAllRoi(self)
-            self.selectedRoiTagArray = [];
-            notify(self,'roiSelectionCleared');
-        end
-        
-        function updateRoi(self,tag,varargin)
-            ind = self.findRoiByTag(tag);
-            oldRoi = self.roiArray(ind);
-            freshRoi = RoiFreehand(varargin{:});
-            freshRoi.tag = tag;
-            % TODO validate ROI position (should not go outside of image)
-            self.roiArray(ind) = freshRoi;
-
-            notify(self,'roiUpdated', ...
-                   NrEvent.RoiUpdatedEvent([self.roiArray(ind)]));
-            disp(sprintf('Roi #%d updated',tag))
-        end
-        
         function changeRoiTag(self,oldTag,newTag)
             ind = self.findRoiByTag(oldTag);
             oldRoi = self.roiArray(ind);
@@ -842,33 +807,33 @@ classdef TrialModel < baseTrial.BaseTrialModel
             end
         end
         
-        function saveRoiArray(self,filePath)
+        function saveRoiArr(self,filePath)
             roiArr = self.roiArr;
             save(filePath,'roiArr');
         end
         
-        function loadRoiArray(self,filePath,option)
+        function loadRoiArr(self,filePath)
             foo = load(filePath);
             % Downward compatibility with polygon ROIs (RoiFreehand)
+            type_correct = false;
             if isfield(foo, 'roiArr')
-                roiArray = foo.roiArr;
+                if isa(foo.roiArr, 'roiFunc.RoiArray')
+                    type_correct = true;
+                    self.roiArr = foo.roiArr;
+                end
             else
-                roiArray = roiFunc.convertRoiFreehandArrToRoiArr(foo)
+                if isa(foo.roiArray, 'RoiFreehand')
+                    type_correct = true;
+                    self.roiArr = roiFunc.convertRoiFreehandArrToRoiArr(foo.roiArray,...
+                                                                      self.getMapSize());
+                end
             end
-            
-            self.insertRoiArray(roiArray,option)
-        end
-
-        function insertRoiArray(self,roiArr,option)
-            if strcmp(option, 'merge')
-                arrayfun(@(x) self.addRoi(x), roiArr.getRoiList);
-            elseif strcmp(option, 'replace')
-                self.roiArr = roiArr;
-                notify(self, 'roiArrReplaced');
+            msg = 'The ROI file should contain roiArr as type roiFunc.RoiArray or the old version (v0.x.x)the ROI file should contain roiArray as type RoiFreehand'
+            if ~type_correct
+                error(msg)
             end
         end
 
-        
         function importRoisFromMask(self,filePath)
             maskImg = movieFunc.readTiff(filePath);
             if ~isequal(size(maskImg),self.getMapSize())
