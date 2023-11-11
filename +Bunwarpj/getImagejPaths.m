@@ -1,5 +1,5 @@
 function imagejPaths = getImagejPaths()
-    imagejDir = '/home/hubo/Software/Fiji.app/';
+    imagejDir = 'D:\hubo\Software\fiji-win64\Fiji.app\';
     imagejPaths = {};
     imagejPaths{end+1} = fullfile(imagejDir, 'plugins', 'bUnwarpJ_-2.6.13.jar');
     imagejPaths{end+1} = fullfile(imagejDir, 'jars', 'ij-1.53t.jar');
