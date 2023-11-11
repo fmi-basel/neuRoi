@@ -849,7 +849,13 @@ classdef TrialModel < baseTrial.BaseTrialModel
         
         function loadRoiArray(self,filePath,option)
             foo = load(filePath);
-            roiArray = foo.roiArr;
+            % Downward compatibility with polygon ROIs (RoiFreehand)
+            if isfield(foo, 'roiArr')
+                roiArray = foo.roiArr;
+            else
+                roiArray = roiFunc.convertRoiFreehandArrToRoiArr(foo)
+            end
+            
             self.insertRoiArray(roiArray,option)
         end
 

@@ -8,6 +8,11 @@ classdef TrialModelTest < matlab.unittest.TestCase
        
     methods(TestMethodSetup)
         function createTrial(testCase)
+            tmpDir = 'tmp';
+            if ~exist(tmpDir, 'dir')
+                mkdir(tmpDir)
+            end
+
             movieSize = [12, 10, 20];
             mockMovie.name = 'mock_movie';
             mockMovie.meta = struct('width', movieSize(1),...
@@ -38,7 +43,7 @@ classdef TrialModelTest < matlab.unittest.TestCase
                 timeTraceMat(k, :) = timeTrace;
             end
             mockMovie.rawMovie = rawMovie;
-            testCase.trial = TrialModel('mockMovie', mockMovie);
+            testCase.trial = trialMvc.TrialModel('mockMovie', mockMovie);
             testCase.anatomy = mean(rawMovie, 3);
             testCase.timeTraceMat = timeTraceMat;
             testCase.addTeardown(@delete, testCase.trial)
@@ -53,6 +58,9 @@ classdef TrialModelTest < matlab.unittest.TestCase
                 dynamic = base * repmat(mask, 1, 1, movieSize(3));
                 dynamic(:, :, start:start+dur-1) = amp * repmat(mask, 1, 1, dur);
             end
+            
+            testDirs.tmpDir = tmpDir;
+            testCase.addTeardown(@rmdir, tmpDir, 's')
         end
     end
 
@@ -63,7 +71,8 @@ classdef TrialModelTest < matlab.unittest.TestCase
         end
         
         function testExtraceTimeTrace(testCase)
-            position = [3,3; 3,5; 5,3; 5,5];
+            % TODO make this RoiM
+            position = [3,3; 3,6; 6,3; 6,6];
             freshRoi = RoiFreehand(position);
             testCase.trial.addRoi(freshRoi);
             [timeTraceMat, roiArray] = testCase.trial.extractTimeTraceMat();
@@ -71,6 +80,31 @@ classdef TrialModelTest < matlab.unittest.TestCase
             timeTrace = timeTraceMat(roiIdx, :);
             testCase.verifyEqual(timeTrace, testCase.timeTraceMat(roiIdx, :));
         end
+        
+        function filePath = createRoiFreehandArrFile(testCase)
+            roiArray = createRoiFreehandArr();
+            filePath = fullfile(testCase.tmpDir, 'RoiFreehandArr.m')
+            save(filePath, 'roiArray')
+        end
+        
+        function testLoadRoiFreehandArr(testCase)
+            filePath = self.createRoiFreehandArrFile();
+            imageSize = testCase.rawMovie(0:2);
+            
+            self.trial.loadRoiArray();
+            testCase.verifyEqual(class(self.trial.roiArr), 'roiFunc.RoiArray')
+        end
+                
     end
 
 end
+
+
+function roiArray = createRoiFreehandArr()
+    positionList = {[3,3; 3,6; 6,3; 6,6], [2,7; 4,7; 2,10; 4,10]};
+    roiArray = RoiFreehand.empty()
+    for k=1:length(positionList)
+        roiArray = RoiFreehand(position);
+    end
+end
+
