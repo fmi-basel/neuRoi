@@ -59,8 +59,6 @@ classdef TrialStackControllerTest < matlab.unittest.TestCase
             pause(0.5);
             testCase.verifyEqual(stackCtrl.model.roiArr.getSelectedTags, [1])
 
-            % stackCtrl.selectRoi_Callback();
-            
             % Test replace ROI
             % stackCtrl.replaceRoiByDrawing([25, 33; 25, 44; 36, 44; 36, 33]);
             stackCtrl.replaceRoiByDrawing([33, 25; 44, 25; 44, 36; 33, 36]);

@@ -95,7 +95,6 @@ classdef BaseTrialController < handle
         
         function deleteSelectedRois(self,src,evnt)
             self.model.deleteSelectedRois();
-            self.view.RoiSaveStatus('Rois have been changed and not saved','red');
         end
 
         function roiClicked_Callback(self, src, evnt)
@@ -221,7 +220,7 @@ classdef BaseTrialController < handle
         % Method to change contrast of map image
             contrastSliderInd = helper.convertTagToInd(src.Tag, ...
                                                        'contrastSlider');
-            contrastLim = self.view.getContrastLim();
+            contrastLim = self.view.getContrastSlidertLim();
             dataLim = self.view.getContrastSliderDataLim();
             % Check whether contrastLim is valid (min < max), otherwise set the
             % other slider to a valid value based on the new value of

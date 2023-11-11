@@ -79,7 +79,7 @@ classdef BaseTrialView < handle
             if ~isempty(map)
                 self.plotMap(map);
                 self.showMapOption(map);
-                self.controller.updateContrastForCurrentMap();
+                self.updateContrastForCurrentMap();
             end
         end
         
@@ -288,6 +288,22 @@ classdef BaseTrialView < handle
         end
         
         % Methods for changing contrast
+        function updateContrastForCurrentMap(self)
+            dataLim = self.model.getDataLim();
+            contrastLim = self.getContrastLim(dataLim);
+            self.setDataLimAndContrastLim(dataLim, contrastLim);
+            self.changeMapContrast(contrastLim);
+            self.saveContrastLim(contrastLim);
+        end
+        
+        function contrastLim = getContrastLim(self, dataLim)
+            error('Not implemented')
+        end
+        
+        function saveContrastLim(self, contrastLim)
+            error('Not implemented')
+        end
+        
         function changeMapContrast(self,contrastLim)
         % Usage: myview.changeMapContrast(contrastLim), contrastLim
         % is a 1x2 array [cmin cmax]
@@ -318,7 +334,7 @@ classdef BaseTrialView < handle
             end
         end
         
-        function contrastLim = getContrastLim(self)
+        function contrastLim = getContrastSlidertLim(self)
             contrastSliderArr = self.guiHandles.contrastSliderGroup.Children;
             for k=1:2
                 contrastLim(k) = contrastSliderArr(end+1-k).Value;

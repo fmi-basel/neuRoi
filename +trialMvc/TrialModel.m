@@ -42,7 +42,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
     end
     
     events
-        mapArrayLengthChanged
+        mapAdded
         mapUpdated
         trialDeleted
     end
@@ -424,13 +424,13 @@ classdef TrialModel < baseTrial.BaseTrialModel
             self.mapArray{end+1} = newMap;
             mapArrayLen = self.getMapArrayLength();
             self.selectMap(mapArrayLen);
-            notify(self,'mapArrayLengthChanged');
+            notify(self,'mapAdded');
         end
         
-        function deleteMap(self,mapInd)
-            self.mapArray(mapInd) = [];
-            notify(self,'mapArrayLengthChanged');
-        end
+        % function deleteMap(self,mapInd)
+        %     self.mapArray(mapInd) = [];
+        %     notify(self,'mapArrayLengthChanged');
+        % end
         
         function updateMap(self,mapInd,mapOption)
             map = self.mapArray{mapInd};
@@ -779,19 +779,19 @@ classdef TrialModel < baseTrial.BaseTrialModel
             end
         end
         
-        function deleteSelectedRoi(self)
-            tagArray = self.selectedRoiTagArray;
-            self.unselectAllRoi();
-            indArray = self.findRoiByTagArray(tagArray);
-            self.roiArray(indArray) = [];
-            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(tagArray));
+        function deleteSelectedRois(self)
+            tags = self.roiArr.getSelectedTags();
+            rois = roiFunc.RoiM.empty();
+            for k=1:length(tags)
+                tag = tags(k);
+                rois(k) = self.deleteRoi(tag);
+            end
+            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(rois));
+            % TODO save ROIs temporarily for undo
         end
         
-        function deleteRoi(self,tag)
-            ind = self.findRoiByTag(tag);
-            self.unselectRoi(tag);
-            self.roiArray(ind) = [];
-            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent([tag]));
+        function roi = deleteRoi(self,tag)
+            roi = self.roiArr.deleteRoi(tag);
         end
         
         function roiArray = getRoiArray(self)
@@ -812,6 +812,11 @@ classdef TrialModel < baseTrial.BaseTrialModel
             save(filePath,'roiArr');
         end
         
+        function replaceRoiArr(self, roiArr)
+            self.roiArr = roiArr
+            notify(self, 'roiArrReplaced')
+        end
+        
         function loadRoiArr(self,filePath)
             foo = load(filePath);
             % Downward compatibility with polygon ROIs (RoiFreehand)
@@ -819,29 +824,36 @@ classdef TrialModel < baseTrial.BaseTrialModel
             if isfield(foo, 'roiArr')
                 if isa(foo.roiArr, 'roiFunc.RoiArray')
                     type_correct = true;
-                    self.roiArr = foo.roiArr;
+                    roiArr = foo.roiArr;
                 end
             else
                 if isa(foo.roiArray, 'RoiFreehand')
                     type_correct = true;
-                    self.roiArr = roiFunc.convertRoiFreehandArrToRoiArr(foo.roiArray,...
+                    roiArr = roiFunc.convertRoiFreehandArrToRoiArr(foo.roiArray,...
                                                                       self.getMapSize());
                 end
             end
-            msg = 'The ROI file should contain roiArr as type roiFunc.RoiArray or the old version (v0.x.x)the ROI file should contain roiArray as type RoiFreehand'
-            if ~type_correct
+            
+            if type_correct
+                self.replaceRoiArr(roiArr)
+            else
+                msg = 'The ROI file should contain roiArr as type roiFunc.RoiArray or the old version (v0.x.x)the ROI file should contain roiArray as type RoiFreehand';
                 error(msg)
             end
         end
-
-        function importRoisFromMask(self,filePath)
+        
+        function importRoisFromMask(self,maskImg)
+            roiArr = roiFunc.RoiArray('maskImg', maskImg);
+            self.replaceRoiArr(roiArr)
+        end
+        
+        function importRoisFromMaskFile(self,filePath)
             maskImg = movieFunc.readTiff(filePath);
             if ~isequal(size(maskImg),self.getMapSize())
                 error(['Image size of mask does not match the map size ' ...
                        '(pixel size in x and y)!'])
             end
-            roiArr = roiFunc.RoiArray('maskImg', maskImg);
-            self.insertRoiArray(roiArr,'replace')
+            self.importRoisFromMask(maskImg)
         end
         
         function importRoisFromImageJ(self,filePath)
@@ -865,7 +877,14 @@ classdef TrialModel < baseTrial.BaseTrialModel
                                    tagArray);
         end
 
-        
+        % Methods for contrast
+        function dataLim = getDataLim(self)
+            map = self.getCurrentMap();
+            dataLim = helper.minMax(map.data);
+            sn = 10000*eps; % a small number
+            dataLim(2) = dataLim(2) + sn;
+        end
+
         % Methods for time trace
         function vecSec = convertFromFrameToSec(self,vecFrame)
             frameRate = self.meta.frameRate;

@@ -93,13 +93,6 @@ classdef TrialStackController < baseTrial.BaseTrialController
             self.view.setRoiImgAlpha(newAlpha);
         end
         
-        function updateContrastForCurrentMap(self)
-        % Set limit and values of the contrast sliders
-            [dataLim, contrastLim] = self.model.getDataLimAndContrastLim();
-            self.view.setDataLimAndContrastLim(dataLim, contrastLim);
-            self.view.changeMapContrast(contrastLim);
-        end
-        
         function delete(self)
             if isvalid(self.view)
                 self.view.deleteFigures();

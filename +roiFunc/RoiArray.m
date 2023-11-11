@@ -160,6 +160,8 @@ classdef RoiArray < handle
         end
         
         function rois = getSelectedRois(self)
+            disp(self.selectedIdxs)
+            disp(self.roiList)
             rois = self.roiList(self.selectedIdxs);
         end
         

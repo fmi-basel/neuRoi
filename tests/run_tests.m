@@ -15,5 +15,7 @@ disp('xxxxxx')
 % testCase = NrControllerTest;
 % results = testCase.run
 % close all
-testCase = trialMvc.TrialModelTest;
+% testCase = trialMvc.TrialModelTest;
+% results = testCase.run
+testCase = trialMvc.TrialControllerTest;
 results = testCase.run

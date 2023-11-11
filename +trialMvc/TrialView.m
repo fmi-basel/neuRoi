@@ -1,4 +1,8 @@
 classdef TrialView < baseTrial.BaseTrialView
+    properties
+        contrastLimArray
+    end
+    
     methods
         function self = TrialView(mymodel,mycontroller)
             self = self@baseTrial.BaseTrialView(mymodel, mycontroller);
@@ -26,6 +30,9 @@ classdef TrialView < baseTrial.BaseTrialView
                 self.mapColorMap = 'default';
             end
             
+            num_map = self.model.getMapArrayLength();
+            self.contrastLimArray = cell(1,num_map);
+            
             self.loadRoiColormap();
             self.roiVisible = true;
             self.drawAllRoisOverlay();
@@ -35,7 +42,7 @@ classdef TrialView < baseTrial.BaseTrialView
         function listenToModel(self)
             listenToModel@baseTrial.BaseTrialView(self); %call base function
             addlistener(self.model,'currentMapInd','PostSet',@self.selectAndDisplayMap);
-            addlistener(self.model,'mapArrayLengthChanged',@self.toggleMapButtonValidity);
+            addlistener(self.model,'mapAdded',@self.addMapView);
             addlistener(self.model,'mapUpdated',...
                         @self.updateMapDisplay);
             
@@ -117,6 +124,11 @@ classdef TrialView < baseTrial.BaseTrialView
             self.displayCurrentMap();
         end
         
+        function addMapView(self,src,event)
+            self.toggleMapButtonValidity(self, src, evnt)
+            self.contrastLimArray{end+1} = [];
+        end
+        
         function toggleMapButtonValidity(self,src,evnt)
             nActiveButton = src.getMapArrayLength();
             mapButtonGroup = self.guiHandles.mapButtonGroup;
@@ -190,18 +202,6 @@ classdef TrialView < baseTrial.BaseTrialView
             delete(htext);
         end
         
-        function changeRoiPatchColor(self,ptcolor,varargin)
-            if nargin == 3
-                if strcmp(ptcolor,'default')
-                    ptcolor = self.DEFAULT_PATCH_COLOR;
-                end
-                for k=1:length(self.selectedRoiPatchArray)
-                    roiPatch = self.selectedRoiPatchArray{k};
-                    set(roiPatch,'Facecolor',ptcolor);
-                end
-            end
-        end
-        
         function roiPatch = findRoiPatchByTag(self,tag)
             ptTag = RoiFreehand.getPatchTag(tag);
             roiPatch = findobj(self.guiHandles.roiGroup,...
@@ -212,15 +212,6 @@ classdef TrialView < baseTrial.BaseTrialView
             end
         end
 
-        function updateRoiPatchPosition(self,src,evnt)
-            updRoiArray = evnt.roiArray;
-            for k=1:length(updRoiArray)
-                roi = updRoiArray(k);
-                roiPatch = self.findRoiPatchByTag(roi.tag);
-                roi.updateRoiPatchPos(roiPatch);
-            end
-        end
-        
         function changeRoiPatchTag(self,src,evnt)
             oldTag = evnt.oldTag;
             newTag = evnt.newTag;
@@ -241,14 +232,6 @@ classdef TrialView < baseTrial.BaseTrialView
             arrayfun(@(x) delete(x), roiPatchArray);
         end
 
-        function deleteRoiPatch(self,src,evnt)
-            tagArray = evnt.tagArray;
-            for k=1:length(tagArray)
-                roiPatch = self.findRoiPatchByTag(tagArray(k))'
-                delete(roiPatch);
-            end
-        end
-        
         function changeRoiVisibility(self,src,evnt)
             if self.model.roiVisible
                 roiState = 'on';
@@ -305,6 +288,28 @@ classdef TrialView < baseTrial.BaseTrialView
         %     traceFigTag = traceFig.Tag;
         %     set(traceFig,'Tag',[prefix '_' traceFigTag])
         % end
+        
+        % Methods for contrast
+        function saveContrastLim(self,contrastLim)
+            mapIdx = self.model.currentMapInd;
+            self.contrastLimArray{mapIdx} = contrastLim;
+        end
+        
+        function contrastLim = getContrastLim(self, dataLim)
+            mapIdx = self.model.currentMapInd;
+
+            contrastLim = self.contrastLimArray{mapIdx};
+            if isempty(contrastLim)
+                contrastLim = dataLim;
+            else
+                ss = helper.rangeIntersect(dataLim,contrastLim);
+                if ~isempty(ss)
+                    contrastLim = ss;
+                else
+                    contrastLim = dataLim;
+                end
+            end
+        end
         
         function zoomReset(self)
             axish = gca;
