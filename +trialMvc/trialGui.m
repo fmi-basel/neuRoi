@@ -35,16 +35,18 @@ function handles = trialGui(varargin)
                                  'Position',[0.02 0.85 0.12 0.15],...
                                  'BackgroundColor',[255,250,250]/255);
     
-    handles.mapAxes = axes('Position',[0.15 0.1 0.8 0.72]);
+    mapAxesLeft = 0.15 + 0.03;
+    
+    handles.mapAxes = axes('Position',[mapAxesLeft 0.1 0.8 0.72]);
     handles.mapImage  = imagesc(zeros(mapSize),'Parent',handles.mapAxes);
     
     handles.mapOptionText = uicontrol('Style','text',...
                                       'String','map option',...
                                       'Units','normal',...
-                                      'Position',[0.15 0.85 0.6 0.05],...
+                                      'Position',[mapAxesLeft 0.85 0.6 0.05],...
                                       'BackgroundColor',[255,250,250]/255);
     
-    handles.mapButtonGroup= uibuttongroup('Position',[0.15,0.91,0.30,0.05]);
+    handles.mapButtonGroup= uibuttongroup('Position',[mapAxesLeft,0.91,0.30,0.05]);
     nMapButton = 6;
     mb = {};
     for i=1:nMapButton
@@ -52,7 +54,7 @@ function handles = trialGui(varargin)
     end
 
     % ROIs
-    handles.roiAxes = axes('Position',[0.15 0.1 0.8 0.72],'Parent',handles.mainFig);
+    handles.roiAxes = axes('Position',[mapAxesLeft 0.1 0.8 0.72],'Parent',handles.mainFig);
     
     % Sync time trace checkbox
     handles.syncTraceCheckbox = uicontrol('Style','checkbox',...
@@ -78,9 +80,18 @@ function handles = trialGui(varargin)
     handles.roiMenu = uicontextmenu(handles.mainFig);
     handles.roiMenuEntry1 = uimenu(handles.roiMenu,'Label','Move ROI(s)');
 
-    % Group for displaying ROI
-    handles.roiGroup = hggroup(handles.mapAxes,'Tag','roiGroup');
+    % ROI groups
+    handles.roiGroupText = uicontrol('Style','text',...
+                                 'String','ROI Groups',...
+                                 'Units','normal',...
+                                 'Position',[0.02 0.65 0.12 0.12],...
+                                 'BackgroundColor',[255,250,250]/255);
     
+    handles.roiGroupListBox = uicontrol(handles.mainFig,...
+                                    'Style','listbox',...
+                                    'Units','normal',...
+                                    'Position',[0.02, 0.5, 0.12, 0.2],...
+                                    'FontSize',14);
     
     handles.traceFig = figure('Name','Time Trace','Tag','traceFig',...
                               'Position',[1350,500,500,400],'Visible','off');
@@ -92,7 +103,7 @@ function handles = trialGui(varargin)
 
 end
 
-function button = createMapButton(buttonGroup,ind)
+function button = createMapButton(buttonGroup,ind,mapAxesLeft)
     position = [0.15*(ind-1),0,0.15,1];
     tag = sprintf('mapButton_%d',ind);
     button = uicontrol(buttonGroup,...

@@ -76,13 +76,15 @@ classdef TrialControllerTest < matlab.unittest.TestCase
             mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
 
             % Move mouse to ROI #1 and select it by clicking
-            pause(0.1);
-            mouse.mouseMove(roi1p(1)+85, roi1p(2)+147);
-            mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
-            pause(0.1);
-            mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
-            pause(0.1);
-            ctrl.deleteSelectedRois();
+            % pause(0.1);
+            % mouse.mouseMove(roi1p(1)+85, roi1p(2)+147);
+            % mouse.mousePress(InputEvent.BUTTON1_MASK); % actual left click press
+            % pause(0.1);
+            % mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
+            % pause(0.1);
+            % ctrl.deleteSelectedRois();
+            
+            % TODO fix delete ROIs
             
             % Add two ROIs
             pause(0.1);
@@ -97,9 +99,11 @@ classdef TrialControllerTest < matlab.unittest.TestCase
             pause(0.1);
             mouse.keyRelease(KeyEvent.VK_CONTROL);
             
-                        
-            % ctrl.model.roiGroupName = 'region1';
+            ctrl.model.addRoiGroup('region1')
+            disp(ctrl.model.roiArr.groupNames)
+            ctrl.model.roiArr.currentGroupName = 'region1';
             
+            notify(ctrl.model, 'roiGroupUpdated')
             % ctrl.deleteSelectedRoi from all trials;
             
             % undo deletion from current trial

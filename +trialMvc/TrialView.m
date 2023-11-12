@@ -30,13 +30,14 @@ classdef TrialView < baseTrial.BaseTrialView
                 self.mapColorMap = 'default';
             end
             
-            num_map = self.model.getMapArrayLength();
-            self.contrastLimArray = cell(1,num_map);
+            self.contrastLimArray = cell(1,self.model.MAX_NUM_MAPS);
             
             self.loadRoiColormap();
             self.roiVisible = true;
             self.drawAllRoisOverlay();
             
+            self.updateRoiGroupListBox();
+            self.updateCurrentRoiGroup();
         end
         
         function listenToModel(self)
@@ -54,6 +55,9 @@ classdef TrialView < baseTrial.BaseTrialView
                         @self.updateTimeTraceDisplay);
             addlistener(self.model,'roiSelectionCleared',...
                         @self.updateTimeTraceDisplay);
+            
+            addlistener(self.model,'roiGroupUpdated',@self.updateRoiGroupListBox);
+            addlistener(self.model,'currentRoiGroupSet',@self.updateCurrentRoiGroup);
         end
         
         function assignCallbacks(self)
@@ -69,7 +73,7 @@ classdef TrialView < baseTrial.BaseTrialView
             set(self.guiHandles.saveRoiMenu,'Callback',...
                 @(~,~)self.controller.saveRoiArray());
             set(self.guiHandles.loadRoiMenu,'Callback',...
-                @(~,~)self.controller.loadRoiArray());
+                @(~,~)self.controller.loadRoiArr());
             set(self.guiHandles.importRoisFromImageJMenu,'Callback',...
                               @(~,~)self.controller.importRoisFromImageJ());
             set(self.guiHandles.importRoisFromMaskMenu,'Callback',...
@@ -124,8 +128,8 @@ classdef TrialView < baseTrial.BaseTrialView
             self.displayCurrentMap();
         end
         
-        function addMapView(self,src,event)
-            self.toggleMapButtonValidity(self, src, evnt)
+        function addMapView(self,src,evnt)
+            self.toggleMapButtonValidity(src, evnt)
             self.contrastLimArray{end+1} = [];
         end
         
@@ -179,68 +183,6 @@ classdef TrialView < baseTrial.BaseTrialView
         end
         
         % Methods for ROIs
-        function redrawAllRoiPatch(self)
-            self.deleteAllRoiPatch();
-            roiArray = self.model.getRoiArray();
-            arrayfun(@(x) self.addRoiPatch(x),roiArray);
-        end
-        
-        function displayRoiTag(self,roiPatch)
-            ptTag = get(roiPatch,'Tag');
-            tag = helper.convertTagToInd(ptTag,'roi');
-            pos = roiPatch.Vertices(1,:);
-            htext = text(self.guiHandles.roiGroup,pos(1),pos(2), ...
-                         num2str(tag),'FontSize',8,'Color','m');
-            htext.Tag = sprintf('roiTag_%d',tag);
-        end
-        
-        function removeRoiTagText(self,roiTag)
-            txtTag = sprintf('roiTag_%d',roiTag);
-            htext = findobj(self.guiHandles.roiGroup,...
-                               'Type','text',...
-                               'Tag',txtTag);
-            delete(htext);
-        end
-        
-        function roiPatch = findRoiPatchByTag(self,tag)
-            ptTag = RoiFreehand.getPatchTag(tag);
-            roiPatch = findobj(self.guiHandles.roiGroup,...
-                               'Type','patch',...
-                               'tag',ptTag);
-            if isempty(roiPatch)
-                error(sprintf('ROI #%d not found!',tag))
-            end
-        end
-
-        function changeRoiPatchTag(self,src,evnt)
-            oldTag = evnt.oldTag;
-            newTag = evnt.newTag;
-            roiPatch = self.findRoiByTag(evnt.oldTag);
-            roiPatch.tag = RoiFreehand.getPatchTag(newTag);
-        end
-        
-        
-        function roiPatchArray = getRoiPatchArray(self)
-            mapAxes = self.guiHandles.roiGroup;
-            children = mapAxes.Children;
-            patchInd = arrayfun(@RoiFreehand.isaRoiPatch,children);
-            roiPatchArray = children(patchInd);
-        end
-        
-        function deleteAllRoiPatch(self)
-            roiPatchArray = self.getRoiPatchArray();
-            arrayfun(@(x) delete(x), roiPatchArray);
-        end
-
-        function changeRoiVisibility(self,src,evnt)
-            if self.model.roiVisible
-                roiState = 'on';
-            else
-                roiState = 'off';
-            end
-            set(self.guiHandles.roiGroup,'Visible',roiState);
-        end
-        
         
         % Methods for displaying time traces
         function updateTimeTraceDisplay(self,src,evnt)
@@ -288,6 +230,21 @@ classdef TrialView < baseTrial.BaseTrialView
         %     traceFigTag = traceFig.Tag;
         %     set(traceFig,'Tag',[prefix '_' traceFigTag])
         % end
+        
+        % Methods for ROI groups
+        function updateRoiGroupListBox(self,src,evnt)
+            groupNames = self.model.roiArr.groupNames;
+            self.guiHandles.roiGroupListBox.String = groupNames;
+        end
+        
+        function updateCurrentRoiGroup(self, src, evnt);
+            rg = self.guiHandles.roiGroupListBox
+            idx = find(strcmp(rg.String,self.model.roiArr.currentGroupName));
+            if isempty(idx)
+                error('Roi group name not found')
+            end
+            rg.Value = idx
+        end
         
         % Methods for contrast
         function saveContrastLim(self,contrastLim)

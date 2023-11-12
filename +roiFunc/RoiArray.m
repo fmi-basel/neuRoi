@@ -2,6 +2,11 @@ classdef RoiArray < handle
     properties
         imageSize
         DEFAULT_GROUP = 'default'
+        currentGroupName
+    end
+    
+    properties (SetObservable)
+        groupNames
     end
     
     properties (Access = private)
@@ -10,7 +15,6 @@ classdef RoiArray < handle
         roiGroupTagList
         selectedIdxs
         
-        groupNames
         groupTags
     end
     
@@ -39,6 +43,8 @@ classdef RoiArray < handle
                 self.imageSize = pr.imageSize;
                 self.addRois(pr.roiList, self.DEFAULT_GROUP);
             end
+            
+            self.currentGroupName = self.groupNames(end);
         end
         
         function tagList = getTagList(self)
@@ -160,8 +166,6 @@ classdef RoiArray < handle
         end
         
         function rois = getSelectedRois(self)
-            disp(self.selectedIdxs)
-            disp(self.roiList)
             rois = self.roiList(self.selectedIdxs);
         end
         
@@ -175,9 +179,6 @@ classdef RoiArray < handle
         end
 
         % Methods for groups
-        function groupNames = getGroupNames(self)
-            groupNames = self.groupNames;
-        end
         
         function idx = findGroupIdx(self, groupName)
             idx = find(strcmp(self.groupNames, groupName));
@@ -191,6 +192,7 @@ classdef RoiArray < handle
         end
     
         function addGroup(self, groupName)
+        % TODO make sure group names are unique
             self.groupNames{end+1} = groupName;
             newTag = max([self.groupTags, 0]) + 1;
             self.groupTags = [self.groupTags, newTag];
@@ -201,13 +203,21 @@ classdef RoiArray < handle
           self.groupNames{idx} = newGroupName;
         end
         
-        function putRoisIntoGroup(self, tags, groupName)
+        function putRoiIntoGroup(self, tag, groupName)
             groupTag = self.findGroupTag(groupName);
+            idx = self.findRoi(tags(k));
+            self.roiGroupTagList(idx) = groupTag;
+            self.roiList(idx).meta.groupName = groupName;
+            self.roiList(idx).meta.groupTag = groupTag;
+        end
+        
+        function putRoiIntoCurrentGroup(self, tag)
+            self.putRoiIntGroup(tag, self.currentGroupName)
+        end
+        
+        function putRoisIntoGroup(self, tags, groupName)
             for k=1:length(tags)
-                idx = self.findRoi(tags(k));
-                self.roiGroupTagList(idx) = groupTag;
-                self.roiList(idx).meta.groupName = groupName;
-                self.roiList(idx).meta.groupTag = groupTag;
+                self.putRoiIntGroup(tags(k), groupName)
             end
         end
         

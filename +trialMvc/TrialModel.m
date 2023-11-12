@@ -26,7 +26,8 @@ classdef TrialModel < baseTrial.BaseTrialModel
         setupMode %1=SetupA; 3=SetupC/VR
         loadMapFromFile %Mainly for SetupC mode
         loadedMapsize %needed because setupC doesn't load rawmovie when opening trial
-
+        
+        MAX_NUM_MAPS = 6
     end
         
     properties (Access = private)
@@ -45,6 +46,8 @@ classdef TrialModel < baseTrial.BaseTrialModel
         mapAdded
         mapUpdated
         trialDeleted
+        roiGroupUpdated
+        currentRoiGroupSet
     end
     
     methods
@@ -149,7 +152,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
                 if pr.maskDir
                     self.maskDir = pr.maskDir;
                 end
-              
+
             end
 
             if pr.loadedMapsize
@@ -744,67 +747,8 @@ classdef TrialModel < baseTrial.BaseTrialModel
         
         function addRoi(self, roi)
             roi.tag = self.getNewRoiTag();
-            self.roiArr.addRoi(roi, 'default');
+            self.roiArr.addRoi(roi, self.roiArr.DEFAULT_GROUP);
             notify(self, 'roiAdded')
-        end
-        
-        function tagArray = getAllRoiTag(self)
-        % TODO remove uniform false
-        % Debug tag data type (uint16 or double)
-            tagArray = arrayfun(@(x) uint16(x.tag), self.roiArray);
-        end
-        
-        function selectAllRoi(self)
-            tagArray = self.getAllRoiTag();
-            self.selectMultipleRoiByTag(tagArray)
-        end
-        
-        function changeRoiTag(self,oldTag,newTag)
-            ind = self.findRoiByTag(oldTag);
-            oldRoi = self.roiArray(ind);
-            tagArray = self.getAllRoiTag();
-            if ismember(newTag,tagArray)
-                error(['New tag cannot be assigned! The tag is ' ...
-                       'already used by another ROI.'])
-            else
-                oldRoi.tag = newTag;
-                self.roiArray(ind) = oldRoi;
-                notify(self,'roiTagChanged', ...
-                NrEvent.RoiTagChangedEvent(oldTag,newTag));
-                disp(sprintf('Roi #%d changed to #%d',oldTag,newTag))
-                if ismember(oldTag,self.selectedRoiTagArray)
-                    idx = find(self.selectedRoiTagArray,oldTag);
-                    self.selectedRoiTagArray(idx) = newTag;
-                end
-            end
-        end
-        
-        function deleteSelectedRois(self)
-            tags = self.roiArr.getSelectedTags();
-            rois = roiFunc.RoiM.empty();
-            for k=1:length(tags)
-                tag = tags(k);
-                rois(k) = self.deleteRoi(tag);
-            end
-            notify(self,'roiDeleted',NrEvent.RoiDeletedEvent(rois));
-            % TODO save ROIs temporarily for undo
-        end
-        
-        function roi = deleteRoi(self,tag)
-            roi = self.roiArr.deleteRoi(tag);
-        end
-        
-        function roiArray = getRoiArray(self)
-            roiArray = self.roiArray;
-        end
-        
-        function roi = getRoiByTag(self,tag)
-            if strcmp(tag,'end')
-                roi = self.roiArray(end);
-            else
-                ind = self.findRoiByTag(tag);
-                roi = self.roiArray(ind);
-            end
         end
         
         function saveRoiArr(self,filePath)
@@ -813,7 +757,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
         end
         
         function replaceRoiArr(self, roiArr)
-            self.roiArr = roiArr
+            self.roiArr = roiArr;
             notify(self, 'roiArrReplaced')
         end
         
@@ -835,7 +779,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
             end
             
             if type_correct
-                self.replaceRoiArr(roiArr)
+                self.replaceRoiArr(roiArr);
             else
                 msg = 'The ROI file should contain roiArr as type roiFunc.RoiArray or the old version (v0.x.x)the ROI file should contain roiArray as type RoiFreehand';
                 error(msg)
@@ -862,21 +806,24 @@ classdef TrialModel < baseTrial.BaseTrialModel
             self.insertRoiArray(roiArray,'replace');
         end
         
-        function ind = findRoiByTag(self,tag)
-            ind = find(arrayfun(@(x) isequal(x.tag,tag), ...
-                                self.roiArray),1);
-            if ~isempty(ind)
-                ind = ind(1);
-            else
-                error(sprintf('Cannot find ROI with tag %d!',tag))
-            end
-        end
-        
-        function roiIndArray = findRoiByTagArray(self,tagArray)
-            roiIndArray = arrayfun(@(x) self.findRoiByTag(x), ...
-                                   tagArray);
+
+        % Methods for ROI group
+        function addRoiGroup(self, groupName)
+            self.roiArr.addGroup(groupName)
+            notify(self, 'roiGroupUpdated')
         end
 
+        function renameRoiGroup(self, oldGroupName, newGroupName)
+            self.roiArr.renameGroup(oldGroupName, newGroupName)
+            notify(self, 'roiGroupUpdated')
+        end
+        
+        function setCurrentRoiGroupName(self, groupName)
+            self.roiArr.currentGroupName = groupName;
+            notify(self, 'currentRoiGroupSet')
+        end
+        
+        
         % Methods for contrast
         function dataLim = getDataLim(self)
             map = self.getCurrentMap();

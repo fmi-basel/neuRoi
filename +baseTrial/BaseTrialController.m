@@ -133,7 +133,6 @@ classdef BaseTrialController < handle
             if ~self.model.singleRoiSelected()
                 error('Please select a single ROI to move!')
             end
-            
             mainFig = self.view.guiHandles.mainFig;
             usrData = get(mainFig,'UserData');
             usrData.oldWindowButtonDownFcn = get(mainFig,'WindowButtonDownFcn');
@@ -178,7 +177,6 @@ classdef BaseTrialController < handle
             rmfield(usrData,'oldWindowButtonDownFcn');
             rmfield(usrData,'oldWindowKeyPressFcn');
             set(thisFig,'UserData',usrData);
-            self.view.RoiSaveStatus('Rois have been changed and not saved','red');
         end
 
         function moveRoi_Callback(self,src,evnt)

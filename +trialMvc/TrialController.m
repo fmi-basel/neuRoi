@@ -32,17 +32,11 @@ classdef TrialController < baseTrial.BaseTrialController
                     self.selectMap(2);
                   case 'e'
                     self.selectMap(3);
-                  case 'v'
-                    self.enterMoveRoiMode();
-                  case 'x'
-                    self.replaceRoiByDrawing();
                 end
             elseif strcmp(evnt.Modifier,'control')
                 switch evnt.Key
                   case 'a'
                     self.selectAllRoi_Callback();
-                  % case 'q'
-                  %   self.loadRoiArray();
                   case '1'
                     self.view.zoomReset();
                 end
@@ -98,7 +92,7 @@ classdef TrialController < baseTrial.BaseTrialController
             end
         end
         
-        function loadRoiArray(self)
+        function loadRoiArr(self)
             [fileName,fileDir] = uigetfile('*.mat','Load ROIs', ...
                                            self.model.roiDir);
             if fileName
@@ -113,9 +107,8 @@ classdef TrialController < baseTrial.BaseTrialController
                         return
                     end
                 end
-                option = 'replace';
-                filePath = fullfile(fileDir,fileName)
-                self.model.loadRoiArray(filePath,option);
+                filePath = fullfile(fileDir,fileName);
+                self.model.loadRoiArr(filePath);
             end
         end
 
