@@ -1,4 +1,8 @@
 classdef TrialStackView < baseTrial.BaseTrialView
+    properties
+        contrastForAllTrial
+    end
+    
     methods
         function self = TrialStackView(mymodel,mycontroller,mytransformationParameter)
             self = self@baseTrial.BaseTrialView(mymodel, mycontroller);
@@ -19,11 +23,14 @@ classdef TrialStackView < baseTrial.BaseTrialView
             end
 
             self.loadRoiColormap();
+            self.contrastLimArray = cell(self.model.MAX_NUM_MAPS, self.model.nTrial);
 
             self.listenToModel();
             self.assignCallbacks();
             self.setRoiAlphaSlider(0.5);
             self.roiVisible = true;
+            
+            self.contrastForAllTrial = false;
         end
         
         function listenToModel(self)
@@ -131,6 +138,33 @@ classdef TrialStackView < baseTrial.BaseTrialView
             mainFig = self.guiHandles.mainFig;
             % traceFig = self.guiHandles.traceFig;
             figure(mainFig)
+        end
+        
+        % Methods for constrast
+        function [dataLim, contrastLim] = getDataLimAndContrastLim(self)
+            dataLim = self.model.getDataLim(self.contrastForAllTrial);
+            
+            mapTypeIdx = self.model.findMapTypeIdx(self.model.mapType);
+            contrastLim = self.contrastLimArray{mapTypeIdx,self.model.currentTrialIdx};
+            if isempty(contrastLim)
+                contrastLim = dataLim;
+            else
+                ss = helper.rangeIntersect(dataLim,contrastLim);
+                if ~isempty(ss)
+                    contrastLim = ss;
+                else
+                    contrastLim = dataLim;
+                end
+            end
+        end
+
+        function saveContrastLim(self,contrastLim)
+            mapTypeIdx = self.model.findMapTypeIdx(self.model.mapType);
+            if self.contrastForAllTrial
+                [self.contrastLimArray{mapTypeIdx,:}] = deal(contrastLim);
+            else
+                self.contrastLimArray{mapTypeIdx,self.model.currentTrialIdx} = contrastLim;
+            end
         end
         
         %JE-Methods for changing Alpha values

@@ -11,6 +11,7 @@ classdef BaseTrialView < handle
         AlphaForRoiOnePatch = 0.5
         roiVisible
         
+        contrastLimArray
     end
     
     properties (Access = private)
@@ -298,8 +299,7 @@ classdef BaseTrialView < handle
         
         % Methods for changing contrast
         function updateContrastForCurrentMap(self)
-            dataLim = self.model.getDataLim();
-            contrastLim = self.getContrastLim(dataLim);
+            [dataLim,contrastLim] = self.getDataLimAndContrastLim();
             self.setDataLimAndContrastLim(dataLim, contrastLim);
             self.changeMapContrast(contrastLim);
             self.saveContrastLim(contrastLim);

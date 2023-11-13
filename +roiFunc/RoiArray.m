@@ -182,8 +182,6 @@ classdef RoiArray < handle
         
         function idx = findGroupIdx(self, groupName)
             idx = find(strcmp(self.groupNames, groupName));
-            disp(groupName)
-            disp(self.groupNames)
             if ~length(idx)
                 error(sprintf('Group %s not found!', groupName))
             end

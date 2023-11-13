@@ -2,7 +2,6 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
     properties (Constant)
         DIFF_NAME = 'diff'
     end
-
     
     properties
         trialNameList
@@ -31,6 +30,8 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         transformStack
         transformInvStack
         templateIdx
+        
+        MAX_NUM_MAPS = 6
     end
     
     properties (SetObservable)
@@ -72,9 +73,6 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             self.mapType = 'anatomy';
             
             self.computeMapLims();
-            self.contrastLimArray = cell(length(self.mapTypeList),...
-                                         self.nTrial);
-            self.contrastForAllTrial = false;
             self.mapSize = size(self.anatomyStack(:, :, 1));
 
             if length(pr.roiArrStack)
@@ -147,38 +145,16 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             self.mapLims(2, :) = helper.minMax(self.responseStack);
         end
         
-        function saveContrastLim(self,contrastLim)
+        function dataLim = getDataLim(self, contrastForAllTrial)
             mapTypeIdx = self.findMapTypeIdx(self.mapType);
-            if self.contrastForAllTrial
-                [self.contrastLimArray{mapTypeIdx,:}] = deal(contrastLim);
-            else
-                self.contrastLimArray{mapTypeIdx,self.currentTrialIdx} = contrastLim;
-            end
-        end
-        
-        function [dataLim, contrastLim] = getDataLimAndContrastLim(self)
-            mapTypeIdx = self.findMapTypeIdx(self.mapType);
-            if self.contrastForAllTrial
+            if contrastForAllTrial
                 dataLim = self.mapLims(mapTypeIdx, :);
             else
-                map = self.model.getCurrentMap();
+                map = self.getCurrentMap();
                 dataLim = helper.minMax(map.data);
                 sn = 10000*eps; % a small number
                 dataLim(2) = dataLim(2) + sn;
             end
-            
-            contrastLim = self.contrastLimArray{mapTypeIdx,self.currentTrialIdx};
-            if isempty(contrastLim)
-                contrastLim = dataLim;
-            else
-                ss = helper.rangeIntersect(dataLim,contrastLim);
-                if ~isempty(ss)
-                    contrastLim = ss;
-                else
-                    contrastLim = dataLim;
-                end
-            end
-            self.saveContrastLim(contrastLim);
         end
         
         function idx = findMapTypeIdx(self, mapType)

@@ -1,8 +1,4 @@
 classdef TrialView < baseTrial.BaseTrialView
-    properties
-        contrastLimArray
-    end
-    
     methods
         function self = TrialView(mymodel,mycontroller)
             self = self@baseTrial.BaseTrialView(mymodel, mycontroller);
@@ -261,7 +257,8 @@ classdef TrialView < baseTrial.BaseTrialView
             self.contrastLimArray{mapIdx} = contrastLim;
         end
         
-        function contrastLim = getContrastLim(self, dataLim)
+        function [dataLim, contrastLim] = getDataLimAndContrastLim(self)
+            dataLim = self.model.getDataLim();
             mapIdx = self.model.currentMapInd;
 
             contrastLim = self.contrastLimArray{mapIdx};
