@@ -228,7 +228,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             for k = 1:self.nTrial
                 if k == self.currentTrialIdx
                     tags = troiArrStack(k).getTagList();
-                    self.roiArrStack(k).putRoisIntoGroup(tags, groupName);
+                    self.roiArrStack(k).assignRoisToGroup(tags, groupName);
                 else
                     self.roiArrStack(k).addRois(troiArrStack(k).getRoiList(), groupName);
                 end
@@ -348,7 +348,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             diffTags = setdiff(allTags, tags);
             roiArr.addGroup('diff')
             if length(diffTags)
-                roiArr.putRoisIntoGroup(diffTags, 'diff')
+                roiArr.assignRoisToGroup(diffTags, 'diff')
             end
         end
         

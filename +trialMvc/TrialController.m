@@ -132,6 +132,36 @@ classdef TrialController < baseTrial.BaseTrialController
             end
         end
         
+        % Methods for ROI groups
+        function roiGroupListBox_Callback(self,src,evnt)
+            fig = src.Parent;
+            if strcmp(fig.SelectionType,'normal')
+                idx = src.Value;
+                self.model.setCurrentRoiGroup(src.String{idx});
+            end
+        end
+        
+        function roiGroupAdd_Callback(self,src,evnt)
+            answer = inputdlg('ROI group name:', 'ROI group name');
+            roiGroupName = answer{1};
+            if isvarname(roiGroupName)
+                self.model.addRoiGroup(roiGroupName)
+            else
+                errordlg('ROI group name should be a valid MATLAB variable name')
+            end
+        end
+
+        function enterAssignRoiMode()
+            
+        end
+        
+        function exitAssignRoiMode()
+        end
+        
+        function assignRoi_Callback()
+        end
+        
+        % Methods for time traces
         function syncTrace_Callback(self,source,evnt)
             self.setSyncTimeTrace(source.Value);
         end

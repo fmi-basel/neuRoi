@@ -182,6 +182,8 @@ classdef RoiArray < handle
         
         function idx = findGroupIdx(self, groupName)
             idx = find(strcmp(self.groupNames, groupName));
+            disp(groupName)
+            disp(self.groupNames)
             if ~length(idx)
                 error(sprintf('Group %s not found!', groupName))
             end
@@ -203,21 +205,23 @@ classdef RoiArray < handle
           self.groupNames{idx} = newGroupName;
         end
         
-        function putRoiIntoGroup(self, tag, groupName)
+        function roi = assignRoiToGroup(self, tag, groupName)
             groupTag = self.findGroupTag(groupName);
-            idx = self.findRoi(tags(k));
+            idx = self.findRoi(tag);
             self.roiGroupTagList(idx) = groupTag;
             self.roiList(idx).meta.groupName = groupName;
             self.roiList(idx).meta.groupTag = groupTag;
+            roi = self.roiList(idx);
         end
         
-        function putRoiIntoCurrentGroup(self, tag)
-            self.putRoiIntGroup(tag, self.currentGroupName)
+        function roi = assignRoiToCurrentGroup(self, tag)
+            roi = self.assignRoiToGroup(tag, self.currentGroupName)
         end
         
-        function putRoisIntoGroup(self, tags, groupName)
+        function rois = assignRoisToGroup(self, tags, groupName)
+            rois = roiFunc.RoiM.empty()
             for k=1:length(tags)
-                self.putRoiIntGroup(tags(k), groupName)
+                rois(k) = self.assignRoiToGroup(tags(k), groupName)
             end
         end
         

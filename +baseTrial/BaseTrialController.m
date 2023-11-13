@@ -124,6 +124,9 @@ classdef BaseTrialController < handle
                 else
                     self.model.selectRoi(tag);
                 end
+              case 'extend'
+                % Assign ROI to current group
+                self.model.assignRoiToCurrentGroup(tag)
             end
         end
 

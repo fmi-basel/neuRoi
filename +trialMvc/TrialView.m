@@ -49,6 +49,10 @@ classdef TrialView < baseTrial.BaseTrialView
             
             addlistener(self.model,'syncTimeTrace','PostSet',...
                         @(~,~)self.changeTraceFigVisibility());
+            
+            addlistener(self.model,'assignedRoiToGroup',...
+                        @self.updateRoiPatchGroup);
+
             addlistener(self.model,'roiSelected',...
                         @self.updateTimeTraceDisplay);
             addlistener(self.model,'roiUnSelected',...
@@ -91,6 +95,11 @@ classdef TrialView < baseTrial.BaseTrialView
             
             set(self.guiHandles.syncTraceCheckbox,'Callback',...
             @(s,e)self.controller.syncTrace_Callback(s,e));
+            
+            set(self.guiHandles.roiGroupListBox,'Callback',...
+                @(s,e)self.controller.roiGroupListBox_Callback(s,e));
+            set(self.guiHandles.roiGroupAddButton,'Callback',...
+                @(s,e)self.controller.roiGroupAdd_Callback(s,e));
         end
         
         function displayTitle(self)
@@ -238,12 +247,12 @@ classdef TrialView < baseTrial.BaseTrialView
         end
         
         function updateCurrentRoiGroup(self, src, evnt);
-            rg = self.guiHandles.roiGroupListBox
+            rg = self.guiHandles.roiGroupListBox;
             idx = find(strcmp(rg.String,self.model.roiArr.currentGroupName));
             if isempty(idx)
                 error('Roi group name not found')
             end
-            rg.Value = idx
+            rg.Value = idx;
         end
         
         % Methods for contrast

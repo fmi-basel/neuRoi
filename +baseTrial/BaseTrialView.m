@@ -163,7 +163,14 @@ classdef BaseTrialView < handle
             % Add updated ROI to roiImg
             self.addRoiPatch(newRoi);
             % Move selection cross
-            self.updateRoiPatchSelection()
+            self.updateRoiPatchSelection();
+        end
+        
+        
+        function updateRoiPatchGroup(self, src, evnt)
+            disp('update roi in view')
+            roi = evnt.roi;
+            self.addRoiPatch(roi);
         end
 
         function deleteRoiPatches(self,src,evnt)

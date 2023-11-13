@@ -53,8 +53,8 @@ function roiArr = splitRoiArr(roiArr)
     tags2 = [3, 4];
     roiArr.renameGroup(roiArr.DEFAULT_GROUP, 'region1');
     roiArr.addGroup('region2');
-    roiArr.putRoisIntoGroup(tags1, 'region1');
-    roiArr.putRoisIntoGroup(tags2, 'region2');
+    roiArr.assignRoisToGroup(tags1, 'region1');
+    roiArr.assignRoisToGroup(tags2, 'region2');
 end
 
 function movieStructList = createTestMovies(affineMat2, affineMat3)
