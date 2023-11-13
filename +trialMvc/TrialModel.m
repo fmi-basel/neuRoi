@@ -814,8 +814,9 @@ classdef TrialModel < baseTrial.BaseTrialModel
             notify(self, 'roiGroupUpdated')
         end
 
-        function renameRoiGroup(self, oldGroupName, newGroupName)
-            self.roiArr.renameGroup(oldGroupName, newGroupName)
+        function renameCurrentRoiGroup(self, newGroupName)
+            self.roiArr.renameGroup(self.roiArr.currentGroupName,...
+                                    newGroupName)
             notify(self, 'roiGroupUpdated')
         end
         

@@ -99,17 +99,28 @@ classdef BaseTrialController < handle
 
         function roiClicked_Callback(self, src, evnt)
             currPt = get(self.view.guiHandles.roiAxes, 'CurrentPoint');
-            % get Tag value under currPt
-            roiMask = self.view.getRoiMask();
-            tag = roiMask(round(currPt(1,2)), round(currPt(1,1)));
-            % select Roi accordingly
-            if tag > 0
-                self.selectRoi_Callback(tag);
-            else
-                if ~isempty(self.model.roiArr.getSelectedIdxs())
-                    self.model.unselectAllRois();
+            if self.checkWithinRoiAxes(currPt)
+                % get Tag value under currPt
+                roiMask = self.view.getRoiMask();
+                tag = roiMask(round(currPt(1,2)), round(currPt(1,1)));
+                % select Roi accordingly
+                if tag > 0
+                    self.selectRoi_Callback(tag);
+                else
+                    if ~isempty(self.model.roiArr.getSelectedIdxs())
+                        self.model.unselectAllRois();
+                    end
                 end
             end
+        end
+        
+        function result = checkWithinRoiAxes(self, currPt)
+            ax = self.view.guiHandles.roiAxes;
+            xlim = get(ax,'xlim');
+            ylim = get(ax,'ylim');
+            outX = any(diff([xlim(1), currPt(1,1), xlim(2)])<0);
+            outY = any(diff([ylim(1), currPt(1,2), ylim(2)])<0);
+            result = ~(max(outX, outY));
         end
 
         function selectRoi_Callback(self, tag)

@@ -39,6 +39,8 @@ classdef TrialController < baseTrial.BaseTrialController
                     self.selectAllRoi_Callback();
                   case '1'
                     self.view.zoomReset();
+                  case 'o'
+                    self.renameCurrentRoiGroup();
                 end
             end
         end
@@ -150,15 +152,15 @@ classdef TrialController < baseTrial.BaseTrialController
                 errordlg('ROI group name should be a valid MATLAB variable name')
             end
         end
-
-        function enterAssignRoiMode()
-            
-        end
         
-        function exitAssignRoiMode()
-        end
-        
-        function assignRoi_Callback()
+        function renameCurrentRoiGroup(self, src, evnt)
+            answer = inputdlg('ROI group new name:', 'ROI group rename');
+            roiGroupName = answer{1};
+            if isvarname(roiGroupName)
+                self.model.renameCurrentRoiGroup(roiGroupName)
+            else
+                errordlg('ROI group name should be a valid MATLAB variable name')
+            end
         end
         
         % Methods for time traces
