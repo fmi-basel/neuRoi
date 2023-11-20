@@ -89,7 +89,7 @@ classdef TrialController < baseTrial.BaseTrialController
                     self.model.roiDir = fileDir;
                     filePath = fullfile(fileDir,fileName);
                     self.model.roiFilePath = filePath;
-                    self.model.saveRoiArray(filePath);
+                    self.model.saveRoiArr(filePath);
                 end
             end
         end

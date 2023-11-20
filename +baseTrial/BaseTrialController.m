@@ -58,8 +58,7 @@ classdef BaseTrialController < handle
         end
 
         function replaceRoiByDrawing(self, varargin)
-            selectedIdxs = self.model.roiArr.getSelectedIdxs();
-            if length(selectedIdxs) == 1
+            if self.model.singleRoiSelected()
                 roi = self.model.roiArr.getSelectedRois();
                 % Remove ROI in view
                 self.view.deleteRoiPatch(roi);
@@ -79,8 +78,8 @@ classdef BaseTrialController < handle
                     position = rawRoi.Position;
                     if ~isempty(position)
                         freshRoi = roiFunc.RoiM('freeHand', rawRoi);
-                        self.model.updateRoiByIdx(selectedIdxs(1), freshRoi);
-                        self.model.selectRoisByIdxs(selectedIdxs(1));
+                        self.model.updateRoi(roi.tag, freshRoi);
+                        self.model.selectSingleRoi(roi.tag);
                     else
                         disp('Empty ROI. No replacement.')
                     end
@@ -127,7 +126,7 @@ classdef BaseTrialController < handle
             selectionType = get(gcf,'SelectionType');
             switch selectionType
               case 'normal'
-                self.model.selectRois([tag]);
+                self.model.selectSingleRoi(tag);
               case 'alt'
                 selectedTags = self.model.roiArr.getSelectedTags();
                 if ismember(tag, selectedTags)
@@ -137,7 +136,8 @@ classdef BaseTrialController < handle
                 end
               case 'extend'
                 % Assign ROI to current group
-                self.model.assignRoiToCurrentGroup(tag)
+                self.model.assignRoiToCurrentGroup(tag);
+                self.model.selectSingle(tag);
             end
         end
 
@@ -243,7 +243,7 @@ classdef BaseTrialController < handle
                 self.view.setContrastLim(contrastLim);
             end
             self.view.changeMapContrast(contrastLim);
-            self.model.saveContrastLim(contrastLim);
+            self.view.saveContrastLim(contrastLim);
         end
         
         function contrastLim = calcMinLessThanMax(self,contrastSliderInd,...

@@ -103,9 +103,9 @@ classdef RoiArray < handle
             end
         end
         
-        function updateRoi(self, tag, roi)
+        function [newRoi, oldRoi] = updateRoi(self, tag, roi)
             idx = self.findRoi(tag);
-            self.updateRoiByIdx(idx, roi)
+            [newRoi, oldRoi] = self.updateRoiByIdx(idx, roi);
         end
         
         function [newRoi, oldRoi] = moveRoi(self, tag, offset)
@@ -213,7 +213,7 @@ classdef RoiArray < handle
         end
         
         function roi = assignRoiToCurrentGroup(self, tag)
-            roi = self.assignRoiToGroup(tag, self.currentGroupName)
+            roi = self.assignRoiToGroup(tag, self.currentGroupName);
         end
         
         function rois = assignRoisToGroup(self, tags, groupName)
