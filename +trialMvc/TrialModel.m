@@ -851,8 +851,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
             end
 
             fZeroPercent = 0.5;
-            ind = self.findRoiByTag(tag);
-            roi = self.roiArray(ind);
+            roi = self.roiArr.getRoi(tag);
             timeTraceRaw = trialMvc.TrialModel.getTimeTrace(self.rawMovie,roi);
             timeTrace = trialMvc.TrialModel.getTimeTraceDf(timeTraceRaw, ...
                                           'intensityOffset',self.intensityOffset, ...
@@ -887,11 +886,10 @@ classdef TrialModel < baseTrial.BaseTrialModel
         % from the input raw movie
         % Usage: timeTraceRaw = getTimeTrace(rawMovie,roi)
             mapSize = size(rawMovie(:,:,1));
-            mask = roi.createMask(mapSize);
-            [maskIndX maskIndY] = find(mask==1);
+            maskIndX = roi.position(:,1);
+            maskIndY = roi.position(:,2);
             roiMovie = rawMovie(maskIndX,maskIndY,:);
             timeTraceRaw = squeeze(mean(mean(roiMovie,1),2));
-            % timeTraceRaw = timeTraceRaw(:);
         end
         
 

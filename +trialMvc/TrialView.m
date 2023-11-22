@@ -51,7 +51,7 @@ classdef TrialView < baseTrial.BaseTrialView
 
             addlistener(self.model,'roiSelected',...
                         @self.updateTimeTraceDisplay);
-            addlistener(self.model,'roiUnSelected',...
+            addlistener(self.model,'roiUnselected',...
                         @self.updateTimeTraceDisplay);
             addlistener(self.model,'roiSelectionCleared',...
                         @self.updateTimeTraceDisplay);
@@ -197,7 +197,7 @@ classdef TrialView < baseTrial.BaseTrialView
                     tag = evnt.tag;
                     [timeTrace,timeVec] = self.model.getTimeTraceByTag(tag,true);
                     self.plotTimeTrace(timeVec,timeTrace,tag);
-                  case 'roiUnSelected'
+                  case 'roiUnselected'
                     tag = evnt.tag;
                     lineTag = sprintf('trace_%04d',tag);
                     hline = findobj(self.guiHandles.traceAxes,'Tag',lineTag);

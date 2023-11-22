@@ -103,9 +103,9 @@ classdef RoiArray < handle
             end
         end
         
-        function updateRoi(self, tag, roi)
+        function [newRoi, oldRoi] = updateRoi(self, tag, roi)
             idx = self.findRoi(tag);
-            self.updateRoiByIdx(idx, roi)
+            [newRoi, oldRoi] = self.updateRoiByIdx(idx, roi);
         end
         
         function [newRoi, oldRoi] = moveRoi(self, tag, offset)
@@ -124,6 +124,7 @@ classdef RoiArray < handle
         end
         
         function roi = deleteRoi(self, tag)
+            self.unselectRoi(tag);
             idx = self.findRoi(tag);
             roi = self.roiList(idx);
             self.roiList(idx) = [];
@@ -159,10 +160,10 @@ classdef RoiArray < handle
         function unselectRoi(self, tag)
             idx = self.findRoi(tag);
             sidx = find(self.selectedIdxs == idx);
-            if ~length(sidx)
-                error(sprintf('ROI #%d is not selected', tag))
+            if length(sidx)
+                self.selectedIdxs(sidx) = [];
             end
-            self.selectedIdxs(sidx) = [];
+            % sprintf('ROI #%d is not selected', tag) then do nothing
         end
         
         function rois = getSelectedRois(self)
@@ -213,7 +214,7 @@ classdef RoiArray < handle
         end
         
         function roi = assignRoiToCurrentGroup(self, tag)
-            roi = self.assignRoiToGroup(tag, self.currentGroupName)
+            roi = self.assignRoiToGroup(tag, self.currentGroupName);
         end
         
         function rois = assignRoisToGroup(self, tags, groupName)

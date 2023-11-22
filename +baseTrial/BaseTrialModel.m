@@ -11,7 +11,7 @@ classdef BaseTrialModel < handle
         roiTagChanged
         
         roiSelected
-        roiUnSelected
+        roiUnselected
         roiSelectionCleared
         
         roiNewAlpha
@@ -24,43 +24,38 @@ classdef BaseTrialModel < handle
             error('Not implemented.')
         end
         
-        function selectRois(self, tagLists)
-            self.roiArr.selectRois(tagLists);
-            notify(self,'roiSelected');
+        function selectSingleRoi(self, tag)
+            self.roiArr.selectRois([tag]);
+            notify(self, 'roiSelected', NrEvent.RoiEvent(tag));
         end
         
         function unselectAllRois(self)
             self.roiArr.selectRois([]);
-            notify(self,'roiSelected');
+            notify(self,'roiSelectionCleared');
         end
 
         
         function selectLastRoi(self)
             self.roiArr.selectLastRoi();
-            notify(self,'roiSelected');
+            notify(self, 'roiSelected', NrEvent.RoiEvent(tag));
         end
         
         function selectRoi(self, tag)
             self.roiArr.selectRoi(tag);
-            notify(self,'roiSelected');
+            notify(self, 'roiSelected', NrEvent.RoiEvent(tag));
         end
         
         function unselectRoi(self, tag)
             self.roiArr.unselectRoi(tag);
-            notify(self,'roiSelected');
-        end
-        
-        function selectRoisByIdxs(self, idxs)
-            self.roiArr.selectRoisByIdxs(idxs);
-            notify(self,'roiSelected');
+            notify(self, 'roiUnselected', NrEvent.RoiEvent(tag));
         end
         
         function res = singleRoiSelected(self)
             res = length(self.roiArr.getSelectedIdxs()) == 1;
         end
         
-        function updateRoiByIdx(self, idx, position)
-            [newRoi, oldRoi] = self.roiArr.updateRoiByIdx(idx, position);
+        function updateRoi(self, tag, position)
+            [newRoi, oldRoi] = self.roiArr.updateRoi(tag, position);
             notify(self,'roiUpdated', NrEvent.RoiUpdatedEvent(newRoi, oldRoi));
         end
         

@@ -270,7 +270,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         
         function deleteSelectedRoisInStack(self)
             tags = self.roiArr.getSelectedTags();
-            roiStacks = {}
+            roiStacks = {};
             for k=1:length(tags)
                 tag = tags(k);
                 roiStacks{k} = self.deleteRoiInStack(tag);
@@ -278,7 +278,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             % Only notify the deleted ROIs in current trial
             rois = roiFunc.RoiM.empty();
             for k=1:length(tags)
-                roi = roiStacks{k}{self.currentTrialIdx}
+                roi = roiStacks{k}{self.currentTrialIdx};
                 if ~isempty(roi)
                     rois(k) = roi;
                 end

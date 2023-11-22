@@ -156,7 +156,6 @@ classdef BaseTrialView < handle
         end
         
         function updateRoiPatchPosition(self,src,evnt)
-            disp('update roi in view')
             newRoi = evnt.newRoi;
             oldRoi = evnt.oldRoi;
             % Remove original ROI in roiImg
@@ -169,7 +168,6 @@ classdef BaseTrialView < handle
         
         
         function updateRoiPatchGroup(self, src, evnt)
-            disp('update roi in view')
             roi = evnt.roi;
             self.addRoiPatch(roi);
         end
