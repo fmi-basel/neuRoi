@@ -1061,7 +1061,7 @@ classdef NrModel < handle
         end
         
         function varargout = getSelectedFileList(self, fileType)
-            if self.selectedFileIdx
+            if length(self.selectedFileIdx)
                 fileList = self.getFileList(fileType, self.selectedFileIdx);
                 idxList = self.selectedFileIdx;
             else

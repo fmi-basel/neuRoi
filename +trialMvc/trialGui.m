@@ -8,8 +8,12 @@ function handles = trialGui(varargin)
     else
         mapSize = [10,10];
     end
+    
+    width = 750; height = 650;
+    Pix_SS = get(0,'screensize');
+    position = [(Pix_SS(3)-width)/2 (Pix_SS(4)-height)/2 width height];
 
-    handles.mainFig = figure('Position',[600,300,750,650]);
+    handles.mainFig = figure('Position', position);
     helper.deleteDefaultFigureMenu(handles.mainFig);
     
     handles.fileMenu = uimenu(handles.mainFig,'Text','File');
