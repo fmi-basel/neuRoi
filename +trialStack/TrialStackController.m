@@ -14,13 +14,13 @@ classdef TrialStackController < baseTrial.BaseTrialController
                 switch evnt.Key
                   case 'b'
                     self.addRoisInStack();
-                  case {'d','delete','backspace'}
-                    self.deleteSelectedRoisInStack();
                 end
             else
                 switch evnt.Key
                   case {'j','k'}
                     self.slideTrialCallback(evnt)
+                  case {'d','delete','backspace'}
+                    self.deleteSelectedRoisInStack();
                 end
             end
         end

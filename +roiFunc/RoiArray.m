@@ -124,6 +124,7 @@ classdef RoiArray < handle
         end
         
         function roi = deleteRoi(self, tag)
+            self.unselectRoi(tag);
             idx = self.findRoi(tag);
             roi = self.roiList(idx);
             self.roiList(idx) = [];
@@ -159,10 +160,10 @@ classdef RoiArray < handle
         function unselectRoi(self, tag)
             idx = self.findRoi(tag);
             sidx = find(self.selectedIdxs == idx);
-            if ~length(sidx)
-                error(sprintf('ROI #%d is not selected', tag))
+            if length(sidx)
+                self.selectedIdxs(sidx) = [];
             end
-            self.selectedIdxs(sidx) = [];
+            % sprintf('ROI #%d is not selected', tag) then do nothing
         end
         
         function rois = getSelectedRois(self)
