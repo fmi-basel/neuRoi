@@ -9,7 +9,7 @@ classdef RoiArray < handle
         groupNames
     end
     
-    properties (Access = private)
+    properties (SetAccess = private)
         roiList
         tagList
         roiGroupTagList
@@ -281,6 +281,28 @@ classdef RoiArray < handle
                     submask = min(submask + roi.createMask(self.imageSize), 1);
                 end
                 maskImg = min(maskImg + submask*groupTag, groupTag);
+            end
+        end
+        
+        function roiArr = copy(self)
+        % COPY copy self to a new RoiArray object
+            roiArr = roiFunc.RoiArray();
+            roiArr.copyFrom(self);
+        end
+
+        function copyFrom(self, roiArr)
+        % COPYFROM copy the properties from the roiArr
+            propsToCopy = {'imageSize',...
+                           'currentGroupName',...
+                           'groupNames',...
+                           'roiList',...
+                           'tagList',...
+                           'roiGroupTagList',...
+                           'selectedIdxs',...
+                           'groupTags'};
+            
+            for prop=propsToCopy(:)
+                self.(prop) = roiArr.(prop);
             end
         end
         

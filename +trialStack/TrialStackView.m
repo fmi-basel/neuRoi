@@ -30,7 +30,7 @@ classdef TrialStackView < baseTrial.BaseTrialView
             self.setRoiAlphaSlider(0.5);
             self.roiVisible = true;
             
-            self.contrastForAllTrial = false;
+            self.contrastForAllTrial = true;
         end
         
         function listenToModel(self)

@@ -60,7 +60,7 @@ classdef TrialStackController < baseTrial.BaseTrialController
         function saveRoiStack_Callback(self,src,evnt)
         % TODO make this work
             if self.model.roiFilePath
-                self.model.saveRoiStack(self.model.roiFilePath);
+                self.model.saveRoiArrStack(self.model.roiFilePath);
             else
                 defFileName = 'roiArrStack.mat';
                 defFilePath = fullfile(self.model.roiDir, defFileName);
@@ -68,11 +68,11 @@ classdef TrialStackController < baseTrial.BaseTrialController
                 if fileName
                     self.model.roiDir = fileDir;
                     filePath = fullfile(fileDir, fileName);
-                    self.model.saveRoiStack(filePath);
+                    self.model.saveRoiArrStack(filePath);
                 end
             end
             % TODO indicate in GUI the non-saved status
-            % self.view.RoiSaveStatus('Rois saved','green');
+            self.view.RoiSaveStatus('Rois saved','green');
         end
         
         function EditCheckbox_Callback(self,src,evnt)
