@@ -343,7 +343,7 @@ classdef NrController < handle
         function BUnwarpJCalculateButton_Callback(self,src,evnt)
             nameOK = self.CheckBunwarpJName();
             if nameOK
-                self.model.computeBunwarpj();
+                self.model.registerTrials();
                 self.view.refreshView();
             end
         end

@@ -56,14 +56,12 @@ classdef NrModel < handle
         roiFileIdentifier    
        
 
+        registerWithBunwarpj = false
         transformParam
         referenceTrialIdx
-        BUnwarpJCalculated
         transformationName
         calculatedTransformationsIdx
         calculatedTransformationsList
-        
-        trialStackDoTransform
         
         TransformationTooltip
         
@@ -189,8 +187,6 @@ classdef NrModel < handle
             self.referenceTrialIdx = 1;
             self.transformParam = Bunwarpj.TransformParam();
             self.TransformationTooltip=struct();
-            
-            self.trialStackDoTransform = true;
         end
         
         function importRawData(self,expInfo,rawDataDir,rawFileList,resultDir)
@@ -1092,54 +1088,63 @@ classdef NrModel < handle
         end
 
         
-        %BUnwarpJ
-        function computeBunwarpj(self, varargin)
-                self.BUnwarpJCalculated= false;
-                
-                bunwarpjDir = self.getBunwarpjDir();
-                if ~exist(bunwarpjDir, 'dir')
-                    mkdir(bunwarpjDir);
-                end
-                
-                trialNameList = self.getSelectedFileList('trial');
-                refTrialName = self.getFileList('trial', self.referenceTrialIdx);
-                [trialNameList, ~] = NrModel.removeReferenceFromList(trialNameList, refTrialName);
-                
-                anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'), self.planeNum);
-                anatomyNameList = self.getSelectedFileList('anatomy');
-                refAnatomyName = self.getFileList('anatomy', self.referenceTrialIdx);
-                [anatomyNameList, ~] = NrModel.removeReferenceFromList(anatomyNameList, refAnatomyName);
-                anatomyFileList = fullfile(anatomyDir, anatomyNameList);
-                refAnatomyFile = fullfile(anatomyDir, refAnatomyName);
-               
+        %Register trials
+        function registerTrials(self)
+            bunwarpjDir = self.getBunwarpjDir();
+            if ~exist(bunwarpjDir, 'dir')
+                mkdir(bunwarpjDir);
+            end
+            
+            trialNameList = self.getSelectedFileList('trial');
+            refTrialName = self.getFileList('trial', self.referenceTrialIdx);
+            [trialNameList, ~] = NrModel.removeReferenceFromList(trialNameList, refTrialName);
+            
+            anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'), self.planeNum);
+            anatomyNameList = self.getSelectedFileList('anatomy');
+            refAnatomyName = self.getFileList('anatomy', self.referenceTrialIdx);
+            [anatomyNameList, ~] = NrModel.removeReferenceFromList(anatomyNameList, refAnatomyName);
+            anatomyFileList = fullfile(anatomyDir, anatomyNameList);
+            refAnatomyFile = fullfile(anatomyDir, refAnatomyName);
+            
 
-                % Rigid alignment before bunwarpj
-                alignDir = fullfile(bunwarpjDir, 'alignment');
-                if ~exist(alignDir, 'dir')
-                    mkdir(alignDir)
-                end
-                alignResult = self.alignTrialBatch(refTrialName,...
-                                                   'planeNum', self.planeNum,...
-                                                   'alignOption', {'plotFig',false},...
-                                                   'outDir', alignDir);
+            % Rigid alignment before bunwarpj
+            alignDir = fullfile(bunwarpjDir, 'alignment');
+            if ~exist(alignDir, 'dir')
+                mkdir(alignDir)
+            end
+            alignResult = self.alignTrialBatch(refTrialName,...
+                                               'planeNum', self.planeNum,...
+                                               'alignOption', {'plotFig',false},...
+                                               'outDir', alignDir);
 
-                
-                offsetYxList = cellfun(@(x) self.getOffsetYx(alignResult, x),...
-                                       anatomyNameList, 'UniformOutput', false);
-                
+            
+            offsetYxList = cellfun(@(x) self.getOffsetYx(alignResult, x),...
+                                   anatomyNameList, 'UniformOutput', false);
+            
+            if self.registerWithBunwarpj
                 % Compute tranfromation and save as .mat
                 Bunwarpj.computeBunwarpj(anatomyFileList, refAnatomyFile,...
                                          trialNameList, refTrialName,...
                                          self.transformParam, offsetYxList,...
                                          bunwarpjDir);
-                
-                if isempty(self.calculatedTransformationsList)
-                    self.calculatedTransformationsIdx=1;
-                end
-                
-                self.calculatedTransformationsList{end+1} = self.transformationName;
-                self.BUnwarpJCalculated= true;
+            else
+                % TODO currently this is a work around to create transformation
+                % as identity transformation
+                Bunwarpj.saveIdentityTransform(anatomyFileList, refAnatomyFile,...
+                                               trialNameList, refTrialName,...
+                                               self.transformParam, offsetYxList,...
+                                               bunwarpjDir);
+            end
+            
+            
+            if isempty(self.calculatedTransformationsList)
+                self.calculatedTransformationsIdx=1;
+            end
+            
+            self.calculatedTransformationsList{end+1} = self.transformationName;
         end
+        
+        %BUnwarpJ
             
         function bunwarpjDir = getBunwarpjDir(self)
             bunwarpjDir = self.appendPlaneDir(fullfile(self.getDefaultDir('bunwarpj'),...
@@ -1190,18 +1195,9 @@ classdef NrModel < handle
             %     anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
             % end
 
-            if self.trialStackDoTransform
-                transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
-                transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'inverse');
-                
-            else
-                transformStack = Bunwarpj.Transformation.empty();
-                transfomrInvStack = Bunwarpj.Transformation.empty();
-                for k=1:length(trialNameList)
-                    transformStack(k) = Bunwarpj.Transformation('type', 'identity');
-                    transformInvStack(k) = Bunwarpj.Transformation('type', 'identity');
-                end
-            end
+            transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
+            transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'inverse');
+
             offsetYxList = Bunwarpj.loadOffsetYxList(bunwarpjDir, trialNameList);
             
             roiArrStackFile = fullfile(bunwarpjDir,"roiArrStack.mat");
@@ -1277,9 +1273,6 @@ classdef NrModel < handle
             subFolders = files(dirFlags);
             subFolderNames = {subFolders(3:end).name};
             self.calculatedTransformationsList=subFolderNames;
-            if ~isempty(subFolders)
-                self.BUnwarpJCalculated=true;
-            end
         end
 
         function UpdateTransformationTooltipValue(self)
