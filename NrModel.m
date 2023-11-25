@@ -824,11 +824,19 @@ classdef NrModel < handle
             end
         end
                 
-        function [timeTraceMat,roiArray] = extractTimeTrace(self,fileIdx,...
-                                                            roiFilePath,planeNum)
-            if ~exist('planeNum','var')
-                planeNum = 1;
-            end
+        function [timeTraceMat,roiArray] = extractTimeTrace(self, fileIdx,...
+                                                            varargin)
+            pa = inputParser;
+            addRequired(pa,'fileIdx');
+            addParameter(pa,'roiArr', []);
+            addParameter(pa,'roiFilePath', []);
+            addParameter(pa,'planeNum', 1);
+            
+            parse(pa,fileIdxList, ...
+                  roiFileList,planeNum, ...
+                  plotTrace,...
+                  varargin{:})
+            pr = pa.Results;
             
             multiPlane = self.checkMultiPlane(planeNum);
             
@@ -852,7 +860,12 @@ classdef NrModel < handle
             disp(sprintf('ROI file: %s', roiFilePath))
             trial = self.loadTrialFromList(fileIdx,'raw',planeNum);
             
-            trial.loadRoiArray(roiFilePath,'replace');
+            if ~isempty(pr.roiArr)
+                trial.setRoiArr(pr.roiArr)'
+            else
+                trial.loadRoiArr(roiFilePath);
+            end
+            
             [timeTraceMat,roiArray] = trial.extractTimeTraceMat();
             
             dataFileBaseName = trial.name;
@@ -865,12 +878,21 @@ classdef NrModel < handle
             save(resFilePath,'traceResult')
         end
         
-        function extractTimeTraceBatch(self,fileIdxList, ...
-                                       roiFileList,planeNum, ...
-                                       plotTrace)
-            if ~exist('plotTrace','var')
-                plotTrace = false;
-            end
+        function extractTimeTraceBatch(self, fileIdxList, ...
+                                       roiFileList, planeNum, ...
+                                       plotTrace, varargin)
+            pa = inputParser;
+            addRequired(pa,'fileIdxList');
+            addParameter(pa,'roiArrStack', []);
+            addParameter(pa,'roiFileList', []);
+            addParameter(pa,'planeNum', 1);
+            addParameter(pa,'plotTrace', false);
+            
+            parse(pa,fileIdxList, ...
+                  roiFileList,planeNum, ...
+                  plotTrace,...
+                  varargin{:})
+            pr = pa.Results;
             
             if plotTrace
                 timeTraceFig = figure();
@@ -880,9 +902,19 @@ classdef NrModel < handle
 
             for k=1:length(fileIdxList)
                 fileIdx = fileIdxList(k);
-                roiFilePath = roiFileList{k};
-                [timeTraceMat,roiArray] = ...
-                    self.extractTimeTrace(fileIdx,roiFilePath,planeNum);
+                
+                if ~isempty(pr.roiArrStack)
+                    roiArr = pr.roiArrStack(k);
+                    [timeTraceMat,roiArray] = self.extractTimeTrace(fileIdx,...
+                                              'roiArr', roiArr,...
+                                              'planeNum', planeNum);
+                else
+                    roiFilePath = pr.roiFileList{k};
+                    [timeTraceMat,roiArray] = self.extractTimeTrace(fileIdx,...
+                                              'roiFilePath', roiFilePath,...
+                                              'planeNum', planeNum);
+                end
+                
                 if plotTrace
                     figure(timeTraceFig)
                     subplot(nrow,ncol,k)
@@ -1083,7 +1115,9 @@ classdef NrModel < handle
         
         function s = saveobj(self)
             for fn = fieldnames(self)'
-                s.(fn{1}) = self.(fn{1});
+                if ~strcmp(fn, 'stackModel')
+                    s.(fn{1}) = self.(fn{1});
+                end
             end
         end
 
@@ -1182,12 +1216,20 @@ classdef NrModel < handle
             anatomyFileList = self.getSelectedFileList('anatomy');
             anatomyStack = batch.loadStack(anatomyDir,anatomyFileList);
             
-            try
-                responseDir = self.appendPlaneDir(self.getDefaultDir('response_max_map'), self.planeNum);
-                responseFileList = self.getSelectedFileList('responseMax');
+            responseDir = self.appendPlaneDir(self.getDefaultDir('response_map'), self.planeNum);
+            if exist(responseDir, 'dir')
+                responseFileList = self.getSelectedFileList('response');
                 responseStack = batch.loadStack(responseDir,responseFileList);
-            catch exception
-                responseStack = self.calcResponseMaxMapArray(true);
+            else
+                responseStack = self.calcResponseMapArray(true);
+            end
+
+            responseMaxDir = self.appendPlaneDir(self.getDefaultDir('response_max_map'), self.planeNum);
+            if exist(responseMaxDir, 'dir')
+                responseMaxFileList = self.getSelectedFileList('responseMax');
+                responseMaxStack = batch.loadStack(responseMaxDir,responseMaxFileList);
+            else
+                responseMaxStack = self.calcResponseMaxMapArray(true);
             end
             
             % TODO apply CLAHE
@@ -1204,19 +1246,23 @@ classdef NrModel < handle
             if isfile(roiArrStackFile)
                 foo = load(roiArrStackFile);
                 roiArrStack = foo.roiArrStack;
+                doSummarizeRoiTags = false;
             else
                 templateRoiArr = self.loadTemplateRoiArr(refTrialName);
                 roiArrStack = Bunwarpj.transformRoiArrStack(templateRoiArr, transformStack, -offsetYxList);
+                doSummarizeRoiTags = true;
             end
             
             self.stackModel = trialStack.TrialStackModel(trialNameList,...
                                                          anatomyStack,...
                                                          responseStack,...
+                                                         responseMaxStack,...
+                                                         'nrModel', self,...
                                                          'roiArrStack', roiArrStack,...
                                                          'transformStack', transformStack,...
                                                          'transformInvStack', transformInvStack,...
                                                          'offsetYxList', offsetYxList,...
-                                                         'doSummarizeRoiTags', true,...
+                                                         'doSummarizeRoiTags', doSummarizeRoiTags,...
                                                          'trialIdxList', trialIdxList,...
                                                          'roiDir', bunwarpjDir);
         end

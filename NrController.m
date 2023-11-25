@@ -74,7 +74,7 @@ classdef NrController < handle
 
         function expInfo_Callback(self,src,evnt)
             tag = src.Tag;
-            propName = regex(tag,'Edit')
+            propName = regexp(tag,'Edit')
             val = str2num(src.String);
             self.model.expInfo.(propName) = val;
         end

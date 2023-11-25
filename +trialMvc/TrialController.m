@@ -26,12 +26,6 @@ classdef TrialController < baseTrial.BaseTrialController
                 switch evnt.Key
                   case {'d','delete','backspace'}
                     self.deleteSelectedRoi();
-                  case 'q'
-                    self.selectMap(1);
-                  case 'w'
-                    self.selectMap(2);
-                  case 'e'
-                    self.selectMap(3);
                 end
             elseif strcmp(evnt.Modifier,'control')
                 switch evnt.Key

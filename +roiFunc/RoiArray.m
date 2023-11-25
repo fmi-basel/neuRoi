@@ -85,7 +85,7 @@ classdef RoiArray < handle
         function addRoi(self, roi, groupName)
             tag = roi.tag;
             if ismember(tag, self.tagList)
-                error(sprintf('ROI #%d already in ROI array!', tag))
+                error('ROI #%d already in ROI array!', tag)
             end
             
             groupTag = self.findGroupTag(groupName);
@@ -147,9 +147,10 @@ classdef RoiArray < handle
             self.selectRoisByIdxs(idxs);
         end
 
-        function selectLastRoi(self)
+        function roi = selectLastRoi(self)
             idxs = [length(self.roiList)];
             self.selectRoisByIdxs(idxs);
+            roi = self.roiList(end);
         end
         
         function selectRoi(self, tag)
@@ -193,7 +194,11 @@ classdef RoiArray < handle
         end
     
         function addGroup(self, groupName)
-        % TODO make sure group names are unique
+            % make sure group names are unique
+            if ismember(groupName,self.groupNames)
+                error('Group %s already exists!', groupName)
+            end
+            
             self.groupNames{end+1} = groupName;
             newTag = max([self.groupTags, 0]) + 1;
             self.groupTags = [self.groupTags, newTag];
@@ -218,9 +223,9 @@ classdef RoiArray < handle
         end
         
         function rois = assignRoisToGroup(self, tags, groupName)
-            rois = roiFunc.RoiM.empty()
+            rois = roiFunc.RoiM.empty();
             for k=1:length(tags)
-                rois(k) = self.assignRoiToGroup(tags(k), groupName)
+                rois(k) = self.assignRoiToGroup(tags(k), groupName);
             end
         end
         
@@ -257,7 +262,7 @@ classdef RoiArray < handle
                 tag = tagArray(k);
                 mask = maskImg == tag;
                 [mposY,mposX] = find(mask);
-                position = [mposX,mposY];
+                position = [mposX'; mposY']';
                 roi = roiFunc.RoiM('position', position,'tag',double(tag));
                 self.addRoi(roi, groupName);
             end

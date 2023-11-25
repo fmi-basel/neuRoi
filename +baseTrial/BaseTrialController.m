@@ -17,6 +17,8 @@ classdef BaseTrialController < handle
                     self.model.selectMapType(1)
                   case 'w'
                     self.model.selectMapType(2)
+                  case 'e'
+                    self.model.selectMapType(3)
                   case 't'
                     self.toggleRoiVisibility()
                   case 'x'

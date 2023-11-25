@@ -24,7 +24,4 @@ classdef Transformation
         end
         
     end
-    
-    
-    
 end

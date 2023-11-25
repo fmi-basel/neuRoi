@@ -36,8 +36,8 @@ classdef BaseTrialModel < handle
 
         
         function selectLastRoi(self)
-            self.roiArr.selectLastRoi();
-            notify(self, 'roiSelected', NrEvent.RoiEvent(tag));
+            roi = self.roiArr.selectLastRoi();
+            notify(self, 'roiSelected', NrEvent.RoiEvent(roi.tag));
         end
         
         function selectRoi(self, tag)

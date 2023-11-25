@@ -4,10 +4,13 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
     end
     
     properties
+        nrModel
+        
         trialNameList
         trialIdxList
         anatomyStack
         responseStack
+        responseMaxStack
         nTrial
         
         mapLims
@@ -44,11 +47,14 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         function self = TrialStackModel(trialNameList,...
                                         anatomyStack,...
                                         responseStack,...
+                                        responseMaxStack,...
                                         varargin)
             pa = inputParser;
             addRequired(pa,'trialNameList');
             addRequired(pa,'anatomyStack');
             addRequired(pa,'responseStack');
+            addRequired(pa,'responseMaxStack');
+            addOptional(pa,'nrModel', []);
             addOptional(pa,'roiArrStack', []);
             addOptional(pa,'transformStack', []);
             addOptional(pa,'transformInvStack', []);
@@ -61,15 +67,19 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             parse(pa,trialNameList,...
                   anatomyStack,...
                   responseStack,...
+                  responseMaxStack,...
                   varargin{:})
             pr = pa.Results;
 
+            self.nrModel = pr.nrModel;
+            
             % TODO check sizes of all arrays
             self.trialNameList = pr.trialNameList;
             self.anatomyStack = pr.anatomyStack;
             self.responseStack = pr.responseStack;
+            self.responseMaxStack = pr.responseMaxStack;
             self.nTrial = length(trialNameList);
-            self.mapTypeList = {'anatomy','response'};
+            self.mapTypeList = {'anatomy','response','responseMax'};
             self.mapType = 'anatomy';
             
             self.computeMapLims();
@@ -81,7 +91,9 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
                     self.roiArrStack = self.separateCommonRois(pr.roiArrStack,...
                                                                self.commonRoiTags);
                 else
-                    self.allRoiTags = roiArrStack(1).getTagList();
+                    % TODO at the moment we assume that doSummarizeroitags false
+                    % indicates the roiArrStack contains only common ROIs
+                    self.allRoiTags = pr.roiArrStack(1).getTagList();
                     self.commonRoiTags = self.allRoiTags;
                     self.roiArrStack = pr.roiArrStack;
                 end
@@ -124,6 +136,8 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
                 mapStack = self.anatomyStack;
               case 'response'
                 mapStack = self.responseStack;
+              case 'responseMax'
+                mapStack = self.responseMaxStack;
             end
             data = mapStack(:, :, trialIdx);
         end
@@ -143,6 +157,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             
             self.mapLims(1, :) = helper.minMax(self.anatomyStack);
             self.mapLims(2, :) = helper.minMax(self.responseStack);
+            self.mapLims(3, :) = helper.minMax(self.responseMaxStack);
         end
         
         function dataLim = getDataLim(self, contrastForAllTrial)
@@ -184,6 +199,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         end
 
         function addRoisInStack(self, groupName)
+        % ADDROISINSTACK add ROIs from current trial to all trials in the stack
             if strcmp(groupName, self.DIFF_NAME)
                 error('Diff group should not be used for containing common ROIs of a stack!')
             end
@@ -301,6 +317,22 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             save(filePath, 'roiArrStack');
             self.roiFilePath = filePath;
         end
+        
+        
+        % Extract time trace
+        function extractTimeTrace(self)
+        % TODO
+            self.nrModel
+        end
+        
+        function s = saveobj(self)
+            for fn = fieldnames(self)'
+                if ~strcmp(fn, 'nrModel')
+                    s.(fn{1}) = self.(fn{1});
+                end
+            end
+        end
+
     end
     
     % Methods for initializing roiStack
