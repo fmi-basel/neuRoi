@@ -32,6 +32,12 @@ classdef BaseTrialController < handle
                   case {'hyphen','1'}
                     self.view.zoomFcn(1);
                 end
+            elseif strcmp(evnt.Modifier,'control')
+                switch evnt.Key
+                  case 'r'
+                    self.selectRoisByOverlay();
+                end
+            end
             end
         end
         
@@ -141,6 +147,27 @@ classdef BaseTrialController < handle
                 self.model.assignRoiToCurrentGroup(tag);
                 self.model.selectSingle(tag);
             end
+        end
+        
+        function selectRoisByOverlay(self)
+        % SELECTROISBYREGION Select multiple ROIs by drawing a region overlay
+            self.view.setRoiVisibility(true);
+            self.enableFreehandShortcut = false;
+            if length(varargin) == 1
+                overlay = images.roi.Freehand(self.view.guiHandles.roiAxes,...
+                                             'Position', varargin{1});
+            else
+                overlay = drawfreehand(self.view.guiHandles.roiAxes);
+            end
+            
+            if ~isempty(overlay.Position)
+                self.model.selectRoisByOverlay(overlay);
+            else
+                disp('Empty Overlay. ROI selection not changed.')
+            end
+            delete(rawRoi)
+
+            self.enableFreehandShortcut = true;
         end
 
         function enterMoveRoiMode(self)

@@ -33,7 +33,6 @@ classdef BaseTrialModel < handle
             self.roiArr.selectRois([]);
             notify(self,'roiSelectionCleared');
         end
-
         
         function selectLastRoi(self)
             roi = self.roiArr.selectLastRoi();
@@ -52,6 +51,14 @@ classdef BaseTrialModel < handle
         
         function res = singleRoiSelected(self)
             res = length(self.roiArr.getSelectedIdxs()) == 1;
+        end
+        
+        function selectRoisByOverlay(self, overlay)
+            overlayMask = overlay.to_mask()
+            mask = self.roiArr.convertToMask()
+            selectedMask = overlayMask .* mask
+            roiTags = unique(selectedMask)
+            self.roiArray(selectRois(roiTags))
         end
         
         function updateRoi(self, tag, position)

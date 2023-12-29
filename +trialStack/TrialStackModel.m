@@ -34,6 +34,8 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         transformInvStack
         templateIdx
         
+        planeNum
+        
         MAX_NUM_MAPS = 6
     end
     
@@ -63,6 +65,7 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             addParameter(pa, 'doSummarizeRoiTags', true)
             addParameter(pa, 'trialIdxList', [])
             addParameter(pa, 'roiDir', '')
+            addParameter(pa, 'planeNum', 1)
             
             parse(pa,trialNameList,...
                   anatomyStack,...
@@ -123,6 +126,8 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
             self.roiGroupName = 'default';
             
             self.roiDir = pr.roiDir;
+            
+            self.planeNum = pr.planeNum;
         end
 
         function set.currentTrialIdx(self, trialIdx)
@@ -320,9 +325,11 @@ classdef TrialStackModel < baseTrial.BaseTrialModel
         
         
         % Extract time trace
-        function extractTimeTrace(self)
-        % TODO
-            self.nrModel
+        function extractTimeTraceBatch(self)
+            self.nrModel.extractTimeTraceBatch(self.trialIdxList,...
+                                               'roiArrStack', self.roiArrStack,...
+                                               'planeNum', self.planeNum,...
+                                               'plotTrace', true);
         end
         
         function s = saveobj(self)

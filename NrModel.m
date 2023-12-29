@@ -824,7 +824,7 @@ classdef NrModel < handle
             end
         end
                 
-        function [timeTraceMat,roiArray] = extractTimeTrace(self, fileIdx,...
+        function [timeTraceMat,roiArr] = extractTimeTrace(self, fileIdx,...
                                                             varargin)
             pa = inputParser;
             addRequired(pa,'fileIdx');
@@ -832,11 +832,11 @@ classdef NrModel < handle
             addParameter(pa,'roiFilePath', []);
             addParameter(pa,'planeNum', 1);
             
-            parse(pa,fileIdxList, ...
-                  roiFileList,planeNum, ...
-                  plotTrace,...
+            parse(pa,fileIdx, ...
                   varargin{:})
             pr = pa.Results;
+            
+            planeNum = pr.planeNum;
             
             multiPlane = self.checkMultiPlane(planeNum);
             
@@ -851,50 +851,47 @@ classdef NrModel < handle
                 mkdir(traceDir)
             end
             
-            if ~exist(roiFilePath,'file')
-                error(sprintf('ROI file %s does not exists!',roiFilePath))
-            end
-            
             disp(sprintf('Extract time trace ...'))
             disp(sprintf('Data file: #%d, %s', fileIdx, self.rawFileList{fileIdx}))
-            disp(sprintf('ROI file: %s', roiFilePath))
             trial = self.loadTrialFromList(fileIdx,'raw',planeNum);
             
             if ~isempty(pr.roiArr)
-                trial.setRoiArr(pr.roiArr)'
+                disp('ROI from stack')
+                trial.replaceRoiArr(pr.roiArr)
             else
-                trial.loadRoiArr(roiFilePath);
+                if ~exist(pr.roiFilePath,'file')
+                    error(sprintf('ROI file %s does not exists!',roiFilePath))
+                end
+                disp(sprintf('ROI file: %s', roiFilePath))
+                trial.loadRoiArr(pr.roiFilePath);
             end
             
-            [timeTraceMat,roiArray] = trial.extractTimeTraceMat();
+            [timeTraceMat,roiArr] = trial.extractTimeTraceMat();
             
             dataFileBaseName = trial.name;
             resFileName = [dataFileBaseName '_traceResult.mat'];
             resFilePath = fullfile(traceDir,resFileName);
             traceResult.timeTraceMat = timeTraceMat;
-            traceResult.roiArray = roiArray;
-            traceResult.roiFilePath = roiFilePath;
+            traceResult.roiArr = roiArr;
+            traceResult.roiFilePath = pr.roiFilePath;
             traceResult.rawFilePath = trial.filePath;
             save(resFilePath,'traceResult')
         end
         
         function extractTimeTraceBatch(self, fileIdxList, ...
-                                       roiFileList, planeNum, ...
-                                       plotTrace, varargin)
+                                       varargin)
             pa = inputParser;
             addRequired(pa,'fileIdxList');
             addParameter(pa,'roiArrStack', []);
             addParameter(pa,'roiFileList', []);
             addParameter(pa,'planeNum', 1);
-            addParameter(pa,'plotTrace', false);
+            addParameter(pa,'plotTrace', true);
             
             parse(pa,fileIdxList, ...
-                  roiFileList,planeNum, ...
-                  plotTrace,...
                   varargin{:})
             pr = pa.Results;
             
-            if plotTrace
+            if pr.plotTrace
                 timeTraceFig = figure();
                 nrow = 4;
                 ncol = ceil(length(fileIdxList)/4);
@@ -905,17 +902,17 @@ classdef NrModel < handle
                 
                 if ~isempty(pr.roiArrStack)
                     roiArr = pr.roiArrStack(k);
-                    [timeTraceMat,roiArray] = self.extractTimeTrace(fileIdx,...
+                    [timeTraceMat,roiArr] = self.extractTimeTrace(fileIdx,...
                                               'roiArr', roiArr,...
-                                              'planeNum', planeNum);
+                                              'planeNum', pr.planeNum);
                 else
                     roiFilePath = pr.roiFileList{k};
-                    [timeTraceMat,roiArray] = self.extractTimeTrace(fileIdx,...
+                    [timeTraceMat,roiArr] = self.extractTimeTrace(fileIdx,...
                                               'roiFilePath', roiFilePath,...
-                                              'planeNum', planeNum);
+                                              'planeNum', pr.planeNum);
                 end
                 
-                if plotTrace
+                if pr.plotTrace
                     figure(timeTraceFig)
                     subplot(nrow,ncol,k)
                     imagesc(timeTraceMat)
@@ -1264,7 +1261,8 @@ classdef NrModel < handle
                                                          'offsetYxList', offsetYxList,...
                                                          'doSummarizeRoiTags', doSummarizeRoiTags,...
                                                          'trialIdxList', trialIdxList,...
-                                                         'roiDir', bunwarpjDir);
+                                                         'roiDir', bunwarpjDir,...
+                                                         'planeNum', self.planeNum);
         end
         
         function responseArray = calcResponseMapArray(self, saveMap)

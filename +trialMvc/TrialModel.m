@@ -763,28 +763,8 @@ classdef TrialModel < baseTrial.BaseTrialModel
         end
         
         function loadRoiArr(self,filePath)
-            foo = load(filePath);
-            % Downward compatibility with polygon ROIs (RoiFreehand)
-            type_correct = false;
-            if isfield(foo, 'roiArr')
-                if isa(foo.roiArr, 'roiFunc.RoiArray')
-                    type_correct = true;
-                    roiArr = foo.roiArr;
-                end
-            else
-                if isa(foo.roiArray, 'RoiFreehand')
-                    type_correct = true;
-                    roiArr = roiFunc.convertRoiFreehandArrToRoiArr(foo.roiArray,...
-                                                                      self.getMapSize());
-                end
-            end
-            
-            if type_correct
-                self.replaceRoiArr(roiArr);
-            else
-                msg = 'The ROI file should contain roiArr as type roiFunc.RoiArray or the old version (v0.x.x)the ROI file should contain roiArray as type RoiFreehand';
-                error(msg)
-            end
+            roiArr = roiFunc.loadRoiArr(filePath, self.getMapSize());
+            self.replaceRoiArr(roiArr);
         end
         
         function importRoisFromMask(self,maskImg)
@@ -859,13 +839,14 @@ classdef TrialModel < baseTrial.BaseTrialModel
             timeVec = self.convertFromFrameToSec(1:length(timeTrace));
         end
         
-        function [timeTraceMat,roiArray] = ...
+        function [timeTraceMat,roiArr] = ...
                 extractTimeTraceMat(self,varargin)
-            roiArray = self.roiArray;
-            nRoi = length(roiArray);
+            roiArr = self.roiArr;
+            roiList = roiArr.getRoiList;
+            nRoi = length(roiList);
             timeTraceMat = zeros(nRoi,size(self.rawMovie,3));
             for k=1:nRoi
-                roi = roiArray(k);
+                roi = roiList(k);
                 timeTraceRaw = trialMvc.TrialModel.getTimeTrace(self.rawMovie,roi);
                 timeTraceMat(k,:) = timeTraceRaw;
             end
