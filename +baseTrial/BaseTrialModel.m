@@ -46,6 +46,7 @@ classdef BaseTrialModel < handle
         
         function unselectRoi(self, tag)
             self.roiArr.unselectRoi(tag);
+            % TODO
             notify(self, 'roiUnselected', NrEvent.RoiEvent(tag));
         end
         
@@ -54,11 +55,13 @@ classdef BaseTrialModel < handle
         end
         
         function selectRoisByOverlay(self, overlay)
-            overlayMask = overlay.to_mask()
-            mask = self.roiArr.convertToMask()
-            selectedMask = overlayMask .* mask
-            roiTags = unique(selectedMask)
-            self.roiArray(selectRois(roiTags))
+            overlayMask = createMask(overlay);
+            mask = self.roiArr.convertToMask();
+            selectedMask = overlayMask .* mask;
+            tags = unique(selectedMask);
+            tags(tags == 0) = [];
+            self.roiArr.selectRois(tags)
+            notify(self, 'roiSelected');
         end
         
         function updateRoi(self, tag, position)

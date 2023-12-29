@@ -35,6 +35,8 @@ classdef TrialController < baseTrial.BaseTrialController
                     self.view.zoomReset();
                   case 'o'
                     self.renameCurrentRoiGroup();
+                  case 't'
+                    self.model.assignSelectedRoisToCurrentGroup();
                 end
             end
         end

@@ -8,35 +8,41 @@ classdef TrialControllerTest < matlab.unittest.TestCase
     end
 
     methods(TestClassSetup)
-        function createData(testCase)
-            testCase.movieStruct = testUtils.createMovie();
+        function createData(self)
+            self.movieStruct = testUtils.createMovie();
             mockMovie.name = 'test_trial';
-            mockMovie.rawMovie = testCase.movieStruct.rawMovie;
+            mockMovie.rawMovie = self.movieStruct.rawMovie;
             mockMovie.meta.frameRate = 2;
-            testCase.model = trialMvc.TrialModel('mockMovie', mockMovie);
-            testCase.ctrl = trialMvc.TrialController(testCase.model);
+            self.model = trialMvc.TrialModel('mockMovie', mockMovie);
+            self.ctrl = trialMvc.TrialController(self.model);
+            % import ROI from mask
+            self.model.importRoisFromMask(self.movieStruct.mask);
         end
     end
 
     methods(Test)
-        function testTrial(testCase)
-            testCase.verifyMapImg(0);
+        function testTrial(self)
+            self.verifyMapImg(0);
         end
         
-        function testRoi(testCase)
-            ctrl = testCase.ctrl;
-            
-            % import ROI from mask
-            testCase.model.importRoisFromMask(testCase.movieStruct.mask);
+        function testSelectRoisByOverlay(self)
+            pos = [45, 35; 105, 35; 105, 105; 45, 105];
+            self.ctrl.selectRoisByOverlay(pos);
+            disp(self.model.roiArr.getSelectedTags())
+            self.verifyEqual(self.model.roiArr.getSelectedTags(), [2, 3])
+        end
         
+        function testRoi(self)
+            ctrl = self.ctrl;
+
             % Test add ROI
             rawRoi = images.roi.Freehand(ctrl.view.guiHandles.roiAxes,...
                                          'Position', [10, 10; 10, 20; 20, 20; 20, 10]);
             ctrl.addRawRoi(rawRoi);
             roiMask = ctrl.view.getRoiMask();
-            mask = testCase.movieStruct.mask;
+            mask = self.movieStruct.mask;
             mask(11:20, 11:20) = 5;
-            testCase.verifyMse(roiMask, mask, 0);
+            self.verifyMse(roiMask, mask, 0);
             
             % % Move mouse to ROI #1 and select it by clicking
             pause(1.0);
@@ -49,14 +55,14 @@ classdef TrialControllerTest < matlab.unittest.TestCase
                                                        % pause(0.1);
             mouse.mouseRelease(InputEvent.BUTTON1_MASK); 
             pause(0.5);
-            testCase.verifyEqual(ctrl.model.roiArr.getSelectedTags, [1])
+            self.verifyEqual(ctrl.model.roiArr.getSelectedTags, [1])
 
             % Test replace ROI
             ctrl.replaceRoiByDrawing([33, 25; 44, 25; 44, 36; 33, 36]);
             mask(find(mask==1)) = 0;
             mask(26:36, 34:44) = 1;
             roiMask = ctrl.view.getRoiMask();
-            testCase.verifyMse(roiMask, mask, 0);
+            self.verifyMse(roiMask, mask, 0);
             
             % Test moving ROI
             ctrl.enterMoveRoiMode();
@@ -118,21 +124,21 @@ classdef TrialControllerTest < matlab.unittest.TestCase
     end
 
     methods
-        function verifyMapImg(testCase, thresh)
-            mapImgData = testCase.ctrl.view.guiHandles.mapImage.CData;
-            testCase.verifyMse(mapImgData, testCase.movieStruct.anatomy,...
+        function verifyMapImg(self, thresh)
+            mapImgData = self.ctrl.view.guiHandles.mapImage.CData;
+            self.verifyMse(mapImgData, self.movieStruct.anatomy,...
                                thresh);
         end
 
-        function verifyRoiImg(testCase, thresh)
-            roiImgData = testCase.ctrl.getRoiImgData();
-            testCase.verifyMse(roiImgData, testCase.movieStruct.mask,...
+        function verifyRoiImg(self, thresh)
+            roiImgData = self.ctrl.getRoiImgData();
+            self.verifyMse(roiImgData, self.movieStruct.mask,...
                                thresh);
         end
 
-        function verifyMse(testCase, img1, img2, thresh)
+        function verifyMse(self, img1, img2, thresh)
             err = immse(img1, img2);
-            testCase.verifyLessThanOrEqual(err, thresh);
+            self.verifyLessThanOrEqual(err, thresh);
         end
     end
 end

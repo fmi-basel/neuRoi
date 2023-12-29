@@ -19,3 +19,6 @@ disp('xxxxxx')
 % results = testCase.run
 testCase = trialMvc.TrialControllerTest;
 results = testCase.run
+
+% results = runtests('trialMvc.TrialControllerTest','Name','testSelectRoisByOverlay');
+

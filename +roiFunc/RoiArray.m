@@ -208,26 +208,39 @@ classdef RoiArray < handle
           idx = self.findGroupIdx(oldGroupName);
           self.groupNames{idx} = newGroupName;
         end
-        
-        function roi = assignRoiToGroup(self, tag, groupName)
+
+        function roi = assignRoiToGroupByIdx(self, idx, groupName)
             groupTag = self.findGroupTag(groupName);
-            idx = self.findRoi(tag);
             self.roiGroupTagList(idx) = groupTag;
             self.roiList(idx).meta.groupName = groupName;
             self.roiList(idx).meta.groupTag = groupTag;
             roi = self.roiList(idx);
         end
         
+        function roi = assignRoiToGroup(self, tag, groupName)
+            idx = self.findRoi(tag);
+            roi = assignRoiToGroupByIdx(idx, groupName);
+        end
+        
         function roi = assignRoiToCurrentGroup(self, tag)
             roi = self.assignRoiToGroup(tag, self.currentGroupName);
         end
         
-        function rois = assignRoisToGroup(self, tags, groupName)
+        function rois = assignRoisToGroupByIdx(self, idxs, groupName)
             rois = roiFunc.RoiM.empty();
-            for k=1:length(tags)
-                rois(k) = self.assignRoiToGroup(tags(k), groupName);
+            for k=1:length(idxs)
+                rois(k) = self.assignRoiToGroupByIdx(idxs(k), groupName);
             end
         end
+        
+        function rois = assignSelectedRoisToCurrentGroup(self)
+            rois = self.assignRoisToGroupByIdx(self.selectedIdxs, self.currentGroupName);
+        end
+        
+        function rois = assignRoisToCurrentGroup(self, tags)
+            rois = self.assignRoisToGroup(tags, self.currentGroupName);
+        end
+
         
         function [rois, tags] = getSelectedRoisFromGroup(self, groupName)
             gidxs = self.findRoisInGroup(groupName);

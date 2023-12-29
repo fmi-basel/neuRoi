@@ -36,6 +36,10 @@ classdef BaseTrialView < handle
             addlistener(self.model,'roiAdded',@self.drawLastRoiPatch);
             addlistener(self.model,'roiSelected',...
                         @self.updateRoiPatchSelection);
+            addlistener(self.model,'roiUnselected',...
+                        @self.updateRoiPatchSelection);
+            addlistener(self.model,'roiSelectionCleared',...
+                        @self.updateRoiPatchSelection);
             addlistener(self.model,'roiDeleted',...
                         @self.deleteRoiPatches);
             addlistener(self.model,'roiNewAlpha',...
@@ -167,9 +171,15 @@ classdef BaseTrialView < handle
         end
         
         
-        function updateRoiPatchGroup(self, src, evnt)
-            roi = evnt.roi;
+        function updateRoiPatchGroup(self, roi)
             self.addRoiPatch(roi);
+        end
+
+        function updateRoiPatchesGroup(self, src, evnt)
+            rois = evnt.rois;
+            for roi=rois
+                self.updateRoiPatchGroup(roi);
+            end
         end
 
         function deleteRoiPatches(self,src,evnt)

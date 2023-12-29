@@ -48,7 +48,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
         trialDeleted
         roiGroupUpdated
         currentRoiGroupSet
-        assignedRoiToGroup
+        assignedRoisToGroup
     end
     
     methods
@@ -807,9 +807,14 @@ classdef TrialModel < baseTrial.BaseTrialModel
         
         function assignRoiToCurrentGroup(self, tag)
             roi = self.roiArr.assignRoiToCurrentGroup(tag);
-            notify(self,'assignedRoiToGroup', NrEvent.AssignedRoiToGroupEvent(roi));
+            notify(self,'assignedRoisToGroup', NrEvent.AssignedRoisToGroupEvent(roi));
         end
-        
+
+        function assignSelectedRoisToCurrentGroup(self)
+            rois = self.roiArr.assignSelectedRoisToCurrentGroup();
+            notify(self,'assignedRoisToGroup', NrEvent.AssignedRoisToGroupEvent(rois));
+        end
+
         % Methods for contrast
         function dataLim = getDataLim(self)
             map = self.getCurrentMap();

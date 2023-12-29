@@ -38,7 +38,6 @@ classdef BaseTrialController < handle
                     self.selectRoisByOverlay();
                 end
             end
-            end
         end
         
         function addRoiByDrawing(self, varargin)
@@ -149,7 +148,7 @@ classdef BaseTrialController < handle
             end
         end
         
-        function selectRoisByOverlay(self)
+        function selectRoisByOverlay(self, varargin)
         % SELECTROISBYREGION Select multiple ROIs by drawing a region overlay
             self.view.setRoiVisibility(true);
             self.enableFreehandShortcut = false;
@@ -165,7 +164,7 @@ classdef BaseTrialController < handle
             else
                 disp('Empty Overlay. ROI selection not changed.')
             end
-            delete(rawRoi)
+            delete(overlay)
 
             self.enableFreehandShortcut = true;
         end
