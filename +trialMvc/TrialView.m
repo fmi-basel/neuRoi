@@ -240,6 +240,9 @@ classdef TrialView < baseTrial.BaseTrialView
         function updateRoiGroupListBox(self,src,evnt)
             groupNames = self.model.roiArr.groupNames;
             self.guiHandles.roiGroupListBox.String = groupNames;
+            currentGroupName = self.model.roiArr.currentGroupName;
+            idx = find(strcmp(self.guiHandles.roiGroupListBox.String, currentGroupName));
+            self.guiHandles.roiGroupListBox.Value = idx;
         end
         
         function updateCurrentRoiGroup(self, src, evnt);
@@ -296,6 +299,17 @@ classdef TrialView < baseTrial.BaseTrialView
             traceFig = self.guiHandles.traceFig;
             delete(mainFig);
             delete(traceFig);
+        end
+    end
+    
+    % For undo
+    methods
+        function recordState(self)
+            x = 1; % sofar do nothing
+        end
+        
+        function restoreState(self)
+            self.displayRoiArr();
         end
     end
     

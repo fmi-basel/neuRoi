@@ -28,6 +28,8 @@ classdef TrialModel < baseTrial.BaseTrialModel
         loadedMapsize %needed because setupC doesn't load rawmovie when opening trial
         
         MAX_NUM_MAPS = 6
+        
+        previousRoiArr
     end
         
     properties (Access = private)
@@ -748,7 +750,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
         
         function addRoi(self, roi)
             roi.tag = self.getNewRoiTag();
-            self.roiArr.addRoi(roi, self.roiArr.DEFAULT_GROUP);
+            self.roiArr.addRoi(roi, self.roiArr.currentGroupName);
             notify(self, 'roiAdded')
         end
         
@@ -858,6 +860,17 @@ classdef TrialModel < baseTrial.BaseTrialModel
         end
         
         
+    end
+    
+    % For undo
+    methods
+        function recordState(self)
+            self.previousRoiArr = self.roiArr.copy();
+        end
+        
+        function restoreState(self)
+            self.roiArr = self.previousRoiArr;
+        end
     end
     
     methods

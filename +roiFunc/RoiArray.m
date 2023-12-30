@@ -207,6 +207,9 @@ classdef RoiArray < handle
         function renameGroup(self, oldGroupName, newGroupName)
           idx = self.findGroupIdx(oldGroupName);
           self.groupNames{idx} = newGroupName;
+          if self.currentGroupName == oldGroupName
+              self.currentGroupName == newGroupName;
+          end
         end
 
         function roi = assignRoiToGroupByIdx(self, idx, groupName)
@@ -319,7 +322,8 @@ classdef RoiArray < handle
                            'selectedIdxs',...
                            'groupTags'};
             
-            for prop=propsToCopy(:)
+            for k=1:length(propsToCopy)
+                prop = propsToCopy{k};
                 self.(prop) = roiArr.(prop);
             end
         end

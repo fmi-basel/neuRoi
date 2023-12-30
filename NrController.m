@@ -274,6 +274,10 @@ classdef NrController < handle
             end
         end
         
+        function trialCtrl = getCurrentTrialCtrl(self)
+            trialCtrl = self.trialCtrlArray(self.model.currentTrialIdx);
+        end
+        
         function raiseTrialView(self,ind)
             trialController = self.trialControllerArray{ind};
             trialController.raiseView();

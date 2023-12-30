@@ -16,13 +16,17 @@ classdef BaseTrialView < handle
     
     properties (Access = private)
         roiMask
+        roiGroupMask
     end
 
     properties (Constant)
         DEFAULT_PATCH_COLOR = 'red'
     end
 
-
+    methods (Abstract)
+        recordState(self)
+        restoreState(self)
+    end
     
     methods
         
@@ -114,7 +118,6 @@ classdef BaseTrialView < handle
         end
 
         function drawAllRoisOverlay(self)
-            mapAxes = self.guiHandles.mapAxes;
             roiMask = self.model.roiArr.convertToMask();
             roiGroupMask = self.model.roiArr.convertToGroupMask();
             self.setRoiImgData(roiMask, roiGroupMask)
@@ -125,7 +128,7 @@ classdef BaseTrialView < handle
         end
         
         function displayRoiArr(self)
-            self.drawAllRoisOverlay());
+            self.drawAllRoisOverlay();
             self.updateRoiGroupListBox();
         end
 
@@ -135,6 +138,7 @@ classdef BaseTrialView < handle
         
         function setRoiImgData(self, roiMask, roiGroupMask)
             self.roiMask = roiMask;
+            self.roiGroupMask = roiGroupMask;
             climits = [0, 20];
             if isfield(self.guiHandles,'roiImg')
                 self.guiHandles.roiImg.CData = roiGroupMask;

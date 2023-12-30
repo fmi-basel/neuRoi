@@ -3,9 +3,14 @@ classdef BaseTrialController < handle
         model
         view
         enableFreehandShortcut
+        commandStack
     end
     
     methods
+        function self = BaseTrialContoller()
+            self.commandStack = {};
+        end
+        
         function keyPressCallback(self, src, evnt)
             if isempty(evnt.Modifier)
                 switch evnt.Key
@@ -31,16 +36,35 @@ classdef BaseTrialController < handle
                     self.view.zoomFcn(-1);
                   case {'hyphen','1'}
                     self.view.zoomFcn(1);
-                end
-            elseif strcmp(evnt.Modifier,'control')
-                switch evnt.Key
-                  case 'r'
+                  case 'b'
                     self.selectRoisByOverlay();
                 end
+            % elseif strcmp(evnt.Modifier,'control')
+            %     switch evnt.Key
+            %     end
+            end
+        end
+        
+        function registerUndo(self)
+            callStack = dbstack();
+            command = callStack(2).name;
+            self.commandStack{end+1} = command;
+            self.model.recordState()
+            self.view.recordState()
+        end
+        
+        function undo(self)
+            if ~isempty(self.commandStack)
+                self.model.restoreState()
+                self.view.restoreState()
+                self.commandStack(end) = []
+            else
+                disp('No operations for undo.')
             end
         end
         
         function addRoiByDrawing(self, varargin)
+            self.registerUndo()
             self.view.setRoiVisibility(true);
             self.enableFreehandShortcut = false;
             if length(varargin) == 1

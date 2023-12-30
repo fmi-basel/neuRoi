@@ -5,6 +5,7 @@ classdef TrialController < baseTrial.BaseTrialController
     
     methods
         function self = TrialController(mymodel)
+            self = self@baseTrial.BaseTrialController();
             self.model = mymodel;
             self.nMapMax = 6;
             self.view = trialMvc.TrialView(self.model,self);
@@ -26,6 +27,8 @@ classdef TrialController < baseTrial.BaseTrialController
                 switch evnt.Key
                   case {'d','delete','backspace'}
                     self.deleteSelectedRoi();
+                  case 'n'
+                    self.model.assignSelectedRoisToCurrentGroup();
                 end
             elseif strcmp(evnt.Modifier,'control')
                 switch evnt.Key
@@ -35,8 +38,6 @@ classdef TrialController < baseTrial.BaseTrialController
                     self.view.zoomReset();
                   case 'o'
                     self.renameCurrentRoiGroup();
-                  case 't'
-                    self.model.assignSelectedRoisToCurrentGroup();
                 end
             end
         end
@@ -75,7 +76,7 @@ classdef TrialController < baseTrial.BaseTrialController
 
         function saveRoiArray(self)
             if self.model.roiFilePath
-                self.model.saveRoiArray(self.model.roiFilePath);
+                self.model.saveRoiArr(self.model.roiFilePath);
             else
                 defFileName = [self.model.fileBaseName ...
                                '_RoiArray.mat'];

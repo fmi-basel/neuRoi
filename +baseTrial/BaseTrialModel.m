@@ -18,6 +18,11 @@ classdef BaseTrialModel < handle
         roiNewAlphaAll
     end
 
+    methods (Abstract)
+        recordState(self)
+        restoreState(self)
+    end
+    
     methods
         % ROI CRUD operations
         function addRoi(self, varargin)
