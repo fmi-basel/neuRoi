@@ -208,7 +208,7 @@ classdef RoiArray < handle
           idx = self.findGroupIdx(oldGroupName);
           self.groupNames{idx} = newGroupName;
           if self.currentGroupName == oldGroupName
-              self.currentGroupName == newGroupName;
+              self.currentGroupName = newGroupName;
           end
         end
 
