@@ -51,7 +51,7 @@ classdef BaseTrialView < handle
             addlistener(self.model,'roiTagChanged',...
                         @self.changeRoiPatchTag);
             addlistener(self.model,'roiArrReplaced',...
-                        @(~,~)self.drawAllRoisOverlay());        
+                        @(~,~)self.displayRoiArr());
         end
 
         function assignCallbacks(self)
@@ -118,6 +118,15 @@ classdef BaseTrialView < handle
             roiMask = self.model.roiArr.convertToMask();
             roiGroupMask = self.model.roiArr.convertToGroupMask();
             self.setRoiImgData(roiMask, roiGroupMask)
+        end
+        
+        function updateRoiGroupListBox(self,src,evnt)
+            error('Not implemented.')
+        end
+        
+        function displayRoiArr(self)
+            self.drawAllRoisOverlay());
+            self.updateRoiGroupListBox();
         end
 
         function roiMask = getRoiMask(self)
