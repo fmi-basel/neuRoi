@@ -10,7 +10,7 @@ classdef BaseTrialView < handle
         roiColorMap
         AlphaForRoiOnePatch = 0.5
         roiVisible
-        
+        selectedRoiTags        
         contrastLimArray
     end
     
@@ -209,85 +209,37 @@ classdef BaseTrialView < handle
             self.updateRoiPatchSelection()
         end
         
-        % function displayRoiTag(self,roiPatch)
-        %     ptTag = get(roiPatch,'Tag');
-        %     tag = helper.convertTagToInd(ptTag,'roi');
-        %     pos = roiPatch.Vertices(1,:);
-        %     htext = text(self.guiHandles.roiGroup,pos(1),pos(2), ...
-        %                  num2str(tag),'FontSize',8,'Color','m');
-        %     htext.Tag = sprintf('roiTag_%d',tag);
-        % end
-        
-        % function removeRoiTagText(self,roiTag)
-        %     txtTag = sprintf('roiTag_%d',roiTag);
-        %     htext = findobj(self.guiHandles.roiGroup,...
-        %                     'Type','text',...
-        %                     'Tag',txtTag);
-        %     delete(htext);
-        % end
-        
         function updateRoiPatchSelection(self,src,evnt)
             roiList = self.model.roiArr.getSelectedRois();
+            % Delete old markers and tags
             delete(self.selectedMarkers);
+            for k=1:length(self.selectedRoiTags)
+                delete(self.selectedRoiTags{k})
+            end
+            
+            % Display new markers and tags
+            tagShift = 8;
             nRois = length(roiList);
             centroids = zeros(nRois, 2);
+            self.selectedRoiTags = {};
+            hold on;
             for k=1:nRois
                 roi = roiList(k);
                 centroids(k, :) = roi.getCentroid();
+                
+                % Display ROI tag
+                htext = text(self.guiHandles.roiAxes,...
+                             centroids(:,1) - tagShift,...
+                             centroids(:,2) - tagShift,...
+                             num2str(roi.tag),...
+                             'FontSize',8,'Color','g');
+                htext.Tag = sprintf('roiTag_%d', roi.tag);
+                self.selectedRoiTags{k} = htext;
             end
-            hold on;
             self.selectedMarkers = plot(centroids(:,1), centroids(:,2), '+',...
                                         'color', '#77AC30', 'MarkerSize', 10, 'LineWidth', 1);
             hold off;
         end
-        
-        
-        % function roiPatch = findRoiPatchByTag(self,tag)
-        %     ptTag = RoiFreehand.getPatchTag(tag);
-        %     roiPatch = findobj(self.guiHandles.roiGroup,...
-        %                        'Type','patch',...
-        %                        'tag',ptTag);
-        %     if isempty(roiPatch)
-        %         error(sprintf('ROI #%d not found!',tag))
-        %     end
-        % end
-
-        % function UpdateRoiPatchAlpha(self,src,evnt)
-        %     updRoiArray=evnt.roiArray;
-        %     for k=1:length(updRoiArray)
-        %         roi = updRoiArray(k);
-        %         roiPatch = self.findRoiPatchByTag(roi.tag);
-        %         roi.UpdateRoiPatchAlpha(roiPatch);
-        %     end
-        % end
-
-        % function UpdateAllRoiPatchAlpha(self,src,evnt)
-        %     if evnt.AllRois==true
-        %         for k=1:length(self.guiHandles.roiGroup.Children)
-        %             roiPatch = self.guiHandles.roiGroup.Children(k);
-        %             set(roiPatch,'FaceAlpha',evnt.NewAlpha);
-        %         end
-        %     end
-        % end
-
-        % function changeRoiPatchTag(self,src,evnt)
-        %     oldTag = evnt.oldTag;
-        %     newTag = evnt.newTag;
-        %     roiPatch = self.findRoiByTag(evnt.oldTag);
-        %     roiPatch.tag = RoiFreehand.getPatchTag(newTag);
-        % end
-        
-        % function roiPatchArray = getRoiPatchArray(self)
-        %     mapAxes = self.guiHandles.roiGroup;
-        %     children = mapAxes.Children;
-        %     patchInd = arrayfun(@RoiFreehand.isaRoiPatch,children);
-        %     roiPatchArray = children(patchInd);
-        % end
-        
-        % function deleteAllRoiPatch(self)
-        %     roiPatchArray = self.getRoiPatchArray();
-        %     arrayfun(@(x) delete(x), roiPatchArray);
-        % end
 
         function setRoiVisibility(self, roiVisible)
             self.roiVisible = roiVisible;

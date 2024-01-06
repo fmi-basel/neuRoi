@@ -31,6 +31,7 @@ classdef BaseTrialModel < handle
         
         function selectSingleRoi(self, tag)
             self.roiArr.selectRois([tag]);
+            notify(self, 'roiSelectionCleared')
             notify(self, 'roiSelected', NrEvent.RoiEvent(tag));
         end
         
@@ -51,7 +52,6 @@ classdef BaseTrialModel < handle
         
         function unselectRoi(self, tag)
             self.roiArr.unselectRoi(tag);
-            % TODO
             notify(self, 'roiUnselected', NrEvent.RoiEvent(tag));
         end
         

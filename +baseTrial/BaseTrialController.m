@@ -30,8 +30,6 @@ classdef BaseTrialController < handle
                     self.replaceRoiByDrawing();
                   case 'v'
                     self.enterMoveRoiMode();
-                  case 'r'
-                    self.toggleRoiVisibility();
                   case {'equal','2'}
                     self.view.zoomFcn(-1);
                   case {'hyphen','1'}
@@ -271,7 +269,7 @@ classdef BaseTrialController < handle
                 self.view.setRoiVisibility(true);
             end
         end
-
+        
         function moveRoiKeyPressCallback(self,src,evnt)
             if isempty(evnt.Modifier) && strcmp(evnt.Key,'escape')
                 selectedObj = gco;
