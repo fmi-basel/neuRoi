@@ -887,7 +887,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
             mapSize = size(rawMovie(:,:,1));
             maskIndX = roi.position(:,1);
             maskIndY = roi.position(:,2);
-            roiMovie = rawMovie(maskIndX,maskIndY,:);
+            roiMovie = rawMovie(maskIndY,maskIndX,:);
             timeTraceRaw = squeeze(mean(mean(roiMovie,1),2));
         end
         
