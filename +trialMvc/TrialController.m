@@ -32,8 +32,6 @@ classdef TrialController < baseTrial.BaseTrialController
                 end
             elseif strcmp(evnt.Modifier,'control')
                 switch evnt.Key
-                  case 'a'
-                    self.selectAllRoi_Callback();
                   case '1'
                     self.view.zoomReset();
                   case 'o'
@@ -62,11 +60,6 @@ classdef TrialController < baseTrial.BaseTrialController
                 filePath = fullfile(fileDir,fileName);
                 self.model.importMap(filePath)
             end
-        end
-        
-        % Methods for ROI based processing
-        function selectAllRoi_Callback(self,src,evnt)
-            self.model.selectAllRoi();
         end
         
         % Functions for moving selected ROIs

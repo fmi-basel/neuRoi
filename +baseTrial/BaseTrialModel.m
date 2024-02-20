@@ -35,6 +35,12 @@ classdef BaseTrialModel < handle
             notify(self, 'roiSelected', NrEvent.RoiEvent(tag));
         end
         
+        function selectAllRois(self)
+            self.roiArr.selectAllRois();
+            tags = self.roiArr.getSelectedTags();
+            notify(self, 'roiSelected', NrEvent.RoiEvent(tags));
+        end
+
         function unselectAllRois(self)
             self.roiArr.selectRois([]);
             notify(self,'roiSelectionCleared');
@@ -66,7 +72,7 @@ classdef BaseTrialModel < handle
             tags = unique(selectedMask);
             tags(tags == 0) = [];
             self.roiArr.selectRois(tags)
-            notify(self, 'roiSelected');
+            notify(self, 'roiSelected', NrEvent.RoiEvent(tags));
         end
         
         function updateRoi(self, tag, position)

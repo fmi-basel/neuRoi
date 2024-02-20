@@ -153,6 +153,10 @@ classdef RoiArray < handle
             roi = self.roiList(end);
         end
         
+        function selectAllRois(self)
+            self.selectedIdxs = 1:length(self.roiList);
+        end
+        
         function selectRoi(self, tag)
             idx = self.findRoi(tag);
             self.selectedIdxs(end+1) = idx;
@@ -207,7 +211,7 @@ classdef RoiArray < handle
         function renameGroup(self, oldGroupName, newGroupName)
           idx = self.findGroupIdx(oldGroupName);
           self.groupNames{idx} = newGroupName;
-          if self.currentGroupName == oldGroupName
+          if strcmp(self.currentGroupName, oldGroupName)
               self.currentGroupName = newGroupName;
           end
         end

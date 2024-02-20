@@ -37,9 +37,11 @@ classdef BaseTrialController < handle
                   case 'b'
                     self.selectRoisByOverlay();
                 end
-            % elseif strcmp(evnt.Modifier,'control')
-            %     switch evnt.Key
-            %     end
+            elseif strcmp(evnt.Modifier,'control')
+                switch evnt.Key
+                  case 'a'
+                    self.selectAllRois_Callback();
+                end
             end
         end
         
@@ -176,9 +178,11 @@ classdef BaseTrialController < handle
             self.enableFreehandShortcut = false;
             if length(varargin) == 1
                 overlay = images.roi.Freehand(self.view.guiHandles.roiAxes,...
-                                             'Position', varargin{1});
+                                             'Position', varargin{1},...
+                                              'Color', 'green');
             else
-                overlay = drawfreehand(self.view.guiHandles.roiAxes);
+                overlay = drawfreehand(self.view.guiHandles.roiAxes,...
+                                       'Color', 'green');
             end
             
             if ~isempty(overlay.Position)
@@ -189,6 +193,10 @@ classdef BaseTrialController < handle
             delete(overlay)
 
             self.enableFreehandShortcut = true;
+        end
+        
+        function selectAllRois_Callback(self,src,evnt)
+            self.model.selectAllRois();
         end
 
         function enterMoveRoiMode(self)
