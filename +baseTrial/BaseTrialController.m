@@ -41,6 +41,8 @@ classdef BaseTrialController < handle
                 switch evnt.Key
                   case 'a'
                     self.selectAllRois_Callback();
+                  case 'z'
+                      self.undo();
                 end
             end
         end
@@ -57,7 +59,7 @@ classdef BaseTrialController < handle
             if ~isempty(self.commandStack)
                 self.model.restoreState()
                 self.view.restoreState()
-                self.commandStack(end) = []
+                self.commandStack(end) = [];
             else
                 disp('No operations for undo.')
             end
