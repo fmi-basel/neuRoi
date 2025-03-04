@@ -7,26 +7,29 @@ neuRoi
 
 Many of the neuRoi functions are from the [ROIing toolbox](https://github.com/PTRRupprecht/Drawing-ROIs-without-GUI) developed by Peter Rupprecht.
 
+## Overview
+The data structure of calcium imaging experiment
+
+Experiment -- NrModel
+Trial -- TrialModel
+
 ## Installation
 Download the source code. Then add the directory of the source code to MATLAB path. Note that you do not need to include sub-folders in the path.
 Required MATLAB packages:
 * DSP System Toolbox
 * Image Processing Toolbox
-* Curve Fitting Toolbox
 
-## Documentation & Wiki
+## Usage
 
-Wiki page of this tool box can be found here [wiki page](https://github.com/fmi-basel/neuRoi/wiki).
+## Developer Documentation
+Documentation for further development of neuRoi can be found here [wiki page](https://github.com/aloejhb/neuRoi/wiki).
 
-## Demos
-Demos can be found in the /demos folder.
-First run preprocess.m for data preprocessing. Then run extract_time_trace.m to draw ROIs manually and extract time traces.
-This work-flow will soon be integrated in a guided procedure in GUI.
 
-# Contributors:
 
-* Bo Hu, **Friedrich-Miescher Institute for Biomedical Research, Basel**
-* Jan Eckhardt, **Friedrich-Miescher Institute for Biomedical Research, Basel**
+## Contributors:
+
+* Bo Hu, **Friedrich-Meischer Institute for Biomedical research, Basel**
+* Jan Eckhardt, **Friedrich-Meischer Institute for Biomedical research, Basel**
 * Peter Rupprecht, **Brain Research Institute*, Zurich**
 
 

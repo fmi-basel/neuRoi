@@ -2,9 +2,10 @@ classdef NrController < handle
     properties
         model
         view
-        trialContrlArray
+        trialCtrlArray
         rootListener
         importGui
+        stackCtrl
     end
     
     methods
@@ -13,7 +14,7 @@ classdef NrController < handle
             self.view = NrView(mymodel,self);
 
             % nFile = self.model.getNFile();
-            self.trialContrlArray = TrialController.empty;
+            self.trialCtrlArray = trialMvc.TrialController.empty;
             % Listen to MATLAB root object for changing of current figure
             self.rootListener = listener(groot,'CurrentFigure','PostSet',@self.selectTrial_Callback);
         end
@@ -29,7 +30,7 @@ classdef NrController < handle
             fld = fld{1};
             if ismember(fld,{'myexp','self'})
                 model = foo.(fld);
-                model.trialArray = TrialModel.empty;
+                model.trialArray = trialMvc.TrialModel.empty;
                 self.model = model;
                 self.view.model = self.model;
                 self.model.LoadCalculatedTransformation();
@@ -73,7 +74,7 @@ classdef NrController < handle
 
         function expInfo_Callback(self,src,evnt)
             tag = src.Tag;
-            propName = regex(tag,'Edit')
+            propName = regexp(tag,'Edit')
             val = str2num(src.String);
             self.model.expInfo.(propName) = val;
         end
@@ -217,7 +218,7 @@ classdef NrController < handle
             idx = self.model.getTrialIdx(trialTag);
             self.model.selectTrial([]);
             self.model.trialArray(idx) = [];
-            self.trialContrlArray(idx) = [];
+            self.trialCtrlArray(idx) = [];
         end
         
         function fileListBox_Callback(self,src,evnt)
@@ -234,18 +235,6 @@ classdef NrController < handle
             planeNum = self.model.planeNum;
             trial = self.model.loadTrialFromList(fileIdx,fileType,planeNum);
             self.openTrialContrl(trial);
-%             if self.model.setupMode== 1
-%                 trial = self.model.loadTrialFromList(fileIdx,fileType,planeNum);
-%                 self.openTrialContrl(trial);
-%             elseif self.model.setupMode== 3
-%                 if self.model.loadMapFromFile
-%                     trial=  self.model.loadTrialFromList(fileIdx,fileType,planeNum);
-%                 else
-%                     %need to be checked!!
-%                     trial = self.model.loadTrialFromList(fileIdx,fileType,planeNum);
-%                 end
-%                 self.openTrialContrl(trial);
-%             end
         end
         
         function openAdditionalTrial(self,filePath,varargin)
@@ -255,9 +244,8 @@ classdef NrController < handle
         
         function openTrialContrl(self,trial)
             addlistener(trial,'trialDeleted',@self.trialDeleted_Callback);
-            trialContrl = TrialController(trial);
-            % trialContrl.setSyncTimeTrace(true);
-            self.trialContrlArray(end+1) = trialContrl;
+            trialContrl = trialMvc.TrialController(trial);
+            self.trialCtrlArray(end+1) = trialContrl;
             trialContrl.raiseView();
             
             if isempty(self.model.loadMapFromFile) || ~self.model.loadMapFromFile %ignores mapsAfterLoading if true
@@ -286,14 +274,18 @@ classdef NrController < handle
             end
         end
         
+        function trialCtrl = getCurrentTrialCtrl(self)
+            trialCtrl = self.trialCtrlArray(self.model.currentTrialIdx);
+        end
+        
         function raiseTrialView(self,ind)
             trialController = self.trialControllerArray{ind};
             trialController.raiseView();
         end
                 
         function mainFigClosed_Callback(self,src,evnt)
-            for i=1:length(self.trialContrlArray)
-                trialContrl = self.trialContrlArray(i);
+            for i=1:length(self.trialCtrlArray)
+                trialContrl = self.trialCtrlArray(i);
                 trialContrl.mainFigClosed_Callback(1,1);
             end
             self.view.deleteFigures();
@@ -349,12 +341,45 @@ classdef NrController < handle
 
         % Callbacks for BUnwaprJ
         function BUnwarpJReferencetrial_Callback(self,src,evnt)
-            self.model.ReferenceTrialIdx=src.Value;
+            self.model.referenceTrialIdx=src.Value;
         end
 
         function BUnwarpJCalculateButton_Callback(self,src,evnt)
-            self.model.CalculateBUnwarpJ();
-            self.view.refreshView();
+            nameOK = self.CheckBunwarpJName();
+            if nameOK
+                self.model.registerTrials();
+                self.view.refreshView();
+            end
+        end
+        
+        function NameOK=CheckBunwarpJName(self)
+            if isempty(self.model.transformationName)
+                msgbox("Transformationname is empty. Please enter a valid name","modal");
+                NameOK= false;
+                return
+            else
+                files= dir(fullfile(self.model.resultDir,"BUnwarpJ"));
+                dirFlags = [files.isdir];
+                subFolders = files(dirFlags);
+                subFolderNames = {subFolders(3:end).name};
+                DoesTransforExist = ismember(subFolderNames,self.model.transformationName);
+                if sum(DoesTransforExist)==0
+                    NameOK=true;
+                    return
+                else
+                    opts.Interpreter = 'tex';
+                    opts.Default = 'No';
+                    answer = questdlg('Transformationname already exist. Do you want to overwrite the folder?',...
+                             'Overwrite transformation', ...
+                             'Yes','No', opts);
+                    if strcmp(answer, 'Yes')
+                        NameOK = true;
+                    else
+                        NameOK = false;
+                    end
+                return
+                end
+            end
         end
 
         function BUnwarpJPara_Callback(self,src,evnt)
@@ -368,28 +393,25 @@ classdef NrController < handle
         end
 
         function BUnwarpJUseSIFT_Callback(self,src,evnt)
-            self.model.UseSFITForBUnwarpJ= src.Value;
+            self.model.transformParam.useSift = src.Value;
         end
 
         function BUnwarpJSIFTPara_Callback(self,src,evnt)
             TempParameter=thirdPartyTools.structdlg.StructDlg(self.model.SIFTParameter,'SIFT parameter');
             self.model.SIFTParameter=TempParameter;
         end
-        %obsolete since CKAHE added
-%         function BUnwarpJUseHistNorm_Callback(self,src,evnt) 
-%             self.model.UseHistEqualForBUnwarpJ= src.Value;
-%         end
 
         function BUnwarpJInspectTrialsButton_Callback(self,src,evnt)
-            self.model.InspectBUnwarpJ();
+            self.model.inspectStack();
+            self.stackCtrl = trialStack.TrialStackController(self.model.stackModel);
         end
 
         function BUnwarpJTransformationName_Callback(self,src,evnt)
-            self.model.TransformationName=src.String;
+            self.model.transformationName=src.String;
         end
         
         function BUnwarpJCalculatedTransformations_Callback(self,src,evnt)
-            self.model.CalculatedTransformationsIdx=src.Value;
+            self.model.calculatedTransformationsIdx=src.Value;
             self.model.UpdateTransformationTooltipValue();
             self.view.updateTransformationTooltip();
         end
@@ -398,14 +420,14 @@ classdef NrController < handle
             button = evnt.NewValue;
             tag = button.Tag;
             if strcmp(tag,'Norm_HistoEqu_radiobutton')
-                self.model.UseHistEqualForBUnwarpJ = 1;
-                self.model.UseCLAHEForBUnwarpJ = 0;
+                self.model.transformParam.normParam.useHistoEqual = true;
+                self.model.transformParam.normParam.useClahe = false;
             elseif strcmp(tag,'Norm_CLAHE_radiobutton')
-                self.model.UseHistEqualForBUnwarpJ = 0;
-                self.model.UseCLAHEForBUnwarpJ = 1;     
+                self.model.transformParam.normParam.useHistoEqual = false;
+                self.model.transformParam.normParam.useClahe = true;
             else
-                self.model.UseHistEqualForBUnwarpJ = 0;
-                self.model.UseCLAHEForBUnwarpJ = 0;
+                self.model.transformParam.normParam.useHistoEqual = false;
+                self.model.transformParam.normParam.useClahe = false;
             end
         end
 

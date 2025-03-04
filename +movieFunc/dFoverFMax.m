@@ -29,12 +29,18 @@ if UseWindow
     cmSize = size(chunkedMovieAvg);
     chunkedMovieAvg = reshape(chunkedMovieAvg,[cmSize(1:2),cmSize(4)]);
     
+
+    fZeroGaussianHsize = 5;%3
+    fZeroGaussianSigma = 1;%1
+
+    dfGaussianHsize = 5;%3
+    dfGaussianSigma = 1.5;%2
     fZeroRaw = mean(rawMovie(:,:,fZeroWindow(1):fZeroWindow(2)),3);
-    fZero = conv2(fZeroRaw,fspecial('gaussian',[3 3], 1),'same');
+    fZero = conv2(fZeroRaw,fspecial('gaussian',[fZeroGaussianHsize, fZeroGaussianHsize], fZeroGaussianSigma),'same');
     
     dfOvrFRaw = (chunkedMovieAvg - fZero)./(fZero - offset);
     dfOvrFRaw = mat2cell(dfOvrFRaw,cmSize(1),cmSize(2),ones(1,cmSize(4)));
-    dfOvrF = cellfun(@(x) conv2(x,fspecial('gaussian',[3 3], 2), ...
+    dfOvrF = cellfun(@(x) conv2(x,fspecial('gaussian',[dfGaussianHsize dfGaussianHsize], dfGaussianSigma), ...
                                 'same'),dfOvrFRaw,'UniformOutput', false);
     dfOvrF = cell2mat(dfOvrF);
     

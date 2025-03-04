@@ -1,10 +1,4 @@
 function mapArray = calcMapFromFile(inDir,fileNameList,mapType,varargin)
-
-% Optional input arguments
-% outDir
-% trialOption
-% outFileType
-
 pa = inputParser;
 addRequired(pa,'inDir',@ischar)
 addRequired(pa,'fileNameList',@iscell)
@@ -18,15 +12,15 @@ addParameter(pa,'outFileType','mat')
 parse(pa,inDir,fileNameList,mapType,varargin{:})
 pr = pa.Results;
 
-nFile = length(pr.fileNameList)
+nFile = length(pr.fileNameList);
 
 for k=1:nFile
-    fileName = pr.fileNameList{k}
+    fileName = pr.fileNameList{k};
     filePath = fullfile(pr.inDir,fileName);
     disp(sprintf('Loading %dth file:',k))
     disp(filePath)
     trialOptionCell = helper.structToNameValPair(pr.trialOption);
-    trial = TrialModel(filePath,trialOptionCell{:});
+    trial = trialMvc.TrialModel('filePath', filePath,trialOptionCell{:});
         
     if ~isempty(pr.mapOption)
         mapOption = pr.mapOption;
@@ -54,7 +48,7 @@ for k=1:nFile
             movieFunc.saveTiff(movieFunc.convertToUint(map.data), ...
                                outFilePath);
         elseif strcmp(pr.outFileType,'mat')
-            save(outFilePath)
+            save(outFilePath, 'map');
         end
     end
 end
@@ -62,3 +56,6 @@ end
 mapMeta = pr;
 metaFilePath = fullfile(pr.outDir,'mapMeta.json');
 helper.saveStructAsJson(mapMeta,metaFilePath);
+
+end
+

@@ -44,12 +44,19 @@ end
 
 
 if UseWindow
-    dfRaw = mean(rawMovie(:,:,responseWindow(1):responseWindow(2)),3);   
+    dfRaw = mean(rawMovie(:,:,responseWindow(1):responseWindow(2)),3);
+    % dfRaw = max(rawMovie(:,:,responseWindow(1):responseWindow(2)),[], 3);
+    dfRaw = double(dfRaw);
     fZeroRaw = mean(rawMovie(:,:,fzeroWindow(1):fzeroWindow(2)),3);
     
-    fZero = conv2(fZeroRaw,fspecial('gaussian',[3 3], 1),'same');
+    fZeroGaussianHsize = 5;%3
+    fZeroGaussianSigma = 1;%1
+    fZero = conv2(fZeroRaw,fspecial('gaussian',[fZeroGaussianHsize, fZeroGaussianHsize], fZeroGaussianSigma),'same');
     df = (dfRaw - fZero)./(fZero-offset);
-    responseMap = conv2(df,fspecial('gaussian',[3 3], 2),'same');
+    dfGaussianHsize = 5;%3
+    dfGaussianSigma = 1.5;%2
+    responseMap = conv2(df,fspecial('gaussian',[dfGaussianHsize dfGaussianHsize], dfGaussianSigma),'same');
+
 else
    
 

@@ -1,0 +1,9 @@
+function convertRawToMat(rawTransFile, matFile)
+    [xcorr, ycorr, height, width] = Bunwarpj.fcn_LoadRawTransformation(rawTransFile);
+    transform = Bunwarpj.Transformation('type', 'bunwarpj',...
+                                        'xcorr', xcorr,...
+                                        'ycorr', ycorr,...
+                                        'imageSize', [height, width]);
+    save(matFile, 'transform')
+end
+

@@ -25,7 +25,11 @@ classdef NrView < handle
             self.displayResponseMaxOption();
            % self.displaySetupCOption();
             self.displayExpInfo();
+            
+            % Bunwarpj
+            self.displayTransformationName();
             self.updateCalculatedTransformationsListBox();
+            self.displayReferenceTrialIdx();
         end
         
         function assignCallbacks(self)
@@ -196,11 +200,8 @@ classdef NrView < handle
                         @(s,e)self.displayLoadFileType());
             addlistener(self.model,'expInfo','PostSet',...
                         @(s,e)self.displayExpInfo());
-            addlistener(self.model,'CalculatedTransformationsList','PostSet',...
+            addlistener(self.model,'calculatedTransformationsList','PostSet',...
                         @(s,e)self.updateCalculatedTransformationsListBox());
-           
-
-
         end
         
         function updateFileListBox(self,src,event)
@@ -215,8 +216,8 @@ classdef NrView < handle
         end
 
         function updateCalculatedTransformationsListBox(self,src,event)
-            CalculatedTransformationsList = self.model.CalculatedTransformationsList;
-            set(self.guiHandles.BUnwarpJCalculatedTransformations,'String',CalculatedTransformationsList);
+            calculatedTransformationsList = self.model.calculatedTransformationsList;
+            set(self.guiHandles.BUnwarpJCalculatedTransformations,'String',calculatedTransformationsList);
         end
 
         function updateTransformationTooltip(self)
@@ -226,8 +227,6 @@ classdef NrView < handle
             StringForTooltip=strrep(evalc('disp(TransformationTooltip)'), sprintf('\n'), '<br />');
             set(self.guiHandles.BUnwarpJCalculatedTransformations,'tooltipString',['<html><pre><font face="courier new">' StringForTooltip '</font>']); %alternative format: only evalc('disp(TransformationTooltip)'); check https://undocumentedmatlab.com/articles/multi-line-tooltips
         end
-        
-        
 
         function displayExpInfo(self)
             expInfo = self.model.expInfo;
@@ -302,7 +301,13 @@ classdef NrView < handle
 %             num2str(self.model.responseMaxOption.slidingWindowSize);
         end
 
+        function displayTransformationName(self)
+            self.guiHandles.BUnwarpJTransformationName.String = self.model.transformationName;
+        end
 
+        function displayReferenceTrialIdx(self)
+            self.guiHandles.BUnwarpJReferencetrial.Value = self.model.referenceTrialIdx;
+        end
         
         function toggleLoadRangeText(self,state)
             if strcmp(state,'on') || strcmp(state,'off')

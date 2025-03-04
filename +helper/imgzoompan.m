@@ -1,4 +1,4 @@
-function imgzoompan(hfig, varargin)
+function imgzoompan(hFig, hAxes1, hAxes2, varargin)
 % imgzoompan provides instant mouse zoom and pan
 %
 % function imgzoompan(hfig, varargin)
@@ -47,18 +47,9 @@ function imgzoompan(hfig, varargin)
     
 %% Modified by Bo Hu, Friedrich Miescher Institute, Basel,
 %% Switzerland
-%    for using on axis
+%    For using on both map axes and roi axes
+%    Only for panning. Zooming is controlled by BaseTrialView
 
-
-%  Run in current figure unless otherwise requested
-    if isempty(findobj('type','figure'))
-        fprintf('%s -- finds no open figure windows. Quitting.\n', mfilename)
-        return
-    end
-
-    if nargin==0 || isempty(hfig) || ~isa(hfig,'matlab.ui.Figure')
-        hfig = gcf;
-    end
 
     % Parse configuration options
     p = inputParser;
@@ -103,9 +94,8 @@ function imgzoompan(hfig, varargin)
     % Removed zoom by mouse wheel, use "=" and "-" keys to zoom in
     % and out
     % By Bo Hu 2020-03
-    % set(hfig, 'WindowScrollWheelFcn', @zoom_fcn);
-    set(hfig, 'WindowButtonDownFcn', @down_fcn);
-    set(hfig, 'WindowButtonUpFcn', @up_fcn);
+    set(hFig, 'WindowButtonDownFcn', @down_fcn);
+    set(hFig, 'WindowButtonUpFcn', @up_fcn);
 
     zoomScrollCount = 0;
     orig.h=[];
@@ -116,47 +106,6 @@ function imgzoompan(hfig, varargin)
 
     % -------------------------------
     % Nested callback functions, etc, follow
-
-
-    % Applies zoom
-    function zoom_fcn(src, cbdata)
-        scrollChange = cbdata.VerticalScrollCount; % -1: zoomIn, 1: zoomOut
-
-        if ((zoomScrollCount - scrollChange) <= opt.MaxZoomScrollCount)
-            axish = gca;
-
-            if (isempty(orig.h) || axish ~= orig.h)
-                orig.h = axish;
-                orig.XLim = axish.XLim;
-                orig.YLim = axish.YLim;
-            end
-
-            % calculate the new XLim and YLim
-            cpaxes = mean(axish.CurrentPoint);
-            newXLim = (axish.XLim - cpaxes(1)) * (opt.Magnify * opt.XMagnify)^scrollChange + cpaxes(1);
-            newYLim = (axish.YLim - cpaxes(2)) * (opt.Magnify * opt.YMagnify)^scrollChange + cpaxes(2);
-
-            newXLim = floor(newXLim);
-            newYLim = floor(newYLim);
-            % only check for image border location if user provided ImgWidth
-            if (opt.ImgWidth > 0)
-                if (newXLim(1) >= 0 && newXLim(2) <= opt.ImgWidth && newYLim(1) >= 0 && newYLim(2) <= opt.ImgHeight)
-                    axish.XLim = newXLim;
-                    axish.YLim = newYLim;
-                    zoomScrollCount = zoomScrollCount - scrollChange;
-                else
-                    axish.XLim = orig.XLim;
-                    axish.YLim = orig.YLim;
-                    zoomScrollCount = 0;
-                end
-            else
-                axish.XLim = newXLim;
-                axish.YLim = newYLim;
-                zoomScrollCount = zoomScrollCount - scrollChange;
-            end
-            %fprintf('XLim: [%.3f, %.3f], YLim: [%.3f, %.3f]\n', axish.XLim(1), axish.XLim(2), axish.YLim(1), axish.YLim(2));
-        end
-    end %zoom_fcn
 
     %% Mouse Button Callbacks
     function down_fcn(hObj, evt)
@@ -171,11 +120,11 @@ function imgzoompan(hfig, varargin)
                 (panBt == 2 && strcmp(clickType, 'alt')) || ...
                 (panBt == 3 && strcmp(clickType, 'extend'))
 
+                % if the mouse is over the desired axis, trigger the pan fcn
                 guiArea = hittest(hObj);
                 parentAxes = ancestor(guiArea,'axes');
-
-                % if the mouse is over the desired axis, trigger the pan fcn
-                if ~isempty(parentAxes)
+                
+                if isequal(parentAxes, hAxes1) | isequal(parentAxes, hAxes2)
                     startPan(parentAxes)
                 else
                     setptr(evt.Source,'forbidden')
@@ -196,10 +145,10 @@ function imgzoompan(hfig, varargin)
                 (resBt == 2 && strcmp(clickType, 'alt')) || ...
                 (resBt == 3 && strcmp(clickType, 'extend'))
 
-                guiArea = hittest(hObj);
-                parentAxes = ancestor(guiArea,'axes');
-                parentAxes.XLim=orig.XLim;
-                parentAxes.YLim=orig.YLim;
+                hAxes1.XLim=orig.XLim;
+                hAxes1.YLim=orig.YLim;
+                hAxes2.XLim=orig.XLim;
+                hAxes2.YLim=orig.YLim;
             end
         end
 
@@ -266,11 +215,18 @@ function imgzoompan(hfig, varargin)
         newYLims = round(newYLims);
 
         % Update Axes limits
+        hAxesList = {hAxes1, hAxes2};
         if (newXLims(1) > 0.0 && newXLims(2) < opt.ImgWidth)
-            set(hAx,'Xlim',newXLims);
+            for k=1:length(hAxesList)
+                axish = hAxesList{k};
+                set(axish,'Xlim',newXLims);
+            end
         end
         if (newYLims(1) > 0.0 && newYLims(2) < opt.ImgHeight)
-            set(hAx,'Ylim',newYLims);
+            for k=1:length(hAxesList)
+                axish = hAxesList{k};
+                set(axish,'Ylim',newYLims);
+            end
         end
     end %panningFcn
 

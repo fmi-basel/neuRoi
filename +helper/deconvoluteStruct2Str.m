@@ -34,9 +34,9 @@ function output = deconvoluteStruct2Str(input,parentStruct,parentName)
            value="";
            end
             if UseParentStruct
-                output(i)=strcat(parentName,'_',name,":",value);
+                output(i)=sprintf('%s_%s:%s',parentName,name,value);
             else
-                output(i)=strcat(name,":",value);
+                output(i)=sprintf('%s:%s',name,value);
             end
         end
     end
