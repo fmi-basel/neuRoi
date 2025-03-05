@@ -61,8 +61,8 @@ function computeTransformation(trialImages, referenceImage,...
         disp(tempString);
         %calculate Transformation
         transf=bunwarpj.bUnwarpJ_.computeTransformationBatch(...
-            reference,... %reference target image
-            tempTrial,... %warped source image
+            tempTrial,... %reference target image
+            reference,... %warped source image
             tempTrial.getMask,...
             reference.getMask,...
             1,... %accuracy mode (0 - Fast, 1 - Accurate, 2 - Mono)
@@ -95,13 +95,6 @@ function computeTransformation(trialImages, referenceImage,...
         bunwarpj.bUnwarpJ_.convertToRaw(fullfile(transformDir, elasticTransInvFile),...
                                         rawTransInvFile, targetTitile);
 
-        bunwarpj.bUnwarpJ_.applyRawTransformToSource(rawTransFile,reference,tempTrial);
-        
-        % Save transformed tempTrial
-        ij.IJ.saveAsTiff(tempTrial, strcat(trialName, "_transformed.tif"));
-        % reference.saveAsTiff(strcat(trialName, "_reference.tif"));
-
-        
         % Convert raw transformation to mat
         Bunwarpj.convertRawToMat(rawTransFile, fullfile(matDir,strcat(trialName, ".mat")));
         Bunwarpj.convertRawToMat(rawTransInvFile, fullfile(matDir,strcat(trialName, "_inverse.mat")));

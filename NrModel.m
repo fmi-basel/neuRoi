@@ -1182,8 +1182,8 @@ classdef NrModel < handle
             refTrialName = transformMeta.refTrialName;
             
             [trialNameList, trialIdxList] = self.getSelectedFileList('trial');
-            transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
             transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'inverse');
+
             offsetYxList = Bunwarpj.loadOffsetYxList(bunwarpjDir, trialNameList);
             
             % Load original anatomy file list
@@ -1193,7 +1193,7 @@ classdef NrModel < handle
             anatomyFileList = fullfile(anatomyDir, anatomyNameList);
             refAnatomyFile = fullfile(anatomyDir, refAnatomyName);
 
-            % For each anatomy file, apply transformation from transformStack to refAnatomyFile
+            % For each anatomy file, apply transformation from transformInvStack to each trial
             % and save the result as registered trial stack
             trialStackDir = bunwarpjDir
             if ~exist(trialStackDir, 'dir')
@@ -1207,7 +1207,13 @@ classdef NrModel < handle
             % registered stack as a three dimensional array
             registeredAnatomyStack = zeros([imageSize, length(anatomyFileList)], 'uint16');
             for i=1:length(anatomyFileList)
-                registeredAnatomyStack(:,:,i) = Bunwarpj.applyTransformation(refAnatomy, transformStack(i), offsetYxList(i));
+                anatomyFile = anatomyFileList{i};
+                trialAnatomy = movieFunc.readTiff(anatomyFile);
+                if anatomyFile == refAnatomyFile
+                    registeredAnatomyStack(:,:,i) = trialAnatomy;
+                    continue
+                end
+                registeredAnatomyStack(:,:,i) = Bunwarpj.applyTransformation(trialAnatomy, transformInvStack(i), -offsetYxList(i));
             end
 
             % Save registered anatomy stack
