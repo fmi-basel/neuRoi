@@ -5,6 +5,7 @@ function [outImg]= applyTransformation(img, transform, offsetYx)
     if strcmp(transform.type, 'identity')
         outImg = img;
     elseif strcmp(transform.type, 'bunwarpj')
+        sourceModel = Bunwarpj.BSplineModel(sourceImg);
         xcorr = transform.xcorr;
         ycorr = transform.ycorr;
         height = transform.imageSize(1);
@@ -12,13 +13,28 @@ function [outImg]= applyTransformation(img, transform, offsetYx)
         
         %clipping max min values. rethink about this...this will messup the last
         %and first pixel. Does NAN helps?
-        xcorr(xcorr>width)=width;
-        xcorr(xcorr<1)=1;
+        %xcorr(xcorr>width)=width;
+        %xcorr(xcorr<1)=1;
         
-        ycorr(ycorr>height)=height;
-        ycorr(ycorr<1)=1;
+        %ycorr(ycorr>height)=height;
+        %ycorr(ycorr<1)=1;
         
         imageSize = size(img);
+        outImg = zeros(height, width);
+        for v = 1:height
+            for u = 1:width
+                x = xcorr(v, u);
+                y = ycorr(v, u);
+
+                if x >= 1 && x <= width && y >= 1 && y <= height
+                    % Use B-Spline interpolation from BSplineModel
+                    transformedImg(v, u) = sourceModel.interpolateI(x, y);
+                else
+                    transformedImg(v, u) = 0;
+                end
+            end
+        end
+
         outImg = img(sub2ind(imageSize, uint16(ycorr), uint16(xcorr)));
     else
         error(sprintf('Unknown transformation type %s', transform.type))

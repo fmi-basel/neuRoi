@@ -1111,7 +1111,7 @@ classdef NrModel < handle
         end
         
         function s = saveobj(self)
-            for fn = fieldnames(self)'
+            for fn = fieldnames(self)' %'
                 if ~strcmp(fn, 'stackModel')
                     s.(fn{1}) = self.(fn{1});
                 end
@@ -1174,8 +1174,46 @@ classdef NrModel < handle
             
             self.calculatedTransformationsList{end+1} = self.transformationName;
         end
-        
-        %BUnwarpJ
+
+        function computeRegisteredTrialStack(self)
+            disp('Compute registered trial stack...')
+            bunwarpjDir = self.getBunwarpjDir();
+            transformMeta = load(fullfile(bunwarpjDir, 'transformMeta.mat'));
+            refTrialName = transformMeta.refTrialName;
+            
+            [trialNameList, trialIdxList] = self.getSelectedFileList('trial');
+            transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
+            transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'inverse');
+            offsetYxList = Bunwarpj.loadOffsetYxList(bunwarpjDir, trialNameList);
+            
+            % Load original anatomy file list
+            anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'), self.planeNum);
+            anatomyNameList = self.getSelectedFileList('anatomy');
+            refAnatomyName = self.getFileList('anatomy', self.referenceTrialIdx);
+            anatomyFileList = fullfile(anatomyDir, anatomyNameList);
+            refAnatomyFile = fullfile(anatomyDir, refAnatomyName);
+
+            % For each anatomy file, apply transformation from transformStack to refAnatomyFile
+            % and save the result as registered trial stack
+            trialStackDir = bunwarpjDir
+            if ~exist(trialStackDir, 'dir')
+                mkdir(trialStackDir)
+            end
+
+            % Open image file of reference anatomy
+            refAnatomy = movieFunc.readTiff(refAnatomyFile);
+
+            imageSize = size(refAnatomy);
+            % registered stack as a three dimensional array
+            registeredAnatomyStack = zeros([imageSize, length(anatomyFileList)], 'uint16');
+            for i=1:length(anatomyFileList)
+                registeredAnatomyStack(:,:,i) = Bunwarpj.applyTransformation(refAnatomy, transformStack(i), offsetYxList(i));
+            end
+
+            % Save registered anatomy stack
+            movieFunc.saveTiff(registeredAnatomyStack, fullfile(trialStackDir, 'registeredAnatomyStack.tif'));
+            disp('Registered trial stack saved.')
+        end
             
         function bunwarpjDir = getBunwarpjDir(self)
             bunwarpjDir = self.appendPlaneDir(fullfile(self.getDefaultDir('bunwarpj'),...
