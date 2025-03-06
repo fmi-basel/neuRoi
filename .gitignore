@@ -8,3 +8,6 @@ moveit2.m
 *.asv
 # Config file for neuRoi paths
 config.ini
+
+tests/test_images/
+tests/test_output/

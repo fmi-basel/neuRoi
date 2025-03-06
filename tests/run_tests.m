@@ -17,7 +17,8 @@ disp('xxxxxx')
 % close all
 % testCase = trialMvc.TrialModelTest;
 % results = testCase.run
-testCase = trialMvc.TrialModelTest;
+% testCase = trialMvc.TrialModelTest;
+testCase = nrOpticFlow.OpticFlowTest;
 results = testCase.run
 
 % results = runtests('trialMvc.TrialControllerTest','Name','testSelectRoisByOverlay');
