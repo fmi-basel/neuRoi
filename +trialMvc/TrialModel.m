@@ -776,6 +776,12 @@ classdef TrialModel < baseTrial.BaseTrialModel
         
         function importRoisFromMaskFile(self,filePath)
             maskImg = movieFunc.readTiff(filePath);
+            % Make sure the size only has length of 2
+
+            if length(size(maskImg)) > 2
+                % Remove the dimensions that are singleton
+                maskImg = squeeze(maskImg);
+            end
             if ~isequal(size(maskImg),self.getMapSize())
                 error(['Image size of mask does not match the map size ' ...
                        '(pixel size in x and y)!'])

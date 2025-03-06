@@ -1,7 +1,6 @@
 function computeTransformation(trialImages, referenceImage,...
                                trialNameList, refTrialName,...
-                               saveDir, transformParam,...
-                               offsetYxList)
+                               saveDir, transformParam)
     % Prepare output directory
     matDir = fullfile(saveDir, 'TransformationsMat');
     if ~exist(matDir, 'dir')
@@ -21,18 +20,9 @@ function computeTransformation(trialImages, referenceImage,...
     for i = 1:length(trialImages)
         trialName = trialNameList{i};
         trialImg = im2double(imread(trialImages{i}));
-
-        % If you have an offset
-        offsetYx = offsetYxList{i};
-        trialImg = imtranslate(trialImg, [offsetYx(2), offsetYx(1)], 'FillValues', 0);
-
         % Optional: match histogram if intensities differ
         trialImg = imhistmatch(trialImg, refImg);
 
-        % Compute flow from T -> refImg
-        % reset(opticFlow);
-        % estimateFlow(opticFlow, T);        % T is 'previous'
-        % flow = estimateFlow(opticFlow, refImg);  % refImg is 'current'
 
         options.alpha = 1.5;
         options.levels = 100;
@@ -43,7 +33,8 @@ function computeTransformation(trialImages, referenceImage,...
         options.a_smooth = 1;
         options.a_data = 0.45;
 
-        flow = nrOpticFlow.core.get_displacement( ...
+        % Compute flow from T -> refImg
+        flowField = nrOpticFlow.core.get_displacement( ...
                 refImg, ... % fixed
                 trialImg, ... % moving
                 'sigma', 0.001, ...
@@ -56,11 +47,11 @@ function computeTransformation(trialImages, referenceImage,...
                 'a_smooth', options.a_smooth, 'a_data', options.a_data);
 
         % Save flow in .mat
-        save(fullfile(matDir, trialName + ".mat"), 'flow');
+        saveFlowFieldTransformation(flowField, fullfile(matDir, trialName + ".mat"));
         fprintf("Computed multi-scale flow for %s\n", trialName);
 
         % Compute the inverse flow
-        inverse_flow = nrOpticFlow.core.get_displacement( ...
+        inverseFlowField = nrOpticFlow.core.get_displacement( ...
                 trialImg, ... % fixed
                 refImg, ... % moving
                 'sigma', 0.001, ...
@@ -71,7 +62,14 @@ function computeTransformation(trialImages, referenceImage,...
                 'update_lag', options.update_lag, ...
                 'iterations', options.iterations, ...
                 'a_smooth', options.a_smooth, 'a_data', options.a_data);
-        save(fullfile(matDir, trialName + "_inverse.mat"), 'inverse_flow');
+        
+        saveFlowFieldTransformation(inverseFlowField, fullfile(matDir, trialName + "_inverse.mat"));
         fprintf("Computed multi-scale inverse flow for %s\n", trialName);
     end
+end
+
+function saveFlowFieldTransformation(flowField, filePath)
+    transform = transformFunc.Transformation('type', 'opticFlow', ...
+                                             'flowField', flowField);
+    save(filePath, 'transform');
 end

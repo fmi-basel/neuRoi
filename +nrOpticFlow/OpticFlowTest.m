@@ -27,9 +27,8 @@ classdef OpticFlowTest < matlab.unittest.TestCase
             end
             mkdir(testCase.saveDir);
 
-            % Create dummy transformParam and offset
+            % Create dummy transformParam
             transformParam = struct(); 
-            offsetYxList   = {[0, 0]}; 
             
             % Run computeTransformation
             nrOpticFlow.computeTransformation( ...
@@ -39,7 +38,6 @@ classdef OpticFlowTest < matlab.unittest.TestCase
                 'refTrialName', ...
                 testCase.saveDir, ...
                 transformParam, ...
-                offsetYxList ...
             );
             
             % Check that the .mat file was created
@@ -53,9 +51,8 @@ classdef OpticFlowTest < matlab.unittest.TestCase
                 "Skipping: transformation file missing.");
 
             % Load the saved flow fields (u, v)
-            flowmat = load(testCase.matFile); % has 'u', 'v'
-            transform.type = 'opticFlow';
-            transform.flowField = flowmat.flow;
+            foo = load(testCase.matFile);
+            transform = foo.transform;
 
             % Load images
             refImg   = im2double(imread(testCase.referencePath));

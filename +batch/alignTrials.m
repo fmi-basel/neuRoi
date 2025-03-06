@@ -1,8 +1,45 @@
 function [alignResult,varargout] = alignTrials(inDir,inFileList,templateName,varargin)
-% ALIGNTRIALS align each trial with respect to the template anatomy
-% image
-%     Args:
-%     Returns:
+% ALIGNTRIALS Align each trial image to a reference (template) anatomy image.
+%
+% This function loads a series of anatomical images (trials) from a directory,
+% aligns each trial to a given template image, and computes the necessary
+% translations to match the template.
+%
+% The YX shift means the number of pixels to shift the trial image in the Y and X to match the template.
+%
+% Args:
+%   inDir (char): Directory containing the trial images.
+%   inFileList (cell array of char): List of filenames to be aligned.
+%   templateName (char): Filename of the template anatomy image.
+%
+%   Name-Value Parameters:
+%       'outFilePath' (char, default ''): Path to save the alignment result.
+%       'stackFilePath' (char, default ''): Path to save the aligned image stack.
+%       'plotFig' (logical, default false): Whether to visualize the alignment results.
+%       'climit' (1x2 double, default [0 1]): Contrast limits for image display.
+%       'debug' (logical, default false): Whether to enable debug mode (verbose output).
+%
+% Returns:
+%   alignResult (struct): Structure containing alignment information:
+%       - inDir (char): Input directory.
+%       - inFileList (cell array of char): List of aligned files.
+%       - templateName (char): Template filename.
+%       - offsetYxMat (nFile x 2 double): YX shift matrix for each image.
+%
+%   varargout (optional): If requested, returns the aligned image stack.
+%
+% Example:
+%   inDir = 'data/images';
+%   inFileList = {'trial1.tif', 'trial2.tif'};
+%   templateName = 'template.tif';
+%   alignResult = alignTrials(inDir, inFileList, templateName, 'plotFig', true);
+%
+%   % Save the aligned stack
+%   [alignResult, alignedStack] = alignTrials(inDir, inFileList, templateName, ...
+%                                             'stackFilePath', 'alignedStack.tif');
+%
+% Author: Bo Hu 2021
+
 
 pa = inputParser;
 addRequired(pa,'inDir',@ischar);

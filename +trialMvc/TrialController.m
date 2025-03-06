@@ -120,7 +120,7 @@ classdef TrialController < baseTrial.BaseTrialController
             if fileName
                 option = 'replace';
                 filePath = fullfile(fileDir,fileName)
-                self.model.importRoisFromMask(filePath);
+                self.model.importRoisFromMaskFile(filePath);
             end
         end
         

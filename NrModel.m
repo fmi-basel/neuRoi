@@ -1121,6 +1121,7 @@ classdef NrModel < handle
         
         %Register trials
         function registerTrials(self)
+            % Currently asume not rigid alignment was done using alignTrials
             bunwarpjDir = self.getBunwarpjDir();
             if ~exist(bunwarpjDir, 'dir')
                 mkdir(bunwarpjDir);
@@ -1137,27 +1138,17 @@ classdef NrModel < handle
             anatomyFileList = fullfile(anatomyDir, anatomyNameList);
             refAnatomyFile = fullfile(anatomyDir, refAnatomyName);
             
-
-            % Rigid alignment before bunwarpj
-            alignDir = fullfile(bunwarpjDir, 'alignment');
-            if ~exist(alignDir, 'dir')
-                mkdir(alignDir)
-            end
-            alignResult = self.alignTrialBatch(refTrialName,...
-                                               'planeNum', self.planeNum,...
-                                               'alignOption', {'plotFig',false},...
-                                               'outDir', alignDir);
-
-            
-            offsetYxList = cellfun(@(x) self.getOffsetYx(alignResult, x),...
-                                   anatomyNameList, 'UniformOutput', false);
-            
             if self.registerWithBunwarpj
                 % Compute tranfromation and save as .mat
-                Bunwarpj.computeBunwarpj(anatomyFileList, refAnatomyFile,...
-                                         trialNameList, refTrialName,...
-                                         self.transformParam, offsetYxList,...
-                                         bunwarpjDir);
+                % Bunwarpj.computeBunwarpj(anatomyFileList, refAnatomyFile,...
+                %                          trialNameList, refTrialName,...
+                %                          self.transformParam, offsetYxList,...
+                %                          bunwarpjDir);
+                nrOpticFlow.computeTransformationWrapper(anatomyFileList, refAnatomyFile,...
+                                                       trialNameList, refTrialName,...
+                                                       self.transformParam, bunwarpjDir);
+                % This computes tranformation forward, apply it to each trial to match with reference image
+                % and then compute inverse transformation, apply it to reference to match with each trial
             else
                 % TODO currently this is a work around to create transformation
                 % as identity transformation
@@ -1182,9 +1173,7 @@ classdef NrModel < handle
             refTrialName = transformMeta.refTrialName;
             
             [trialNameList, trialIdxList] = self.getSelectedFileList('trial');
-            transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'inverse');
-
-            offsetYxList = Bunwarpj.loadOffsetYxList(bunwarpjDir, trialNameList);
+            transformStack = transformFunc.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
             
             % Load original anatomy file list
             anatomyDir = self.appendPlaneDir(self.getDefaultDir('anatomy'), self.planeNum);
@@ -1209,7 +1198,7 @@ classdef NrModel < handle
             for i=1:length(anatomyFileList)
                 anatomyFile = anatomyFileList{i};
                 trialAnatomy = movieFunc.readTiff(anatomyFile);
-                registeredAnatomyStack(:,:,i) = Bunwarpj.applyTransformationBspline(trialAnatomy, transformInvStack(i), -offsetYxList(i));
+                registeredAnatomyStack(:,:,i) = nrOpticFlow.applyTransformation(trialAnatomy, transformStack(i));
             end
 
             % Save registered anatomy stack
@@ -1274,10 +1263,8 @@ classdef NrModel < handle
             %     anatomyArray(:,:,i)=adapthisteq(uint8(squeeze(anatomyArray(:,:,i))),"NumTiles",[8 8],'ClipLimit',0.02);
             % end
 
-            transformStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
-            transformInvStack = Bunwarpj.loadTransformStack(bunwarpjDir, trialNameList, 'inverse');
-
-            offsetYxList = Bunwarpj.loadOffsetYxList(bunwarpjDir, trialNameList);
+            transformStack = transformFunc.loadTransformStack(bunwarpjDir, trialNameList, 'forward');
+            transformInvStack = transformFunc.loadTransformStack(bunwarpjDir, trialNameList, 'inverse');
             
             roiArrStackFile = fullfile(bunwarpjDir,"roiArrStack.mat");
             if isfile(roiArrStackFile)
@@ -1286,7 +1273,7 @@ classdef NrModel < handle
                 doSummarizeRoiTags = false;
             else
                 templateRoiArr = self.loadTemplateRoiArr(refTrialName);
-                roiArrStack = Bunwarpj.transformRoiArrStack(templateRoiArr, transformStack, -offsetYxList);
+                roiArrStack = transfromFunc.transformRoiArrStack(templateRoiArr, transformStack);
                 doSummarizeRoiTags = true;
             end
             
@@ -1298,7 +1285,6 @@ classdef NrModel < handle
                                                          'roiArrStack', roiArrStack,...
                                                          'transformStack', transformStack,...
                                                          'transformInvStack', transformInvStack,...
-                                                         'offsetYxList', offsetYxList,...
                                                          'doSummarizeRoiTags', doSummarizeRoiTags,...
                                                          'trialIdxList', trialIdxList,...
                                                          'roiDir', bunwarpjDir,...

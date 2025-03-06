@@ -1,4 +1,38 @@
 function [offsetYx,varargout] = alignImage(movingImg,fixedImg,fitGauss,normFlag,debug)
+% ALIGNIMAGE Computes the translational offset between two images using cross-correlation.
+%
+% This function estimates the displacement required to align `movingImg` to 
+% `fixedImg` by computing the cross-correlation in the Fourier domain. It can 
+% optionally use Gaussian fitting for subpixel precision.
+%
+% The offsetYx means the number of pixels that the moving image should be shifted to align with the fixed image.
+%
+% Args:
+%   movingImg (2D array): The image to be aligned (moving image).
+%   fixedImg (2D array): The reference image (fixed image).
+%   fitGauss (logical, optional): Whether to fit a Gaussian to the cross-correlation peak 
+%       for subpixel accuracy. Default: `false`.
+%   normFlag (logical, optional): If `true`, normalizes images before computing cross-correlation 
+%       by subtracting the mean. Default: `false`.
+%   debug (logical, optional): If `true`, enables debugging mode to visualize cross-correlation 
+%       results and display key values. Default: `false`.
+%
+% Returns:
+%   offsetYx (1x2 double): The estimated YX translation to align `movingImg` to `fixedImg`.
+%       - `offsetYx(1)`: Vertical shift (Y displacement).
+%       - `offsetYx(2)`: Horizontal shift (X displacement).
+%
+%   varargout (optional): If requested, returns an additional alignment error measure.
+%       - `varargout{1}` (double): Estimated alignment error (if `normFlag` is enabled).
+%
+% Example:
+%   movingImg = imread('trial1.tif');
+%   fixedImg = imread('template.tif');
+%   offset = alignImage(movingImg, fixedImg);
+%   alignedImg = circshift(movingImg, offset);
+%
+% Author: Bo Hu 2021
+
 % TODO IMPORTANT! change the code in align batch so that fitGauss
 % was not used because of debugging...
     if ~exist('normFlag','var')
