@@ -1209,11 +1209,7 @@ classdef NrModel < handle
             for i=1:length(anatomyFileList)
                 anatomyFile = anatomyFileList{i};
                 trialAnatomy = movieFunc.readTiff(anatomyFile);
-                if anatomyFile == refAnatomyFile
-                    registeredAnatomyStack(:,:,i) = trialAnatomy;
-                    continue
-                end
-                registeredAnatomyStack(:,:,i) = Bunwarpj.applyTransformation(trialAnatomy, transformInvStack(i), -offsetYxList(i));
+                registeredAnatomyStack(:,:,i) = Bunwarpj.applyTransformationBspline(trialAnatomy, transformInvStack(i), -offsetYxList(i));
             end
 
             % Save registered anatomy stack
