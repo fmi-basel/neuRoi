@@ -62,6 +62,11 @@ classdef RoiArray < handle
             end
         end
 
+        function idxs = findRoisByTags(self, tags)
+            [~, idxs] = ismember(tags, self.tagList);
+        end
+
+
         function roi = getRoi(self, tag)
             idx = self.findRoi(tag);
             roi = self.roiList(idx);
@@ -137,7 +142,18 @@ classdef RoiArray < handle
                 self.deleteRoi(tags(k));
             end
         end
-        
+
+        function rois = deleteSelectedRois(self)
+            tags = self.getSelectedTags();
+            rois = roiFunc.RoiM.empty();
+            for k=1:length(tags)
+                tag = tags(k);
+                rois(k) = self.deleteRoi(tag);
+            end
+            % Clear selection
+            self.selectedIdxs = [];
+        end
+
         function selectRoisByIdxs(self, idxs)
             self.selectedIdxs = idxs;
         end
@@ -178,7 +194,7 @@ classdef RoiArray < handle
         function idxs = getSelectedIdxs(self)
             idxs = self.selectedIdxs;
         end
-        
+
         function tags = getSelectedTags(self)
             idxs = self.selectedIdxs;
             tags = self.tagList(idxs);
@@ -248,7 +264,11 @@ classdef RoiArray < handle
             rois = self.assignRoisToGroup(tags, self.currentGroupName);
         end
 
-        
+        function rois = assignRoisToGroup(self, tags, groupName)
+            idxs = self.findRoisByTags(tags);
+            rois = self.assignRoisToGroupByIdx(idxs, groupName);
+        end
+
         function [rois, tags] = getSelectedRoisFromGroup(self, groupName)
             gidxs = self.findRoisInGroup(groupName);
             idxs = intersect(self.selectedIdxs, gidxs);

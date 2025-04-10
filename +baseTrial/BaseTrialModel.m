@@ -85,6 +85,10 @@ classdef BaseTrialModel < handle
             notify(self,'roiUpdated', NrEvent.RoiUpdatedEvent(newRoi, oldRoi));
         end
 
+        function deleteSelectedRois(self, varargin)
+            % This method needs to be implemented in the subclass
+            error('Not implemented.')
+        end
     end
 end
 

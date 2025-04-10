@@ -210,6 +210,15 @@ classdef TrialStackView < baseTrial.BaseTrialView
             mainFig = self.guiHandles.mainFig;
             delete(mainFig);
         end
+
+        function recordState(self)
+            error('Not implemented!')
+        end
+
+        function restoreState(self)
+            error('Not implemented!')
+        end
+
     end
     
 end

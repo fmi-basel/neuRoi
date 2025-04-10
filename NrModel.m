@@ -1273,7 +1273,7 @@ classdef NrModel < handle
                 doSummarizeRoiTags = false;
             else
                 templateRoiArr = self.loadTemplateRoiArr(refTrialName);
-                roiArrStack = transfromFunc.transformRoiArrStack(templateRoiArr, transformStack);
+                roiArrStack = transformFunc.transformRoiArrStack(templateRoiArr, transformInvStack);
                 doSummarizeRoiTags = true;
             end
             

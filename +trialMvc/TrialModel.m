@@ -794,7 +794,11 @@ classdef TrialModel < baseTrial.BaseTrialModel
             roiArray = roiFunc.convertFromImageJRoi(jroiArray);
             self.insertRoiArray(roiArray,'replace');
         end
-        
+
+        function deleteSelectedRois(self)
+            rois = self.roiArr.deleteSelectedRois();
+            notify(self, 'roiDeleted', NrEvent.RoiDeletedEvent(rois))
+        end
 
         % Methods for ROI group
         function addRoiGroup(self, groupName)

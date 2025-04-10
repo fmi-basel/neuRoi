@@ -26,6 +26,8 @@ classdef BaseTrialController < handle
                     self.model.selectMapType(3)
                   case 't'
                     self.toggleRoiVisibility()
+                  case {'d','delete','backspace'}
+                    self.deleteSelectedRois();
                   case 'x'
                     self.replaceRoiByDrawing();
                   case 'v'
@@ -66,7 +68,7 @@ classdef BaseTrialController < handle
         end
         
         function addRoiByDrawing(self, varargin)
-            self.registerUndo()
+            % self.registerUndo()
             self.view.setRoiVisibility(true);
             self.enableFreehandShortcut = false;
             if length(varargin) == 1

@@ -25,8 +25,6 @@ classdef TrialController < baseTrial.BaseTrialController
 
             if isempty(evnt.Modifier)
                 switch evnt.Key
-                  case {'d','delete','backspace'}
-                    self.deleteSelectedRoi();
                   case 'n'
                     self.model.assignSelectedRoisToCurrentGroup();
                 end
@@ -60,11 +58,6 @@ classdef TrialController < baseTrial.BaseTrialController
                 filePath = fullfile(fileDir,fileName);
                 self.model.importMap(filePath)
             end
-        end
-        
-        % Functions for moving selected ROIs
-        function deleteSelectedRoi(self)
-            self.model.deleteSelectedRoi();
         end
 
         function saveRoiArray(self)

@@ -10,17 +10,18 @@ classdef TrialStackController < baseTrial.BaseTrialController
         
         function keyPressCallback(self, src, evnt)
             keyPressCallback@baseTrial.BaseTrialController(self, src, evnt); %call base function
-            if strcmp(evnt.Modifier,'control')
+            %if strcmp(evnt.Modifier,'control')
+            if strcmp(evnt.Modifier,'shift')
                 switch evnt.Key
-                  case 'b'
+                  case {'d','delete','backspace'}
+                    self.deleteSelectedRoisInStack();
+                  case 's'
                     self.addRoisInStack();
                 end
             else
                 switch evnt.Key
                   case {'j','k'}
                     self.slideTrialCallback(evnt)
-                  case {'d','delete','backspace'}
-                    self.deleteSelectedRoisInStack();
                 end
             end
         end
