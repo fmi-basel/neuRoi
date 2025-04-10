@@ -40,18 +40,14 @@ classdef NrModel < handle
         jroiDir
         maskDir
         precalculatedMapDir
-        
-        loadFileType
+
         planeNum
         
         trialOptionRaw
-        trialOptionBinned
         alignToTemplate
         mapsAfterLoading
         loadTemplateRoi
         roiTemplateFilePath
-        
-        binConfig
 
         roiFileIdentifier    
        
@@ -86,17 +82,12 @@ classdef NrModel < handle
             addParameter(pa,'expInfo',defaultExpInfo,@isstruct);
             % addParameter(pa,'alignFilePath','',@ischar)
             addParameter(pa,'roiDir','',@ischar);
-            addParameter(pa,'loadFileType','raw',@ischar);
+
             defaultTrialOptionRaw = struct('process',true,...
                                 'noSignalWindow',[1 12], ...
                                 'intensityOffset',-30);
-            defaultTrialOptionBinned = struct('process',false,...
-                                'noSignalWindow',[], ...
-                                'intensityOffset',100);   
             addParameter(pa,'trialOptionRaw',defaultTrialOptionRaw, ...
                          @isstruct);
-            addParameter(pa,'trialOptionBinned', ...
-                         defaultTrialOptionBinned,@isstruct);
             
             
             defaultResponseOption = struct('offset',0,...
@@ -167,10 +158,7 @@ classdef NrModel < handle
             self.roiFileIdentifier=pr.roiFileIdentifier;
             self.maskDir = self.getDefaultDir('mask');
 
-            
-            self.loadFileType = pr.loadFileType;
             self.trialOptionRaw = pr.trialOptionRaw;
-            self.trialOptionBinned = pr.trialOptionBinned;
             self.responseOption = pr.responseOption;
             self.responseMaxOption = pr.responseMaxOption;
             self.SetupCAnatomyOption=pr.SetupCAnatomyOption;
@@ -204,13 +192,10 @@ classdef NrModel < handle
             addParameter(pa,'computeAnatomy',true);
             addParameter(pa,'mcBetweenTrial',false);
             addParameter(pa,'mcBTTemplateIdx',1);
-            addParameter(pa,'binning',false);
-            addParameter(pa,'binDir','');
-            addParameter(pa,'binParam',[]);
             parse(pa,varargin{:})
             pr = pa.Results;
 
-            if pr.subtractScan
+            if pr.subtractScan % Subtract scan pattern caused by resonant scanning in x direction (setupA(Clara))
                 trialOption = struct('process',true,'noSignalWindow',pr.noSignalWindow);
             else
                 trialOption = {}; %
@@ -225,25 +210,10 @@ classdef NrModel < handle
                 self.motionCorrBatch(trialOption,motionCorrDir)
             end
             
-            % Subsampling
-            if pr.binning
-                binParam = pr.binParam;
-                binParam.trialOption = trialOption;
-                for planeNum=1:self.expInfo.nPlane
-                    self.binMovieBatch(binParam,pr.binDir,planeNum);
-                end
-            end
-            
             % Compute averaged anatomy image for each trial
             if pr.computeAnatomy
-                if pr.binning
-                    anatomyParam.inFileType = 'binned';
-                    anatomyParam.trialOption = [];
-                else
-                    anatomyParam.inFileType = 'raw';
-                    anatomyParam.trialOption = trialOption;
-                end
-                
+                anatomyParam.trialOption = trialOption;
+            
                 for planeNum=1:self.expInfo.nPlane
                     self.calcAnatomyBatch(anatomyParam,planeNum);
                 end
@@ -277,8 +247,7 @@ classdef NrModel < handle
             trial = self.trialArray(idx);
         end
 
-        function trial = loadTrialFromList(self,fileIdx,fileType, ...
-                                           planeNum)
+        function trial = loadTrialFromList(self,fileIdx, planeNum)
             if ~exist('planeNum','var')
                 planeNum = 1;
             end
@@ -288,42 +257,18 @@ classdef NrModel < handle
                     planeNum)
             
             multiPlane = checkMultiPlane(self,planeNum);
-            
-            if self.setupMode==3 %SetupC maps are precalculated so we use 'raw' so the names are correct
-                fileType='raw';
-            end
-            switch fileType
-              case 'raw'
-                fileName = rawFileName;
-                filePath = fullfile(self.rawDataDir, ...
-                                    fileName);
-                trialOption = self.trialOptionRaw;
-                if multiPlane
-                    trialOption.zrange = [planeNum inf];
-                    trialOption.nFramePerStep = ...
-                        self.expInfo.nPlane;
-                    frameRate = self.expInfo.frameRate /self.expInfo.nPlane;
-                else
-                    frameRate = self.expInfo.frameRate;
-                end
-              case 'binned'
-                shrinkFactors = self.binConfig.param.shrinkFactors;
-                fileName = iopath.getBinnedFileName(rawFileName, ...
-                                                    shrinkFactors);
-                if multiPlane
-                    planeString = NrModel.getPlaneString(planeNum);
-                    filePath = fullfile(self.binConfig.outDir, ...
-                                        planeString,fileName);
-                    frameRate = self.expInfo.frameRate / ...
-                        shrinkFactors(3) / self.expInfo.nPlane;
-                else
-                    filePath = fullfile(self.binConfig.outDir, ...
-                                        fileName);
-                    frameRate = self.expInfo.frameRate / ...
-                        shrinkFactors(3);
-                end
-                
-                trialOption = self.trialOptionBinned;
+
+            fileName = rawFileName;
+            filePath = fullfile(self.rawDataDir, ...
+                                fileName);
+            trialOption = self.trialOptionRaw;
+            if multiPlane
+                trialOption.zrange = [planeNum inf];
+                trialOption.nFramePerStep = ...
+                    self.expInfo.nPlane;
+                frameRate = self.expInfo.frameRate /self.expInfo.nPlane;
+            else
+                frameRate = self.expInfo.frameRate;
             end
             
 
@@ -573,41 +518,15 @@ classdef NrModel < handle
                 mkdir(outSubDir)
             end
 
-            if strcmp(param.inFileType,'raw')
-                trialOption = param.trialOption;
-                if self.expInfo.nPlane > 1
-                    trialOption.nFramePerStep = self.expInfo.nPlane;
-                    trialOption.zrange = [planeNum,inf];
-                end
-                [~,filePrefix] = batch.calcAnatomyFromFile(self.rawDataDir, ...
-                                                           rawFileList,...
-                                                           outSubDir, ...
-                                                           trialOption);
-            elseif strcmp(param.inFileType,'binned')
-                binDir = self.binConfig.outDir;
-                if self.expInfo.nPlane > 1
-                    binDir = fullfile(binDir,planeString);
-                end
-                
-                if self.binConfig.filePrefix
-                    binPrefix = self.binConfig.filePrefix;
-                    binnedFileList = ...
-                        iopath.modifyFileName(rawFileList,binPrefix,'','tif');
-                end
-                try
-                    [~,filePrefix] = batch.calcAnatomyFromFile(binDir, ...
-                                 binnedFileList,outSubDir,param.trialOption);
-                catch ME
-                    if strcmp(ME.identifier, ...
-                              'batchCalcAnatomyFromFile:fileNotFound')
-                        addMsg = ['Binned data does not exist! Please do ' ...
-                               'binning first before calculating anatomy.'];
-                        disp(addMsg)
-                    end
-                    rethrow(ME)
-                end
-                filePrefix = [filePrefix,binPrefix];
+            trialOption = param.trialOption;
+            if self.expInfo.nPlane > 1
+                trialOption.nFramePerStep = self.expInfo.nPlane;
+                trialOption.zrange = [planeNum,inf];
             end
+            [~,filePrefix] = batch.calcAnatomyFromFile(self.rawDataDir, ...
+                                                        rawFileList,...
+                                                        outSubDir, ...
+                                                        trialOption);
             
             anatomyConfig.param = param;
             anatomyConfig.filePrefix = filePrefix;
@@ -705,7 +624,7 @@ classdef NrModel < handle
             self.trialTable(rowLogic,:) = [];
         end
         
-        function [mapArray,varargout] = calcMapBatch(self,inFileType,mapType,mapOption,varargin)
+        function [mapArray,varargout] = calcMapBatch(self,mapType,mapOption,varargin)
             pa = inputParser;
             addParameter(pa,'trialOption',[]);
             addParameter(pa,'planeNum',1,@isnumeric);
@@ -720,42 +639,21 @@ classdef NrModel < handle
             multiPlane = self.checkMultiPlane(planeNum);
                 
             trialOption = pr.trialOption;
-            if strcmp(inFileType,'raw')
-                inSubDir = self.rawDataDir;
-                inFileList = self.rawFileList;
-                if pr.fileIdx
-                    inFileList = inFileList(pr.fileIdx);
-                end
-                if multiPlane
-                    trialOption.frameRate = self.expInfo.frameRate/ ...
-                                            self.expInfo.nPlane;
-                    trialOption.zrange = [planeNum inf];
-                    trialOption.nFramePerStep = self.expInfo.nPlane;
-                else
-                    trialOption.frameRate = self.expInfo.frameRate;
-                end
-            elseif strcmp(inFileType,'binned')
-                inDir = self.binConfig.outDir;
-                inFileList = self.getFileList('binned');
-                if pr.fileIdx
-                    inFileList = inFileList(pr.fileIdx);
-                end
-                shrinkZ = self.binConfig.param.shrinkFactors(3);
-                if multiPlane
-                    inSubDir = fullfile(inDir, ...
-                                  NrModel.getPlaneString(planeNum));
-                    trialOption.frameRate = self.expInfo.frameRate/ ...
-                                         self.expInfo.nPlane/shrinkZ;
-                else
-                    inSubDir = inDir;
-                    trialOption.frameRate = self.expInfo.frameRate/ ...
-                                            shrinkZ;
-                end
 
-            else
-                error('inFileType should be either raw or binned!')
+            inSubDir = self.rawDataDir;
+            inFileList = self.rawFileList;
+            if pr.fileIdx
+                inFileList = inFileList(pr.fileIdx);
             end
-            
+            if multiPlane
+                trialOption.frameRate = self.expInfo.frameRate/ ...
+                                        self.expInfo.nPlane;
+                trialOption.zrange = [planeNum inf];
+                trialOption.nFramePerStep = self.expInfo.nPlane;
+            else
+                trialOption.frameRate = self.expInfo.frameRate;
+            end
+
             delayList = [];
             if pr.saveMap
                 if strcmp(mapType, 'response')
@@ -1068,10 +966,6 @@ classdef NrModel < handle
                 fileList = strrep(rawFileList, '.tif', '');
             else
                 switch fileType
-                  case 'binned'
-                    prefix = self.binConfig.filePrefix;
-                    appendix = '';
-                    ext = 'tif';
                   case 'anatomy'
                     prefix = self.anatomyConfig.filePrefix;
                     appendix = '';
@@ -1294,12 +1188,10 @@ classdef NrModel < handle
         function responseArray = calcResponseMapArray(self, saveMap)
             fileIdx = self.selectedFileIdx;
             planeNum = self.planeNum;
-            inFileType = 'raw';
             mapType = 'response';
             mapOption = self.responseOption;
             trialOption = self.trialOptionRaw;
-            responseArray= self.calcMapBatch(inFileType,...
-                                             mapType,mapOption,...
+            responseArray= self.calcMapBatch(mapType,mapOption,...
                                              'trialOption',trialOption,...
                                              'sortBy','odor',...
                                              'planeNum',planeNum,...
@@ -1311,12 +1203,10 @@ classdef NrModel < handle
         function responseMaxArray = calcResponseMaxMapArray(self, saveMap)
             fileIdx = self.selectedFileIdx;
             planeNum = self.planeNum;
-            inFileType = 'raw';
             mapType = 'responseMax';
             mapOption = self.responseMaxOption;
             trialOption = self.trialOptionRaw;
-            responseMaxArray= self.calcMapBatch(inFileType,...
-                                                mapType,mapOption,...
+            responseMaxArray= self.calcMapBatch(mapType,mapOption,...
                                                 'trialOption',trialOption,...
                                                 'sortBy','odor',...
                                                 'planeNum',planeNum,...
@@ -1363,9 +1253,8 @@ classdef NrModel < handle
             else
                 disp('Loading 1st trial to determine mapSize')
                 fileIdx = 1;
-                fileType = 'raw';
                 planeNum = 1;
-                trial = self.loadTrialFromList(fileIdx,fileType,planeNum);
+                trial = self.loadTrialFromList(fileIdx,planeNum);
                 mapSize = trial.getMapSize();
                 self.trialArray(end) = []; % delete the temporarily loaded trial
                 self.expInfo.mapSize = mapSize;

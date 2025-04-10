@@ -109,18 +109,7 @@ classdef NrController < handle
             nFramePerStep = str2num(stepStr);
             self.model.loadMovieOption.nFramePerStep = nFramePerStep;
         end
-        
-        function loadFileTypeGroup_Callback(self,src,evnt)
-            button = evnt.NewValue;
-            tag = button.Tag;
-            if strcmp(tag,'loadfiletype_radio_1')
-                self.model.loadFileType = 'binned';
-            else
-                self.model.loadFileType = 'raw';
-            end
-        end
-        
-        
+
         function planeNumText_Callback(self,src,evnt)
             planeNumStr = src.String;
             planeNum = str2num(planeNumStr);
@@ -231,9 +220,8 @@ classdef NrController < handle
         end
         
         function openTrialFromList(self,fileIdx)
-            fileType = self.model.loadFileType;
             planeNum = self.model.planeNum;
-            trial = self.model.loadTrialFromList(fileIdx,fileType,planeNum);
+            trial = self.model.loadTrialFromList(fileIdx,planeNum);
             self.openTrialContrl(trial);
         end
         
