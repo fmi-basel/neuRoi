@@ -83,7 +83,7 @@ classdef NrModel < handle
             % addParameter(pa,'alignFilePath','',@ischar)
             addParameter(pa,'roiDir','',@ischar);
 
-            defaultTrialOptionRaw = struct('process',true,...
+            defaultTrialOptionRaw = struct('subtractScan',false,...
                                 'noSignalWindow',[1 12], ...
                                 'intensityOffset',-30);
             addParameter(pa,'trialOptionRaw',defaultTrialOptionRaw, ...
@@ -196,7 +196,7 @@ classdef NrModel < handle
             pr = pa.Results;
 
             if pr.subtractScan % Subtract scan pattern caused by resonant scanning in x direction (setupA(Clara))
-                trialOption = struct('process',true,'noSignalWindow',pr.noSignalWindow);
+                trialOption = struct('subtractScan',true,'noSignalWindow',pr.noSignalWindow);
             else
                 trialOption = {}; %
             end
@@ -751,7 +751,7 @@ classdef NrModel < handle
             
             disp(sprintf('Extract time trace ...'))
             disp(sprintf('Data file: #%d, %s', fileIdx, self.rawFileList{fileIdx}))
-            trial = self.loadTrialFromList(fileIdx,'raw',planeNum);
+            trial = self.loadTrialFromList(fileIdx,planeNum);
             
             if ~isempty(pr.roiArr)
                 disp('ROI from stack')

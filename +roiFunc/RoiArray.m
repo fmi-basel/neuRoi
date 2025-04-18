@@ -51,6 +51,16 @@ classdef RoiArray < handle
             tagList = self.tagList;
         end
 
+        function setTagList(self, tagList)
+            % Update tag of each ROI
+            for k=1:length(self.roiList)
+                tag = tagList(k);
+                self.roiList(k).tag = tag;
+            end
+            % Update tagList
+            self.tagList = tagList;
+        end
+
         function roiList = getRoiList(self)
             roiList = self.roiList;
         end
@@ -301,7 +311,22 @@ classdef RoiArray < handle
             for k=1:length(tagArray)
                 tag = tagArray(k);
                 mask = maskImg == tag;
-                [mposY,mposX] = find(mask);
+                % If the ROI contains multiple disconnected regions, only keep the largest one
+                % Check the number of disconnected components
+                CC = bwconncomp(mask);
+                numComponents = CC.NumObjects;
+                if numComponents > 1
+                    disp(['Tag ' num2str(tag) ' has ' num2str(numComponents) ' disconnected components. Keeping only the largest.']);
+                    % Keep only the largest connected component
+                    stats = regionprops(CC, 'Area');
+                    [~, largestIdx] = max([stats.Area]);
+                    largestMask = false(size(mask));
+                    largestMask(CC.PixelIdxList{largestIdx}) = true;
+                    [mposY, mposX] = find(largestMask);
+                else
+                    % If there is only one component, use the original mask
+                    [mposY, mposX] = find(mask);
+                end
                 position = [mposX'; mposY']';
                 roi = roiFunc.RoiM('position', position,'tag',double(tag));
                 self.addRoi(roi, groupName);

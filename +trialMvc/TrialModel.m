@@ -60,7 +60,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
             addParameter(pa,'mockMovie',struct([]), @isstruct);
             addParameter(pa,'zrange',[1 inf], @ismatrix);
             addParameter(pa,'nFramePerStep',1)
-            addParameter(pa,'process',false);
+            addParameter(pa,'subtractScan',false);
             addParameter(pa,'noSignalWindow',[1 12]);
             addParameter(pa,'motionCorr',false);
             addParameter(pa,'motionCorrDir','');
@@ -84,7 +84,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
             self.loadMovieOption = struct('zrange',pr.zrange,...
                                           'nFramePerStep', ...
                                           pr.nFramePerStep);
-            self.preprocessOption = struct('process',pr.process,...
+            self.preprocessOption = struct('subtractScan',pr.subtractScan,...
                                            'noSignalWindow', ...
                                            pr.noSignalWindow);
             
@@ -115,10 +115,10 @@ classdef TrialModel < baseTrial.BaseTrialModel
                     self.meta = movieFunc.readMeta(self.filePath);
                     self.loadMovie(self.filePath,self.loadMovieOption);
                     
-                    if self.preprocessOption.process
-                        disp('Processing image: no signal window:')
+                    if self.preprocessOption.subtractScan
+                        disp('Subtracting resonance scan pattern (setup-A-Clara) with no signal window:')
                         disp(self.preprocessOption.noSignalWindow)
-                        self.preprocessMovie(self.preprocessOption.noSignalWindow);
+                        self.subtractResonaceScanPattern(self.preprocessOption.noSignalWindow);
                     end
                     
                     if self.motionCorrOption.motionCorr
@@ -295,7 +295,7 @@ classdef TrialModel < baseTrial.BaseTrialModel
             nf = size(self.rawMovie,3);
         end
         
-        function preprocessMovie(self,noSignalWindow)
+        function subtractResonaceScanPattern(self,noSignalWindow)
             self.rawMovie = movieFunc.subtractPreampRing(self.rawMovie,noSignalWindow);
         end
         
