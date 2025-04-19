@@ -912,6 +912,11 @@ classdef NrModel < handle
                 end
             end
         end
+
+        function resultDir = get.resultDir(self)
+            % Handle using the experiment across os platforms
+            resultDir = helper.normalizePath(self.resultDir);
+        end
         
         function dd = getDefaultDir(self,dirName)
             dirNameList = {'binned', 'anatomy', 'alignment',...
